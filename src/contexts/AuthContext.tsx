@@ -49,9 +49,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (error) {
         console.error('ユーザープロフィール取得エラー:', error);
-        // usersテーブルが存在しない場合やプロフィールが存在しない場合は簡易ユーザーオブジェクトを作成
-        if (error.code === 'PGRST116' || error.message.includes('relation "users" does not exist')) {
-          console.log('usersテーブルまたはプロフィールが存在しないため、簡易ユーザーを作成');
+        // usersテーブルにプロフィールが存在しない場合は作成を試行
+        if (error.code === 'PGRST116') {
+          console.log('プロフィールが存在しないため作成します');
+          try {
+            const { data: newUser, error: insertError } = await supabase
+              .from('users')
+              .insert({
+                id: supabaseUser.id,
+                email: supabaseUser.email || '',
+              })
+              .select()
+              .single();
+            
+            if (insertError) {
+              console.error('プロフィール作成エラー:', insertError);
+              // 作成に失敗した場合は簡易ユーザーオブジェクトを返す
+              return {
+                id: supabaseUser.id,
+                email: supabaseUser.email || '',
+                name: null,
+                google_id: null,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              };
+            }
+            
+            console.log('プロフィール作成成功:', newUser);
+            return newUser;
+          } catch (createError) {
+            console.error('プロフィール作成例外:', createError);
+            return {
+              id: supabaseUser.id,
+              email: supabaseUser.email || '',
+              name: null,
+              google_id: null,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+          }
+        }
+        // usersテーブルが存在しない場合は簡易ユーザーオブジェクトを作成
+        if (error.message.includes('relation "users" does not exist')) {
+          console.log('usersテーブルが存在しないため、簡易ユーザーを作成');
           return {
             id: supabaseUser.id,
             email: supabaseUser.email || '',
