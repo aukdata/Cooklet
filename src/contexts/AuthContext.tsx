@@ -1,0 +1,203 @@
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabase';
+import { User } from '../types';
+
+interface AuthContextType {
+  user: User | null;
+  supabaseUser: SupabaseUser | null;
+  session: Session | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string) => Promise<{ error: any }>;
+  signOut: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // ユーザープロフィールを取得する関数
+  const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
+    try {
+      console.log('ユーザープロフィール取得開始:', supabaseUser.id);
+      
+      // タイムアウト付きでデータベース接続を試行
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('Database connection timeout')), 10000);
+      });
+      
+      const queryPromise = supabase
+        .from('users')
+        .select('*')
+        .eq('id', supabaseUser.id)
+        .single();
+      
+      const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+      
+      if (error) {
+        console.error('ユーザープロフィール取得エラー:', error);
+        // usersテーブルが存在しない場合やプロフィールが存在しない場合は簡易ユーザーオブジェクトを作成
+        if (error.code === 'PGRST116' || error.message.includes('relation "users" does not exist')) {
+          console.log('usersテーブルまたはプロフィールが存在しないため、簡易ユーザーを作成');
+          return {
+            id: supabaseUser.id,
+            email: supabaseUser.email || '',
+            name: null,
+            google_id: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
+        }
+        return null;
+      }
+      
+      console.log('ユーザープロフィール取得成功:', data);
+      return data;
+    } catch (error) {
+      console.error('ユーザープロフィール取得例外:', error);
+      // タイムアウトまたはデータベース接続エラーの場合は簡易ユーザーオブジェクトを作成
+      return {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        name: null,
+        google_id: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+    }
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    
+    // 初期セッション取得
+    const initializeAuth = async () => {
+      try {
+        console.log('認証初期化開始');
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('セッション取得エラー:', error);
+          if (isMounted) {
+            setSession(null);
+            setSupabaseUser(null);
+            setUser(null);
+            setLoading(false);
+          }
+          return;
+        }
+        
+        if (isMounted) {
+          setSession(session);
+          setSupabaseUser(session?.user ?? null);
+          
+          if (session?.user) {
+            const userProfile = await fetchUserProfile(session.user);
+            setUser(userProfile);
+          } else {
+            setUser(null);
+          }
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error('認証初期化エラー:', error);
+        if (isMounted) {
+          setSession(null);
+          setSupabaseUser(null);
+          setUser(null);
+          setLoading(false);
+        }
+      }
+    };
+
+    initializeAuth();
+
+    // 認証状態変更の監視
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      console.log('認証状態変更:', _event, session?.user?.id);
+      
+      if (isMounted) {
+        setSession(session);
+        setSupabaseUser(session?.user ?? null);
+        
+        if (session?.user) {
+          const userProfile = await fetchUserProfile(session.user);
+          setUser(userProfile);
+        } else {
+          setUser(null);
+        }
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+    return { error };
+  };
+
+  const signUp = async (email: string, password: string) => {
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (error) return { error };
+
+    // usersテーブルにユーザープロフィールを作成
+    if (data.user) {
+      const { error: profileError } = await supabase
+        .from('users')
+        .insert({
+          id: data.user.id,
+          email: data.user.email,
+        });
+
+      if (profileError) {
+        console.error('ユーザープロフィール作成エラー:', profileError);
+        return { error: profileError };
+      }
+    }
+
+    return { error };
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
+
+  const value = {
+    user,
+    supabaseUser,
+    session,
+    loading,
+    signIn,
+    signUp,
+    signOut,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
