@@ -198,12 +198,11 @@ export const MealPlans: React.FC = () => {
                 <div className={`font-medium ${isToday(date) ? 'text-blue-600' : 'text-gray-900'}`}>
                   {date.getDate()}
                 </div>
-                <div className="flex justify-center space-x-1 mt-1">
-                  {Array.from({ length: mealCount }, (_, i) => (
-                    <span key={i} className="text-xs">🍳</span>
-                  ))}
-                  {mealCount === 0 && (
-                    <span className="text-xs text-gray-400">•</span>
+                <div className="flex justify-center mt-1">
+                  {mealCount > 0 ? (
+                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
+                  ) : (
+                    <div className="w-2 h-2"></div>
                   )}
                 </div>
               </button>
