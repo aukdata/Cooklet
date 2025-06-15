@@ -1,14 +1,22 @@
 import React, { useState } from 'react';
-import { useRecipes } from '../../hooks/useRecipes';
+import { useRecipes, type SavedRecipe } from '../../hooks/useRecipes';
 import { extractIngredientsFromURL, extractRecipeTitleFromURL } from '../../services/ingredientExtraction';
+import { RecipeDialog } from '../../components/dialogs/RecipeDialog';
+import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
 export const Recipes: React.FC = () => {
-  const { recipes, loading, error, addRecipe } = useRecipes();
+  const { recipes, loading, error, addRecipe, updateRecipe, deleteRecipe } = useRecipes();
   const [newRecipeUrl, setNewRecipeUrl] = useState('');
   const [newRecipeTitle, setNewRecipeTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('全て');
+  
+  // ダイアログの状態管理
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingRecipe, setEditingRecipe] = useState<SavedRecipe | undefined>();
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+  const [deletingRecipe, setDeletingRecipe] = useState<SavedRecipe | undefined>();
   
   // 食材自動抽出の状態管理
   const [isExtracting, setIsExtracting] = useState(false);
@@ -76,6 +84,57 @@ export const Recipes: React.FC = () => {
     } catch (err) {
       console.error('レシピの追加に失敗しました:', err);
     }
+  };
+
+  // レシピ編集ボタンのハンドラー
+  const handleEditRecipe = (recipe: SavedRecipe) => {
+    setEditingRecipe(recipe);
+    setIsEditDialogOpen(true);
+  };
+
+  // レシピ編集ダイアログの保存ハンドラー
+  const handleSaveEditedRecipe = async (recipeData: any) => {
+    if (!editingRecipe) return;
+    
+    try {
+      await updateRecipe(editingRecipe.id, {
+        title: recipeData.title,
+        url: recipeData.url,
+        servings: recipeData.servings,
+        tags: recipeData.tags
+      });
+      setIsEditDialogOpen(false);
+      setEditingRecipe(undefined);
+    } catch (err) {
+      console.error('レシピの更新に失敗しました:', err);
+      alert('レシピの更新に失敗しました');
+    }
+  };
+
+  // レシピ削除ボタンのハンドラー
+  const handleDeleteRecipe = (recipe: SavedRecipe) => {
+    setDeletingRecipe(recipe);
+    setIsConfirmDialogOpen(true);
+  };
+
+  // レシピ削除確認ダイアログの確認ハンドラー
+  const handleConfirmDelete = async () => {
+    if (!deletingRecipe) return;
+    
+    try {
+      await deleteRecipe(deletingRecipe.id);
+      setIsConfirmDialogOpen(false);
+      setDeletingRecipe(undefined);
+    } catch (err) {
+      console.error('レシピの削除に失敗しました:', err);
+      alert('レシピの削除に失敗しました');
+    }
+  };
+
+  // レシピ削除キャンセルハンドラー
+  const handleCancelDelete = () => {
+    setIsConfirmDialogOpen(false);
+    setDeletingRecipe(undefined);
   };
 
   // 検索フィルタリング
@@ -271,10 +330,16 @@ export const Recipes: React.FC = () => {
                   </div>
                   
                   <div className="flex gap-2">
-                    <button className="text-sm text-gray-600 hover:text-gray-800">
+                    <button 
+                      onClick={() => handleEditRecipe(recipe)}
+                      className="text-sm text-gray-600 hover:text-gray-800"
+                    >
                       編集
                     </button>
-                    <button className="text-sm text-red-600 hover:text-red-800">
+                    <button 
+                      onClick={() => handleDeleteRecipe(recipe)}
+                      className="text-sm text-red-600 hover:text-red-800"
+                    >
                       削除
                     </button>
                   </div>
@@ -284,6 +349,31 @@ export const Recipes: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* レシピ編集ダイアログ */}
+      <RecipeDialog
+        isOpen={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        onSave={handleSaveEditedRecipe}
+        onExtractIngredients={extractIngredientsFromURL}
+        initialData={editingRecipe ? {
+          title: editingRecipe.title,
+          url: editingRecipe.url,
+          servings: editingRecipe.servings,
+          ingredients: [], // レシピ仕様では食材は直接保存しないためデフォルト値
+          tags: editingRecipe.tags
+        } : undefined}
+      />
+
+      {/* 削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={isConfirmDialogOpen}
+        title="確認"
+        message="を削除します"
+        itemName={deletingRecipe?.title || ''}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+      />
     </div>
   );
 };

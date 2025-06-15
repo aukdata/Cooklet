@@ -6,6 +6,7 @@ import { MealPlans } from '../../pages/meal-plans/MealPlans';
 import { Recipes } from '../../pages/recipes/Recipes';
 import { Shopping } from '../../pages/shopping/Shopping';
 import { Cost } from '../../pages/cost/Cost';
+import { ErrorBoundary } from '../ErrorBoundary';
 
 // アプリケーションのメインレイアウトコンポーネント
 export const MainLayout: React.FC = () => {
@@ -41,7 +42,21 @@ export const MainLayout: React.FC = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard /> // ダッシュボードページ
+        return (
+          <ErrorBoundary fallback={
+            <div className="p-4 text-center">
+              <div className="text-red-600">ダッシュボードの読み込みに失敗しました</div>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded"
+              >
+                再読み込み
+              </button>
+            </div>
+          }>
+            <Dashboard />
+          </ErrorBoundary>
+        ) // ダッシュボードページ
       case 'meal-plans':
         return <MealPlans /> // カレンダー画面（献立計画表示）
       case 'shopping':
@@ -62,7 +77,7 @@ export const MainLayout: React.FC = () => {
       <header className="bg-white shadow-sm border-b border-gray-200">
         <div className="flex justify-between items-center px-4 py-3">
           {/* アプリタイトル */}
-          <h1 className="text-xl font-bold text-gray-900">Cooklet - {getTabName()}</h1>
+          <h1 className="text-xl font-bold text-gray-900">Cooklet</h1>
           {/* ユーザー情報とログアウトボタン */}
           <div className="flex items-center space-x-3">
             <span className="text-sm text-gray-600">{user?.email}</span>

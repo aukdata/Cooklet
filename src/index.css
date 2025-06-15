@@ -1,1 +1,12 @@
 @import "tailwindcss";
+
+/* ルート要素のpadding/marginをリセット */
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  margin: 0;
+  padding: 0;
+}

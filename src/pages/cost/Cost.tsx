@@ -162,22 +162,10 @@ export const Cost: React.FC = () => {
       {/* ヘッダー */}
       <div className="flex justify-between items-center mb-4">
         <div className="flex items-center">
-          <button 
-            onClick={() => changeMonth('prev')}
-            className="p-1 text-gray-600 hover:text-gray-800 mr-2"
-          >
-            ←
-          </button>
-          <h2 className="text-lg font-semibold flex items-center">
+           <h2 className="text-lg font-semibold flex items-center">
             <span className="mr-2">💰</span>
             コスト管理
           </h2>
-          <button 
-            onClick={() => changeMonth('next')}
-            className="p-1 text-gray-600 hover:text-gray-800 ml-2"
-          >
-            →
-          </button>
         </div>
         <button className="text-gray-400 hover:text-gray-600">
           <span className="text-xl">⚙️</span>
@@ -186,7 +174,19 @@ export const Cost: React.FC = () => {
 
       {/* 月表示 */}
       <div className="text-center mb-4">
+        <button 
+          onClick={() => changeMonth('prev')}
+          className="p-1 text-gray-600 hover:text-gray-800 mr-2"
+        >
+          &lt;
+        </button>
         <span className="text-gray-600">＜ {monthString} ＞</span>
+        <button 
+          onClick={() => changeMonth('next')}
+          className="p-1 text-gray-600 hover:text-gray-800 ml-2"
+        >
+          &gt;
+        </button>
       </div>
 
       {/* 月間サマリー */}

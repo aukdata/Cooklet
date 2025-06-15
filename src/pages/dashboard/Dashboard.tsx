@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
-import { useMealPlans, type MealPlan } from '../../hooks';
+import { useMealPlans, useStockItems, useCostRecords, type MealPlan } from '../../hooks';
 
 
 // ダッシュボード画面コンポーネント - CLAUDE.md仕様書に準拠
@@ -17,7 +17,16 @@ export const Dashboard: React.FC = () => {
   const [editingMeal, setEditingMeal] = useState<{ date: string; mealType: '朝' | '昼' | '夜' | '間食' } | null>(null);
   
   // 献立データの取得（Supabase連携）
-  const { mealPlans, loading, error, saveMealPlan } = useMealPlans();
+  const { mealPlans, loading: mealLoading, error: mealError, saveMealPlan } = useMealPlans();
+  
+  // 在庫データの取得
+  const { stockItems, getExpiredItems, getExpiringItems, loading: stockLoading } = useStockItems();
+  
+  // コストデータの取得
+  const { getMonthlyStats, loading: costLoading } = useCostRecords();
+
+  // 全体のローディング状態
+  const isLoading = mealLoading || stockLoading || costLoading;
 
   // 今日の献立データを取得
   const getTodayMealPlan = (mealType: '朝' | '昼' | '夜') => {
@@ -54,23 +63,37 @@ export const Dashboard: React.FC = () => {
     setEditingMeal(null);
   };
 
-  const stockAlerts = {
-    expired: [
-      { name: 'にんじん', expiry: '6/13' },
-      { name: '牛乳', expiry: '6/14' }
-    ],
-    expiringSoon: [
-      { name: 'たまご', expiry: '6/16' },
-      { name: 'ヨーグルト', expiry: '6/16' }
-    ]
+  // 在庫アラートデータ（動的データ）
+  const expiredItems = getExpiredItems ? getExpiredItems() : [];
+  const expiringItems = getExpiringItems ? getExpiringItems(1) : []; // 明日まで
+  
+  // 月次コストサマリー（動的データ）
+  const currentMonth = today.getMonth() + 1;
+  const currentYear = today.getFullYear();
+  const monthlySummary = getMonthlyStats ? getMonthlyStats(currentYear, currentMonth) : {
+    total: 0,
+    homeCooking: { total: 0, count: 0, average: 0 },
+    eatingOut: { total: 0, count: 0, average: 0 },
+    dailyAverage: 0,
+    mealAverage: 0
+  };
+  
+  // 日付フォーマット関数（6/15形式）
+  const formatDate = (dateStr: string) => {
+    const date = new Date(dateStr);
+    return `${date.getMonth() + 1}/${date.getDate()}`;
   };
 
-  const monthlyCosts = {
-    cooking: { amount: 3200, count: 12 },
-    eating_out: { amount: 2100, count: 3 },
-    total: 5300,
-    dailyAverage: 353
-  };
+  // ローディング中の表示
+  if (isLoading) {
+    return (
+      <div className="p-4">
+        <div className="text-center py-8">
+          <div className="text-gray-600">読み込み中...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
@@ -90,8 +113,8 @@ export const Dashboard: React.FC = () => {
         <h3 className="font-medium text-gray-900 mb-3 flex items-center">
           <span className="mr-2">📅</span>
           今日の献立 ({todayString})
-          {loading && <span className="ml-2 text-sm text-gray-500">読み込み中...</span>}
-          {error && <span className="ml-2 text-sm text-red-500">エラー: {error}</span>}
+          {mealLoading && <span className="ml-2 text-sm text-gray-500">読み込み中...</span>}
+          {mealError && <span className="ml-2 text-sm text-red-500">エラー: {mealError}</span>}
         </h3>
         
         <div className="space-y-3">
@@ -223,16 +246,16 @@ export const Dashboard: React.FC = () => {
         
         <div className="space-y-3">
           {/* 賞味期限切れ */}
-          {stockAlerts.expired.length > 0 && (
+          {expiredItems.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-red-600 mb-2 flex items-center">
                 <span className="mr-1">🔴</span>
                 賞味期限切れ
               </h4>
               <div className="ml-4 space-y-1">
-                {stockAlerts.expired.map((item, index) => (
-                  <div key={index} className="text-sm text-gray-700">
-                    • {item.name} ({item.expiry}期限)
+                {expiredItems.map((item) => (
+                  <div key={item.id} className="text-sm text-gray-700">
+                    • {item.name} ({item.best_before ? formatDate(item.best_before) : '不明'}期限)
                   </div>
                 ))}
               </div>
@@ -240,19 +263,27 @@ export const Dashboard: React.FC = () => {
           )}
 
           {/* 期限間近 */}
-          {stockAlerts.expiringSoon.length > 0 && (
+          {expiringItems.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-yellow-600 mb-2 flex items-center">
                 <span className="mr-1">🟡</span>
                 明日まで
               </h4>
               <div className="ml-4 space-y-1">
-                {stockAlerts.expiringSoon.map((item, index) => (
-                  <div key={index} className="text-sm text-gray-700">
-                    • {item.name} ({item.expiry}期限)
+                {expiringItems.map((item) => (
+                  <div key={item.id} className="text-sm text-gray-700">
+                    • {item.name} ({item.best_before ? formatDate(item.best_before) : '不明'}期限)
                   </div>
                 ))}
               </div>
+            </div>
+          )}
+
+          {/* アラートなしの場合 */}
+          {expiredItems.length === 0 && expiringItems.length === 0 && (
+            <div className="text-center text-gray-500 py-4">
+              <span className="text-2xl">✅</span>
+              <div className="text-sm mt-2">期限切れの在庫はありません</div>
             </div>
           )}
         </div>
@@ -262,7 +293,7 @@ export const Dashboard: React.FC = () => {
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
         <h3 className="font-medium text-gray-900 mb-3 flex items-center">
           <span className="mr-2">💰</span>
-          今月の出費 (6月)
+          今月の出費 ({currentMonth}月)
         </h3>
         
         <div className="space-y-3">
@@ -274,7 +305,7 @@ export const Dashboard: React.FC = () => {
                 自炊:
               </span>
               <span className="text-sm font-medium">
-                ¥{monthlyCosts.cooking.amount.toLocaleString()} ({monthlyCosts.cooking.count}回)
+                ¥{monthlySummary.homeCooking.total.toLocaleString()} ({monthlySummary.homeCooking.count}回)
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -283,7 +314,7 @@ export const Dashboard: React.FC = () => {
                 外食:
               </span>
               <span className="text-sm font-medium">
-                ¥{monthlyCosts.eating_out.amount.toLocaleString()} ({monthlyCosts.eating_out.count}回)
+                ¥{monthlySummary.eatingOut.total.toLocaleString()} ({monthlySummary.eatingOut.count}回)
               </span>
             </div>
           </div>
@@ -296,7 +327,7 @@ export const Dashboard: React.FC = () => {
                 合計:
               </span>
               <span className="font-medium text-lg">
-                ¥{monthlyCosts.total.toLocaleString()}
+                ¥{monthlySummary.total.toLocaleString()}
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -305,7 +336,7 @@ export const Dashboard: React.FC = () => {
                 1日平均:
               </span>
               <span className="text-sm font-medium">
-                ¥{monthlyCosts.dailyAverage}
+                ¥{monthlySummary.dailyAverage}
               </span>
             </div>
           </div>
