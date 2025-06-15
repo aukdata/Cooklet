@@ -3,29 +3,59 @@ import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog'
 import { useMealPlans, type MealPlan } from '../../hooks';
 
 
-// カレンダー画面コンポーネント - 今日を含む先の7日分表示・献立追加機能付き
+// カレンダー画面コンポーネント - 週間表示・献立追加機能付き
 export const MealPlans: React.FC = () => {
   // 選択された日付（今日がデフォルト）
   const [selectedDate, setSelectedDate] = useState(new Date());
+  
+  // 現在表示している週の開始日（日曜日基準）
+  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
+    const today = new Date();
+    // 今週の日曜日を取得
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - today.getDay());
+    return sunday;
+  });
   
   // ダイアログの表示状態
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<{ date: string; mealType: '朝' | '昼' | '夜' | '間食' } | null>(null);
 
-  // 今日を含む先の7日分の日付を取得
-  const getNext7Days = () => {
+  // 指定した週の開始日から7日分の日付を取得
+  const getWeekDates = (weekStart: Date) => {
     const dates = [];
-    const today = new Date();
     
     for (let i = 0; i < 7; i++) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + i);
+      const date = new Date(weekStart);
+      date.setDate(weekStart.getDate() + i);
       dates.push(date);
     }
     return dates;
   };
 
-  const weekDates = getNext7Days();
+  // 先週に移動
+  const goToPreviousWeek = () => {
+    const prevWeek = new Date(currentWeekStart);
+    prevWeek.setDate(currentWeekStart.getDate() - 7);
+    setCurrentWeekStart(prevWeek);
+  };
+
+  // 来週に移動
+  const goToNextWeek = () => {
+    const nextWeek = new Date(currentWeekStart);
+    nextWeek.setDate(currentWeekStart.getDate() + 7);
+    setCurrentWeekStart(nextWeek);
+  };
+
+  // 今週に戻る
+  const goToThisWeek = () => {
+    const today = new Date();
+    const sunday = new Date(today);
+    sunday.setDate(today.getDate() - today.getDay());
+    setCurrentWeekStart(sunday);
+  };
+
+  const weekDates = getWeekDates(currentWeekStart);
   const today = new Date();
 
   // 献立データの取得（Supabase連携）
@@ -33,6 +63,14 @@ export const MealPlans: React.FC = () => {
 
   // 週の範囲を表示用にフォーマット
   const weekRange = `${weekDates[0].getMonth() + 1}/${weekDates[0].getDate()} - ${weekDates[6].getMonth() + 1}/${weekDates[6].getDate()}`;
+  
+  // 今週かどうかを判定
+  const isCurrentWeek = () => {
+    const today = new Date();
+    const todaySunday = new Date(today);
+    todaySunday.setDate(today.getDate() - today.getDay());
+    return currentWeekStart.toDateString() === todaySunday.toDateString();
+  };
 
 
   // 献立追加ボタンクリック処理
@@ -91,13 +129,46 @@ export const MealPlans: React.FC = () => {
             献立カレンダー
           </h2>
           <div className="text-sm text-gray-600 mt-1">
-            今日から7日間 ({weekRange})
+            {weekRange}
             {loading && <span className="ml-2">読み込み中...</span>}
             {error && <span className="ml-2 text-red-500">エラー: {error}</span>}
           </div>
         </div>
         <button className="text-gray-400 hover:text-gray-600">
           <span className="text-xl">⚙️</span>
+        </button>
+      </div>
+
+      {/* 週間ナビゲーション */}
+      <div className="flex justify-between items-center mb-4">
+        <button
+          onClick={goToPreviousWeek}
+          className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+        >
+          <span className="mr-1">‹</span>
+          先週
+        </button>
+        
+        <div className="flex items-center space-x-2">
+          {!isCurrentWeek() && (
+            <button
+              onClick={goToThisWeek}
+              className="px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
+            >
+              今週
+            </button>
+          )}
+          <span className="text-sm text-gray-500">
+            {isCurrentWeek() ? '今週' : ''}
+          </span>
+        </div>
+        
+        <button
+          onClick={goToNextWeek}
+          className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+        >
+          来週
+          <span className="ml-1">›</span>
         </button>
       </div>
 
