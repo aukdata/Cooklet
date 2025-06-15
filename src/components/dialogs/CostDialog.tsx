@@ -1,22 +1,14 @@
 import React, { useState } from 'react';
+import { type CostRecord } from '../../hooks';
 
 // コスト記録ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface CostDialogProps {
   isOpen: boolean; // ダイアログの表示状態
   onClose: () => void; // ダイアログを閉じる関数
-  onSave: (costData: CostForm) => void; // コストデータを保存する関数
+  onSave: (costData: CostRecord) => void; // コストデータを保存する関数
   onDelete?: () => void; // コストを削除する関数（編集時のみ）
-  initialData?: CostForm; // 初期データ（編集時）
+  initialData?: CostRecord; // 初期データ（編集時）
   isEditing?: boolean; // 編集モードかどうか
-}
-
-// コストフォームの型定義
-interface CostForm {
-  date: string; // 日付（YYYY-MM-DD形式）
-  description: string; // 内容説明
-  amount: string; // 金額（文字列で管理）
-  is_eating_out: boolean; // 外食フラグ
-  memo?: string; // メモ（任意）
 }
 
 // コスト記録ダイアログコンポーネント - CLAUDE.md仕様書 5.6.6に準拠
@@ -28,14 +20,18 @@ export const CostDialog: React.FC<CostDialogProps> = ({
   initialData,
   isEditing = false
 }) => {
-  // フォームデータの状態管理
-  const [formData, setCostData] = useState<CostForm>({
+  // フォームデータの状態管理（CostRecord型に合わせて調整）
+  const [formData, setFormData] = useState<CostRecord>({
     date: initialData?.date || new Date().toISOString().split('T')[0],
     description: initialData?.description || '',
-    amount: initialData?.amount || '',
-    is_eating_out: initialData?.is_eating_out || false,
-    memo: initialData?.memo || ''
+    amount: initialData?.amount || 0,
+    is_eating_out: initialData?.is_eating_out || false
   });
+
+  // 金額を文字列で管理するローカル状態
+  const [amountString, setAmountString] = useState(
+    initialData?.amount ? initialData.amount.toString() : ''
+  );
 
   // 今日の日付を取得
   const today = new Date().toISOString().split('T')[0];
@@ -43,15 +39,22 @@ export const CostDialog: React.FC<CostDialogProps> = ({
   // フォーム送信ハンドラ
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.description.trim()) {
+    if (!formData.description?.trim()) {
       alert('内容を入力してください');
       return;
     }
-    if (!formData.amount.trim() || isNaN(Number(formData.amount))) {
+    if (!amountString.trim() || isNaN(Number(amountString))) {
       alert('正しい金額を入力してください');
       return;
     }
-    onSave(formData);
+    
+    // amountを数値に変換してフォームデータに設定
+    const finalData = {
+      ...formData,
+      amount: parseInt(amountString)
+    };
+    
+    onSave(finalData);
     onClose();
   };
 
@@ -65,7 +68,7 @@ export const CostDialog: React.FC<CostDialogProps> = ({
 
   // 今日の日付を設定
   const setToday = () => {
-    setCostData(prev => ({ ...prev, date: today }));
+    setFormData(prev => ({ ...prev, date: today }));
   };
 
   // ダイアログが閉じている場合は何も表示しない
@@ -98,7 +101,7 @@ export const CostDialog: React.FC<CostDialogProps> = ({
               <input
                 type="date"
                 value={formData.date}
-                onChange={(e) => setCostData(prev => ({ ...prev, date: e.target.value }))}
+                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
                 className="flex-1 border border-gray-300 rounded px-3 py-2"
                 required
               />
@@ -119,8 +122,8 @@ export const CostDialog: React.FC<CostDialogProps> = ({
             </label>
             <input
               type="text"
-              value={formData.description}
-              onChange={(e) => setCostData(prev => ({ ...prev, description: e.target.value }))}
+              value={formData.description || ''}
+              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
               placeholder="昼食 - 牛丼"
               className="w-full border border-gray-300 rounded px-3 py-2"
               required
@@ -135,8 +138,8 @@ export const CostDialog: React.FC<CostDialogProps> = ({
             <div className="flex">
               <input
                 type="number"
-                value={formData.amount}
-                onChange={(e) => setCostData(prev => ({ ...prev, amount: e.target.value }))}
+                value={amountString}
+                onChange={(e) => setAmountString(e.target.value)}
                 placeholder="500"
                 min="0"
                 step="1"
@@ -157,7 +160,7 @@ export const CostDialog: React.FC<CostDialogProps> = ({
                   type="radio"
                   name="meal_type"
                   checked={!formData.is_eating_out}
-                  onChange={() => setCostData(prev => ({ ...prev, is_eating_out: false }))}
+                  onChange={() => setFormData(prev => ({ ...prev, is_eating_out: false }))}
                   className="mr-2"
                 />
                 <span className="text-sm flex items-center">
@@ -170,7 +173,7 @@ export const CostDialog: React.FC<CostDialogProps> = ({
                   type="radio"
                   name="meal_type"
                   checked={formData.is_eating_out}
-                  onChange={() => setCostData(prev => ({ ...prev, is_eating_out: true }))}
+                  onChange={() => setFormData(prev => ({ ...prev, is_eating_out: true }))}
                   className="mr-2"
                 />
                 <span className="text-sm flex items-center">

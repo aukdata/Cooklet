@@ -1,91 +1,118 @@
 import React, { useState } from 'react';
-
-// 買い物リストアイテムの型定義
-interface ShoppingItem {
-  id: string;
-  name: string;
-  quantity?: string;
-  checked: boolean;
-  added_from: 'manual' | 'auto';
-}
+import { useShoppingList, useMealPlans, useStockItems } from '../../hooks';
+import { generateWeeklyShoppingList, generateShoppingListForNextDays } from '../../services/shoppingListGeneration';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
 export const Shopping: React.FC = () => {
+  // useShoppingListフックを使用してデータを取得
+  const {
+    shoppingList,
+    loading,
+    error,
+    addShoppingItem,
+    toggleShoppingItem,
+    getUncompletedItems,
+    getCompletedItems,
+    deleteCompletedItems,
+    selectAllItems,
+    addCompletedItemsToStock,
+    getStats
+  } = useShoppingList();
+
+  // 献立と在庫データを取得（自動生成機能用）
+  const { mealPlans } = useMealPlans();
+  const { stockItems } = useStockItems();
+
   // 新規追加フォームの状態
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
   
   // 完了アイテムの表示状態（折りたたみ機能）
   const [showCompleted, setShowCompleted] = useState(false);
+
+  // 統計情報を取得
+  const stats = getStats();
   
-  // 全選択の状態
-  const [selectAll, setSelectAll] = useState(false);
-
-  // サンプルの買い物リストデータ（CLAUDE.md仕様書準拠）
-  const [shoppingItems, setShoppingItems] = useState<ShoppingItem[]>([
-    // 未完了アイテム
-    { id: '1', name: '牛ひき肉', quantity: '200g', checked: false, added_from: 'auto' },
-    { id: '2', name: '玉ねぎ', quantity: '1個', checked: false, added_from: 'auto' },
-    { id: '3', name: 'パン', quantity: '', checked: false, added_from: 'manual' },
-    { id: '4', name: '牛乳', quantity: '1本', checked: false, added_from: 'auto' },
-    { id: '5', name: 'レタス', quantity: '', checked: false, added_from: 'manual' },
-    
-    // 完了済みアイテム
-    { id: '6', name: 'にんじん', quantity: '2本', checked: true, added_from: 'manual' },
-    { id: '7', name: 'たまご', quantity: '1パック', checked: true, added_from: 'auto' },
-    { id: '8', name: '醤油', quantity: '', checked: true, added_from: 'manual' },
-  ]);
-
   // 未完了・完了アイテムの分離
-  const pendingItems = shoppingItems.filter(item => !item.checked);
-  const completedItems = shoppingItems.filter(item => item.checked);
+  const pendingItems = getUncompletedItems();
+  const completedItems = getCompletedItems();
 
   // 新規アイテム追加処理
-  const handleAddItem = () => {
+  const handleAddItem = async () => {
     if (newItemName.trim()) {
-      const newItem: ShoppingItem = {
-        id: Date.now().toString(),
-        name: newItemName.trim(),
-        quantity: newItemQuantity.trim(),
-        checked: false,
-        added_from: 'manual'
-      };
-      setShoppingItems([...shoppingItems, newItem]);
-      setNewItemName('');
-      setNewItemQuantity('');
+      try {
+        await addShoppingItem({
+          name: newItemName.trim(),
+          quantity: newItemQuantity.trim() || undefined,
+          checked: false,
+          added_from: 'manual'
+        });
+        setNewItemName('');
+        setNewItemQuantity('');
+      } catch (err) {
+        console.error('買い物リストアイテムの追加に失敗しました:', err);
+        alert('追加に失敗しました');
+      }
     }
   };
 
   // アイテムチェック状態変更
-  const handleToggleItem = (id: string) => {
-    setShoppingItems(items =>
-      items.map(item =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
-    );
+  const handleToggleItem = async (id: string) => {
+    try {
+      await toggleShoppingItem(id);
+    } catch (err) {
+      console.error('チェック状態の変更に失敗しました:', err);
+      alert('操作に失敗しました');
+    }
   };
 
   // 全選択・全解除処理
-  const handleSelectAll = () => {
-    const newSelectAll = !selectAll;
-    setSelectAll(newSelectAll);
-    setShoppingItems(items =>
-      items.map(item =>
-        !item.checked ? { ...item, checked: newSelectAll } : item
-      )
-    );
+  const handleSelectAll = async () => {
+    try {
+      await selectAllItems();
+    } catch (err) {
+      console.error('全選択に失敗しました:', err);
+      alert('操作に失敗しました');
+    }
   };
 
   // 完了アイテム一括削除
-  const handleDeleteCompleted = () => {
-    setShoppingItems(items => items.filter(item => !item.checked));
+  const handleDeleteCompleted = async () => {
+    try {
+      await deleteCompletedItems();
+    } catch (err) {
+      console.error('削除に失敗しました:', err);
+      alert('削除に失敗しました');
+    }
   };
 
-  // 完了アイテムを在庫に追加（今後実装予定）
-  const handleAddToInventory = () => {
-    // TODO: 在庫管理機能と連携
-    alert('在庫追加機能は今後実装予定です');
+  // 完了アイテムを在庫に追加
+  const handleAddToInventory = async () => {
+    try {
+      await addCompletedItemsToStock();
+      alert('在庫に追加しました');
+    } catch (err) {
+      console.error('在庫追加に失敗しました:', err);
+      alert('在庫追加に失敗しました');
+    }
   };
+
+  // ローディング・エラー状態の処理
+  if (loading) {
+    return (
+      <div className="p-4 text-center">
+        <div className="text-gray-600">読み込み中...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center">
+        <div className="text-red-600">エラー: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
@@ -97,7 +124,7 @@ export const Shopping: React.FC = () => {
             買い物リスト
           </h2>
           <div className="text-sm text-gray-600 mt-1">
-            未完了: {pendingItems.length}件  完了: {completedItems.length}件
+            未完了: {stats.uncompleted}件  完了: {stats.completed}件
           </div>
         </div>
         <button className="text-gray-400 hover:text-gray-600">

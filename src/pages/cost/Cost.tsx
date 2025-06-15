@@ -1,10 +1,28 @@
 import React, { useState } from 'react';
+import { useCostRecords, type CostRecord } from '../../hooks';
+import { CostDialog } from '../../components/dialogs';
 
 // コスト管理画面コンポーネント - CLAUDE.md仕様書に準拠
 export const Cost: React.FC = () => {
   // 現在の月を管理
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddForm, setShowAddForm] = useState(false);
+
+  // useCostRecordsフックを使用してデータを取得
+  const { 
+    costRecords, 
+    loading, 
+    error, 
+    addCostRecord, 
+    updateCostRecord,
+    deleteCostRecord,
+    getMonthlyStats, 
+    getCurrentMonthStats 
+  } = useCostRecords();
+
+  // ダイアログの状態管理
+  const [showCostDialog, setShowCostDialog] = useState(false);
+  const [editingCost, setEditingCost] = useState<CostRecord | null>(null);
 
   // 新規記録用の状態
   const [newRecord, setNewRecord] = useState({
@@ -17,28 +35,36 @@ export const Cost: React.FC = () => {
   // 月の表示用フォーマット
   const monthString = `${currentMonth.getFullYear()}年${currentMonth.getMonth() + 1}月`;
 
-  // サンプルの月間サマリーデータ
-  const monthlySummary = {
-    cooking: { amount: 3200, count: 12, average: 267 },
-    eating_out: { amount: 2100, count: 3, average: 700 },
-    total: { amount: 5300, count: 15, average: 353, dailyAverage: 353 }
-  };
+  // 現在の月間サマリーを取得
+  const monthlySummary = getCurrentMonthStats();
 
-  // サンプルの支出履歴データ
-  const costHistory = [
-    { id: '1', date: '6/15', description: '朝食 - トースト', amount: 120, is_eating_out: false },
-    { id: '2', date: '6/14', description: '夕食 - 居酒屋', amount: 1500, is_eating_out: true },
-    { id: '3', date: '6/14', description: '昼食 - 自作弁当', amount: 200, is_eating_out: false },
-    { id: '4', date: '6/13', description: '夕食 - ハンバーグ', amount: 350, is_eating_out: false },
-    { id: '5', date: '6/13', description: '昼食 - パスタ', amount: 180, is_eating_out: false }
-  ];
+  // 現在の月の支出履歴を取得（最新10件）
+  const costHistory = costRecords
+    .filter(record => {
+      const recordDate = new Date(record.date);
+      return recordDate.getFullYear() === currentMonth.getFullYear() && 
+             recordDate.getMonth() === currentMonth.getMonth();
+    })
+    .slice(0, 10)
+    .map(record => ({
+      ...record,
+      date: new Date(record.date).toLocaleDateString('ja-JP', { 
+        month: 'numeric', 
+        day: 'numeric' 
+      })
+    }));
 
-  // 月別推移データ
-  const monthlyTrend = [
-    { month: '4月', amount: 4800 },
-    { month: '5月', amount: 5100 },
-    { month: '6月', amount: 5300, isCurrent: true }
-  ];
+  // 月別推移データ（過去3ヶ月）
+  const monthlyTrend = [-2, -1, 0].map(offset => {
+    const date = new Date(currentMonth);
+    date.setMonth(date.getMonth() + offset);
+    const stats = getMonthlyStats(date.getFullYear(), date.getMonth() + 1);
+    return {
+      month: `${date.getMonth() + 1}月`,
+      amount: stats.total,
+      isCurrent: offset === 0
+    };
+  });
 
   // 月を変更する関数
   const changeMonth = (direction: 'prev' | 'next') => {
@@ -47,18 +73,89 @@ export const Cost: React.FC = () => {
     setCurrentMonth(newMonth);
   };
 
-  // 新規記録を保存する関数（今後API実装）
-  const handleSaveRecord = () => {
-    // TODO: API連携実装
-    console.log('新規記録保存:', newRecord);
-    setNewRecord({
-      date: new Date().toISOString().split('T')[0],
-      description: '',
-      amount: '',
-      is_eating_out: false
-    });
-    setShowAddForm(false);
+  // 新規記録を保存する関数
+  const handleSaveRecord = async () => {
+    if (!newRecord.amount || !newRecord.description.trim()) {
+      alert('金額と内容を入力してください');
+      return;
+    }
+
+    try {
+      await addCostRecord({
+        date: newRecord.date,
+        description: newRecord.description.trim(),
+        amount: parseInt(newRecord.amount),
+        is_eating_out: newRecord.is_eating_out
+      });
+
+      // フォームをリセット
+      setNewRecord({
+        date: new Date().toISOString().split('T')[0],
+        description: '',
+        amount: '',
+        is_eating_out: false
+      });
+      setShowAddForm(false);
+    } catch (err) {
+      console.error('コスト記録の保存に失敗しました:', err);
+      alert('保存に失敗しました');
+    }
   };
+
+  // コスト編集ボタンクリック処理
+  const handleEditCost = (record: CostRecord) => {
+    setEditingCost(record);
+    setShowCostDialog(true);
+  };
+
+  // コスト保存処理（ダイアログから）
+  const handleSaveCost = async (costData: CostRecord) => {
+    try {
+      if (editingCost?.id) {
+        // 更新
+        await updateCostRecord(editingCost.id, costData);
+      } else {
+        // 新規追加
+        await addCostRecord(costData);
+      }
+      setShowCostDialog(false);
+      setEditingCost(null);
+    } catch (err) {
+      console.error('コスト記録の保存に失敗しました:', err);
+      alert('保存に失敗しました');
+    }
+  };
+
+  // コスト削除処理
+  const handleDeleteCost = async () => {
+    if (editingCost?.id) {
+      try {
+        await deleteCostRecord(editingCost.id);
+        setShowCostDialog(false);
+        setEditingCost(null);
+      } catch (err) {
+        console.error('コスト記録の削除に失敗しました:', err);
+        alert('削除に失敗しました');
+      }
+    }
+  };
+
+  // ローディング・エラー状態の処理
+  if (loading) {
+    return (
+      <div className="p-4 text-center">
+        <div className="text-gray-600">読み込み中...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-4 text-center">
+        <div className="text-red-600">エラー: {error}</div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-4">
@@ -109,10 +206,10 @@ export const Cost: React.FC = () => {
               </span>
               <div className="text-right">
                 <span className="text-sm font-medium">
-                  ¥{monthlySummary.cooking.amount.toLocaleString()} ({monthlySummary.cooking.count}回)
+                  ¥{monthlySummary.homeCooking.total.toLocaleString()} ({monthlySummary.homeCooking.count}回)
                 </span>
                 <div className="text-xs text-gray-500">
-                  └ 1回平均: ¥{monthlySummary.cooking.average}
+                  └ 1回平均: ¥{monthlySummary.homeCooking.average}
                 </div>
               </div>
             </div>
@@ -124,10 +221,10 @@ export const Cost: React.FC = () => {
               </span>
               <div className="text-right">
                 <span className="text-sm font-medium">
-                  ¥{monthlySummary.eating_out.amount.toLocaleString()} ({monthlySummary.eating_out.count}回)
+                  ¥{monthlySummary.eatingOut.total.toLocaleString()} ({monthlySummary.eatingOut.count}回)
                 </span>
                 <div className="text-xs text-gray-500">
-                  └ 1回平均: ¥{monthlySummary.eating_out.average}
+                  └ 1回平均: ¥{monthlySummary.eatingOut.average}
                 </div>
               </div>
             </div>
@@ -141,7 +238,7 @@ export const Cost: React.FC = () => {
                 合計:
               </span>
               <span className="font-medium text-lg">
-                ¥{monthlySummary.total.amount.toLocaleString()} ({monthlySummary.total.count}回)
+                ¥{monthlySummary.total.toLocaleString()} ({monthlySummary.homeCooking.count + monthlySummary.eatingOut.count}回)
               </span>
             </div>
             <div className="flex justify-between items-center text-sm">
@@ -149,14 +246,14 @@ export const Cost: React.FC = () => {
                 <span className="mr-1">📈</span>
                 1日平均:
               </span>
-              <span className="font-medium">¥{monthlySummary.total.dailyAverage}</span>
+              <span className="font-medium">¥{monthlySummary.dailyAverage}</span>
             </div>
             <div className="flex justify-between items-center text-sm">
               <span className="text-gray-600 flex items-center">
                 <span className="mr-1">📈</span>
                 1回平均:
               </span>
-              <span className="font-medium">¥{monthlySummary.total.average}</span>
+              <span className="font-medium">¥{monthlySummary.mealAverage}</span>
             </div>
           </div>
         </div>
@@ -312,10 +409,19 @@ export const Cost: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex space-x-2 ml-3">
-                  <button className="text-xs text-gray-500 hover:text-gray-700">
+                  <button 
+                    onClick={() => handleEditCost(record)}
+                    className="text-xs text-gray-500 hover:text-gray-700"
+                  >
                     編集
                   </button>
-                  <button className="text-xs text-gray-500 hover:text-red-600">
+                  <button 
+                    onClick={() => {
+                      setEditingCost(record);
+                      handleDeleteCost();
+                    }}
+                    className="text-xs text-gray-500 hover:text-red-600"
+                  >
                     削除
                   </button>
                 </div>
@@ -344,6 +450,21 @@ export const Cost: React.FC = () => {
           ))}
         </div>
       </div>
+
+      {/* コスト記録ダイアログ */}
+      {showCostDialog && (
+        <CostDialog
+          isOpen={showCostDialog}
+          onClose={() => {
+            setShowCostDialog(false);
+            setEditingCost(null);
+          }}
+          onSave={handleSaveCost}
+          onDelete={handleDeleteCost}
+          initialData={editingCost || undefined}
+          isEditing={!!editingCost?.id}
+        />
+      )}
     </div>
   );
 };

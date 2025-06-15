@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useRecipes } from '../../hooks/useRecipes';
+import { extractIngredientsFromURL, extractRecipeTitleFromURL } from '../../services/ingredientExtraction';
 
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
 export const Recipes: React.FC = () => {
@@ -8,6 +9,55 @@ export const Recipes: React.FC = () => {
   const [newRecipeTitle, setNewRecipeTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('全て');
+  
+  // 食材自動抽出の状態管理
+  const [isExtracting, setIsExtracting] = useState(false);
+  const [extractionResult, setExtractionResult] = useState<{
+    ingredients: { name: string; quantity: string }[];
+    error?: string;
+  } | null>(null);
+
+  // 食材自動抽出処理
+  const handleExtractIngredients = async () => {
+    if (!newRecipeUrl.trim()) {
+      alert('レシピURLを入力してください');
+      return;
+    }
+
+    setIsExtracting(true);
+    setExtractionResult(null);
+
+    try {
+      // URLからレシピタイトルを抽出
+      if (!newRecipeTitle.trim()) {
+        const title = await extractRecipeTitleFromURL(newRecipeUrl);
+        setNewRecipeTitle(title);
+      }
+
+      // 食材を自動抽出
+      const result = await extractIngredientsFromURL(newRecipeUrl);
+      
+      if (result.success) {
+        setExtractionResult({
+          ingredients: result.ingredients,
+          error: result.error // 警告メッセージがある場合
+        });
+      } else {
+        setExtractionResult({
+          ingredients: [],
+          error: result.error
+        });
+      }
+    } catch (err) {
+      console.error('食材抽出に失敗しました:', err);
+      setExtractionResult({
+        ingredients: [],
+        error: '食材抽出中にエラーが発生しました'
+      });
+    } finally {
+      setIsExtracting(false);
+    }
+  };
 
   // URLからレシピを追加する処理
   const handleAddRecipe = async () => {
@@ -22,6 +72,7 @@ export const Recipes: React.FC = () => {
       });
       setNewRecipeUrl('');
       setNewRecipeTitle('');
+      setExtractionResult(null);
     } catch (err) {
       console.error('レシピの追加に失敗しました:', err);
     }
@@ -64,13 +115,56 @@ export const Recipes: React.FC = () => {
           新しいレシピを追加
         </h3>
         <div className="space-y-3">
-          <input
-            type="url"
-            value={newRecipeUrl}
-            onChange={(e) => setNewRecipeUrl(e.target.value)}
-            placeholder="レシピURLを入力..."
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-          />
+          <div className="flex gap-2">
+            <input
+              type="url"
+              value={newRecipeUrl}
+              onChange={(e) => setNewRecipeUrl(e.target.value)}
+              placeholder="レシピURLを入力..."
+              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+            />
+            <button
+              onClick={handleExtractIngredients}
+              disabled={isExtracting || !newRecipeUrl.trim()}
+              className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+            >
+              {isExtracting ? '解析中...' : '食材抽出'}
+            </button>
+          </div>
+          
+          {/* 食材自動抽出結果 */}
+          {extractionResult && (
+            <div className="bg-gray-50 rounded-lg p-3">
+              <h4 className="font-medium text-sm mb-2 flex items-center">
+                <span className="mr-1">🤖</span>
+                食材自動抽出結果
+              </h4>
+              
+              {extractionResult.error && (
+                <div className="text-orange-600 text-sm mb-2 p-2 bg-orange-50 rounded">
+                  ⚠️ {extractionResult.error}
+                </div>
+              )}
+              
+              {extractionResult.ingredients.length > 0 ? (
+                <div className="space-y-1">
+                  <div className="text-sm text-gray-600 mb-2">検出された食材:</div>
+                  {extractionResult.ingredients.map((ingredient, index) => (
+                    <div key={index} className="flex justify-between items-center bg-white rounded px-3 py-2 text-sm">
+                      <span className="font-medium">{ingredient.name}</span>
+                      <span className="text-gray-600">{ingredient.quantity}</span>
+                    </div>
+                  ))}
+                  <div className="text-xs text-gray-500 mt-2">
+                    ※ 抽出結果は保存時に自動でレシピに追加されます
+                  </div>
+                </div>
+              ) : (
+                <div className="text-gray-500 text-sm">食材を抽出できませんでした</div>
+              )}
+            </div>
+          )}
+          
           <div className="text-center text-gray-500 text-sm">または</div>
           <input
             type="text"

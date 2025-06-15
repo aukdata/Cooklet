@@ -6,7 +6,11 @@ export { useMealPlans, type MealPlan } from './useMealPlans';
 // レシピ管理フック
 export { useRecipes, type SavedRecipe } from './useRecipes';
 
-// 今後追加予定のフック
-// export { useStockItems, type StockItem } from './useStockItems';
-// export { useCostRecords, type CostRecord } from './useCostRecords';
-// export { useShoppingList, type ShoppingListItem } from './useShoppingList';
+// 在庫管理フック
+export { useStockItems, type StockItem } from './useStockItems';
+
+// コスト管理フック
+export { useCostRecords, type CostRecord } from './useCostRecords';
+
+// 買い物リスト管理フック
+export { useShoppingList, type ShoppingListItem } from './useShoppingList';

@@ -1,28 +1,19 @@
 import React, { useState } from 'react';
+import { type StockItem } from '../../hooks';
 
 // 在庫編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface StockDialogProps {
   isOpen: boolean; // ダイアログの表示状態
   onClose: () => void; // ダイアログを閉じる関数
-  onSave: (stockData: StockForm) => void; // 在庫データを保存する関数
+  onSave: (stockData: StockItem) => void; // 在庫データを保存する関数
   onDelete?: () => void; // 在庫を削除する関数（編集時のみ）
-  initialData?: StockForm; // 初期データ（編集時）
+  initialData?: StockItem; // 初期データ（編集時）
   isEditing?: boolean; // 編集モードかどうか
-}
-
-// 在庫フォームの型定義
-interface StockForm {
-  name: string; // 食材名
-  quantity: string; // 数量
-  unit: string; // 単位
-  best_before?: string; // 賞味期限
-  storage_location: string; // 保存場所
-  is_homemade: boolean; // 作り置きフラグ
 }
 
 // 単位の選択肢
 const unitOptions = [
-  '個', '本', 'パック', 'グラム', 'キロ', 'リットル', '袋', '缶', '適量'
+  '個', '本', 'パック', 'g', 'kg', 'ml', 'l', '袋', '缶', '適量'
 ];
 
 // 保存場所の選択肢
@@ -37,14 +28,29 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   initialData,
   isEditing = false
 }) => {
-  // フォームデータの状態管理
-  const [formData, setFormData] = useState<StockForm>({
+  // フォームデータの状態管理（StockItem型に合わせて調整）
+  // quantityは"数量 + 単位"の形式で管理（例: "2本"、"200g"）
+  const [formData, setFormData] = useState<StockItem>({
     name: initialData?.name || '',
     quantity: initialData?.quantity || '',
-    unit: initialData?.unit || '個',
     best_before: initialData?.best_before || '',
     storage_location: initialData?.storage_location || '冷蔵庫',
     is_homemade: initialData?.is_homemade || false
+  });
+
+  // quantityフィールドから数量と単位を分離
+  const [quantityValue, setQuantityValue] = useState(() => {
+    if (!formData.quantity) return '';
+    // 数字部分を抽出
+    const match = formData.quantity.match(/^(\d+(?:\.\d+)?)/);
+    return match ? match[1] : '';
+  });
+
+  const [selectedUnit, setSelectedUnit] = useState(() => {
+    if (!formData.quantity) return '個';
+    // 単位部分を抽出
+    const match = formData.quantity.match(/^(\d+(?:\.\d+)?)(.*)$/);
+    return match && match[2] ? match[2] : '個';
   });
 
   // 今日の日付を取得
@@ -124,15 +130,29 @@ export const StockDialog: React.FC<StockDialogProps> = ({
             <div className="flex gap-2">
               <input
                 type="text"
-                value={formData.quantity}
-                onChange={(e) => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                value={quantityValue}
+                onChange={(e) => {
+                  setQuantityValue(e.target.value);
+                  // quantityフィールドを更新（数量 + 単位の形式）
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    quantity: e.target.value + selectedUnit 
+                  }));
+                }}
                 placeholder="2"
                 className="flex-1 border border-gray-300 rounded px-3 py-2"
                 required
               />
               <select
-                value={formData.unit}
-                onChange={(e) => setFormData(prev => ({ ...prev, unit: e.target.value }))}
+                value={selectedUnit}
+                onChange={(e) => {
+                  setSelectedUnit(e.target.value);
+                  // quantityフィールドを更新（数量 + 単位の形式）
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    quantity: quantityValue + e.target.value 
+                  }));
+                }}
                 className="w-24 border border-gray-300 rounded px-2 py-2"
               >
                 {unitOptions.map((unit) => (
