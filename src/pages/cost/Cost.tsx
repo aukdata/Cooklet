@@ -394,9 +394,6 @@ export const Cost: React.FC = () => {
                     <span className="text-sm font-medium text-gray-900">
                       📅 {record.date}
                     </span>
-                    <span className="ml-2 text-xs text-gray-500">
-                      ({record.date === '6/15' ? '今日' : ''})
-                    </span>
                   </div>
                   <div className="flex items-center text-sm">
                     <span className="mr-1">

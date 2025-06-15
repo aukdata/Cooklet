@@ -1,54 +1,50 @@
-# React + TypeScript + Vite
+# Cooklet - 献立管理アプリ
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+一人暮らしユーザーのための献立・在庫・買い物・コストを一元管理できるスマートな献立管理Webアプリです。
 
-Currently, two official plugins are available:
+## 🎯 プロジェクト概要
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+Cookletは、レシピをURL管理とし、軽量かつシンプルなPWAとして設計された個人向け献立管理アプリです。
 
-## Expanding the ESLint configuration
+### ✨ 主な特徴
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **📱 軽量PWA設計** - モバイルファーストの高速表示
+- **🔗 レシピはURL管理** - 調理手順は外部サイトを活用
+- **🤖 食材自動抽出** - LLMでレシピURLから食材を自動抽出
+- **📦 柔軟な在庫管理** - 中途半端な食材・作り置きにも対応
+- **🛒 自動買い物リスト** - 献立と在庫から必要な食材を自動算出
+- **💰 一食単位のコスト管理** - 自炊・外食の支出を詳細記録
+- **⏰ 賞味期限リマインド** - Web Push通知で食材の無駄を防止
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
+### 🎯 対象ユーザー
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+- 一人暮らしで自炊する個人ユーザー
+- 献立・在庫・支出をシンプルに記録・管理したい人
+- 軽量で高速なWebアプリを求める人
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## 🛠️ 技術スタック
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
-```
+- **フロントエンド**: React + TypeScript + Vite
+- **バックエンド**: Supabase (PostgreSQL + 認証 + リアルタイム)
+- **ホスティング**: Netlify
+- **認証**: Google連携ログイン
+- **通知**: Web Push API
+
+## 📊 機能構成
+
+| 画面 | 主な機能 |
+|------|----------|
+| **ダッシュボード** | 当日の献立・在庫アラート・出費概要の一括表示 |
+| **カレンダー** | 献立の週間・月間プランを視覚的に確認・編集 |
+| **買い物** | 食材不足に基づいた買い物リスト表示・チェック管理 |
+| **レシピ** | 外部レシピURLの保存と食材抽出の編集、管理 |
+| **コスト** | 自炊・外食を含む一食単位でのコスト記録・月別集計表示 |
+
+## 🚀 開発状況
+
+現在アクティブ開発中です。詳細な仕様・設計は `CLAUDE.md` をご覧ください。
+
+---
+
+**開発者**: 個人開発 + Claude Code AI支援  
+**ライセンス**: MIT
