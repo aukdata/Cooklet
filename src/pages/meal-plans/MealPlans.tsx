@@ -8,13 +8,11 @@ export const MealPlans: React.FC = () => {
   // 選択された日付（今日がデフォルト）
   const [selectedDate, setSelectedDate] = useState(new Date());
   
-  // 現在表示している週の開始日（日曜日基準）
+  // 現在表示している週の開始日（今日基準）
   const [currentWeekStart, setCurrentWeekStart] = useState(() => {
     const today = new Date();
-    // 今週の日曜日を取得
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() - today.getDay());
-    return sunday;
+    // 今日を開始日として設定
+    return today;
   });
   
   // ダイアログの表示状態
@@ -47,12 +45,10 @@ export const MealPlans: React.FC = () => {
     setCurrentWeekStart(nextWeek);
   };
 
-  // 今週に戻る
+  // 今日を基準にした週に戻る
   const goToThisWeek = () => {
     const today = new Date();
-    const sunday = new Date(today);
-    sunday.setDate(today.getDate() - today.getDay());
-    setCurrentWeekStart(sunday);
+    setCurrentWeekStart(today);
   };
 
   const weekDates = getWeekDates(currentWeekStart);
@@ -64,12 +60,10 @@ export const MealPlans: React.FC = () => {
   // 週の範囲を表示用にフォーマット
   const weekRange = `${weekDates[0].getMonth() + 1}/${weekDates[0].getDate()} - ${weekDates[6].getMonth() + 1}/${weekDates[6].getDate()}`;
   
-  // 今週かどうかを判定
+  // 今日を基準とした週かどうかを判定
   const isCurrentWeek = () => {
     const today = new Date();
-    const todaySunday = new Date(today);
-    todaySunday.setDate(today.getDate() - today.getDay());
-    return currentWeekStart.toDateString() === todaySunday.toDateString();
+    return currentWeekStart.toDateString() === today.toDateString();
   };
 
 
@@ -146,7 +140,7 @@ export const MealPlans: React.FC = () => {
           className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
         >
           <span className="mr-1">‹</span>
-          先週
+          前週
         </button>
         
         <div className="flex items-center space-x-2">
@@ -155,11 +149,11 @@ export const MealPlans: React.FC = () => {
               onClick={goToThisWeek}
               className="px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
             >
-              今週
+              今日から
             </button>
           )}
           <span className="text-sm text-gray-500">
-            {isCurrentWeek() ? '今週' : ''}
+            {isCurrentWeek() ? '今日から' : ''}
           </span>
         </div>
         
@@ -167,7 +161,7 @@ export const MealPlans: React.FC = () => {
           onClick={goToNextWeek}
           className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
         >
-          来週
+          次週
           <span className="ml-1">›</span>
         </button>
       </div>
