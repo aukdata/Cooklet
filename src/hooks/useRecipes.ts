@@ -1,129 +1,174 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Recipe, RecipeIngredient } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
-export const useRecipes = () => {
-  const [recipes, setRecipes] = useState<Recipe[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+// レシピデータの型定義（CLAUDE.md仕様書準拠）
+export interface SavedRecipe {
+  id: string;
+  user_id: string;
+  title: string;
+  url: string;
+  servings: number;
+  tags: string[];
+  created_at: string;
+}
 
+// レシピ管理機能を提供するカスタムフック
+export const useRecipes = () => {
+  // 状態管理
+  const [recipes, setRecipes] = useState<SavedRecipe[]>([]); // レシピ配列
+  const [loading, setLoading] = useState(true); // 読み込み状態
+  const [error, setError] = useState<string | null>(null); // エラーメッセージ
+  const { user } = useAuth(); // 認証ユーザー情報
+
+  // レシピデータを取得する関数
   const fetchRecipes = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('recipes')
-        .select(`
-          *,
-          recipe_ingredients(
-            *,
-            ingredient:ingredients(*)
-          )
-        `)
+      setError(null);
+
+      const { data, error: fetchError } = await supabase
+        .from('saved_recipes')
+        .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      if (fetchError) {
+        throw fetchError;
+      }
+
       setRecipes(data || []);
     } catch (err) {
+      console.error('レシピデータの取得に失敗しました:', err);
       setError(err instanceof Error ? err.message : 'レシピデータの取得に失敗しました');
     } finally {
       setLoading(false);
     }
   };
 
-  const addRecipe = async (recipe: Omit<Recipe, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
-    if (!user) return;
+  // 新しいレシピを追加する関数
+  const addRecipe = async (recipe: Omit<SavedRecipe, 'id' | 'user_id' | 'created_at'>) => {
+    if (!user) throw new Error('ユーザーが認証されていません');
 
     try {
-      const { data, error } = await supabase
-        .from('recipes')
-        .insert([{ ...recipe, user_id: user.id }])
-        .select(`
-          *,
-          recipe_ingredients(
-            *,
-            ingredient:ingredients(*)
-          )
-        `)
+      setError(null);
+
+      const { data, error: insertError } = await supabase
+        .from('saved_recipes')
+        .insert([
+          {
+            user_id: user.id,
+            title: recipe.title,
+            url: recipe.url,
+            servings: recipe.servings,
+            tags: recipe.tags
+          }
+        ])
+        .select()
         .single();
 
-      if (error) throw error;
+      if (insertError) {
+        throw insertError;
+      }
+
+      // ローカル状態を更新（新しいレシピを先頭に追加）
       setRecipes(prev => [data, ...prev]);
       return data;
     } catch (err) {
+      console.error('レシピの追加に失敗しました:', err);
       setError(err instanceof Error ? err.message : 'レシピの追加に失敗しました');
       throw err;
     }
   };
 
-  const addRecipeIngredients = async (recipeId: number, ingredients: Omit<RecipeIngredient, 'id' | 'recipe_id'>[]) => {
-    try {
-      const { data, error } = await supabase
-        .from('recipe_ingredients')
-        .insert(
-          ingredients.map(ing => ({ ...ing, recipe_id: recipeId }))
-        )
-        .select(`
-          *,
-          ingredient:ingredients(*)
-        `);
+  // レシピを更新する関数
+  const updateRecipe = async (id: string, updates: Partial<Omit<SavedRecipe, 'id' | 'user_id' | 'created_at'>>) => {
+    if (!user) throw new Error('ユーザーが認証されていません');
 
-      if (error) throw error;
-      
-      // レシピ一覧を更新
-      await fetchRecipes();
-      return data;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'レシピ食材の追加に失敗しました');
-      throw err;
-    }
-  };
-
-  const updateRecipe = async (id: number, updates: Partial<Recipe>) => {
     try {
-      const { data, error } = await supabase
-        .from('recipes')
+      setError(null);
+
+      const { data, error: updateError } = await supabase
+        .from('saved_recipes')
         .update(updates)
         .eq('id', id)
-        .select(`
-          *,
-          recipe_ingredients(
-            *,
-            ingredient:ingredients(*)
-          )
-        `)
+        .eq('user_id', user.id)
+        .select()
         .single();
 
-      if (error) throw error;
-      setRecipes(prev => prev.map(recipe => recipe.id === id ? data : recipe));
+      if (updateError) {
+        throw updateError;
+      }
+
+      // ローカル状態を更新
+      setRecipes(prev => 
+        prev.map(recipe => recipe.id === id ? data : recipe)
+      );
       return data;
     } catch (err) {
+      console.error('レシピの更新に失敗しました:', err);
       setError(err instanceof Error ? err.message : 'レシピの更新に失敗しました');
       throw err;
     }
   };
 
-  const deleteRecipe = async (id: number) => {
-    try {
-      const { error } = await supabase
-        .from('recipes')
-        .delete()
-        .eq('id', id);
+  // レシピを削除する関数
+  const deleteRecipe = async (id: string) => {
+    if (!user) throw new Error('ユーザーが認証されていません');
 
-      if (error) throw error;
+    try {
+      setError(null);
+
+      const { error: deleteError } = await supabase
+        .from('saved_recipes')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      // ローカル状態を更新
       setRecipes(prev => prev.filter(recipe => recipe.id !== id));
     } catch (err) {
+      console.error('レシピの削除に失敗しました:', err);
       setError(err instanceof Error ? err.message : 'レシピの削除に失敗しました');
       throw err;
     }
   };
 
+  // 初回データ取得
   useEffect(() => {
     fetchRecipes();
+  }, [user]);
+
+  // リアルタイム更新の設定
+  useEffect(() => {
+    if (!user) return;
+
+    const subscription = supabase
+      .channel('saved_recipes_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'saved_recipes',
+          filter: `user_id=eq.${user.id}`
+        },
+        () => {
+          // データが変更された場合は再取得
+          fetchRecipes();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(subscription);
+    };
   }, [user]);
 
   return {
@@ -131,9 +176,8 @@ export const useRecipes = () => {
     loading,
     error,
     addRecipe,
-    addRecipeIngredients,
     updateRecipe,
     deleteRecipe,
-    refetch: fetchRecipes,
+    refetch: fetchRecipes
   };
 };

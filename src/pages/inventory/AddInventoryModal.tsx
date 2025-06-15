@@ -6,10 +6,10 @@ import { InventoryItem } from '../../types';
 interface AddInventoryModalProps {
   onClose: () => void;
   onSuccess: () => void;
+  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<InventoryItem>;
 }
 
-export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({ onClose, onSuccess }) => {
-  const { addInventoryItem } = useInventory();
+export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({ onClose, onSuccess, addInventoryItem }) => {
   const { ingredients, addIngredient } = useIngredients();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({

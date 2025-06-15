@@ -21,19 +21,15 @@ CREATE TABLE IF NOT EXISTS ingredients (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 3. inventory テーブル (在庫)
-CREATE TABLE IF NOT EXISTS inventory (
-  id SERIAL PRIMARY KEY,
+-- 3. stock_items テーブル (食材在庫) - CLAUDE.md仕様書に準拠
+CREATE TABLE IF NOT EXISTS stock_items (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  ingredient_id INTEGER REFERENCES ingredients(id),
-  quantity DECIMAL(10,2) NOT NULL,
-  unit VARCHAR NOT NULL,
-  purchase_price DECIMAL(10,2),
-  purchase_date DATE,
-  expiry_date DATE,
-  location VARCHAR NOT NULL CHECK (location IN ('refrigerator', 'freezer', 'pantry')),
-  is_leftover BOOLEAN DEFAULT FALSE,
-  leftover_recipe_id INTEGER,
+  name TEXT NOT NULL,
+  quantity TEXT NOT NULL,
+  best_before DATE,
+  storage_location TEXT,
+  is_homemade BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -62,56 +58,78 @@ CREATE TABLE IF NOT EXISTS recipe_ingredients (
   is_optional BOOLEAN DEFAULT FALSE
 );
 
--- 6. meal_plans テーブル (献立計画)
+-- 6. meal_plans テーブル (献立計画) - CLAUDE.md仕様書に準拠
 CREATE TABLE IF NOT EXISTS meal_plans (
-  id SERIAL PRIMARY KEY,
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  planned_date DATE NOT NULL,
-  meal_type VARCHAR NOT NULL CHECK (meal_type IN ('breakfast', 'lunch', 'dinner', 'snack')),
-  recipe_id INTEGER REFERENCES recipes(id),
+  date DATE NOT NULL,
+  meal_type TEXT NOT NULL CHECK (meal_type IN ('朝', '昼', '夜', '間食')),
+  recipe_url TEXT,
+  ingredients JSONB,
+  memo TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 7. shopping_list テーブル (買い物リスト) - CLAUDE.md仕様書に準拠
+CREATE TABLE IF NOT EXISTS shopping_list (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  quantity TEXT,
+  checked BOOLEAN DEFAULT FALSE,
+  added_from TEXT CHECK (added_from IN ('manual', 'auto')),
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 8. cost_records テーブル (コスト記録) - CLAUDE.md仕様書に追加
+CREATE TABLE IF NOT EXISTS cost_records (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  description TEXT,
+  amount INTEGER NOT NULL,
+  is_eating_out BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 9. saved_recipes テーブル (レシピ保存) - CLAUDE.md仕様書に追加
+CREATE TABLE IF NOT EXISTS saved_recipes (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  url TEXT NOT NULL,
   servings INTEGER DEFAULT 1,
-  actual_cost DECIMAL(10,2),
-  is_completed BOOLEAN DEFAULT FALSE,
-  completed_at TIMESTAMP WITH TIME ZONE,
+  tags TEXT[],
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 7. shopping_lists テーブル (買い物リスト)
-CREATE TABLE IF NOT EXISTS shopping_lists (
-  id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
-  ingredient_id INTEGER REFERENCES ingredients(id),
-  quantity DECIMAL(10,2) NOT NULL,
-  unit VARCHAR NOT NULL,
-  estimated_price DECIMAL(10,2),
-  source_meal_plan_id INTEGER REFERENCES meal_plans(id),
-  is_purchased BOOLEAN DEFAULT FALSE,
-  purchased_at TIMESTAMP WITH TIME ZONE,
-  actual_price DECIMAL(10,2),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- インデックス作成 - CLAUDE.md仕様書に準拠
+CREATE INDEX IF NOT EXISTS idx_stock_items_user_best_before ON stock_items(user_id, best_before);
+CREATE INDEX IF NOT EXISTS idx_meal_plans_user_date ON meal_plans(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_shopping_list_user_checked ON shopping_list(user_id, checked);
+CREATE INDEX IF NOT EXISTS idx_cost_records_user_date ON cost_records(user_id, date);
 
--- インデックス作成
-CREATE INDEX IF NOT EXISTS idx_inventory_user_expiry ON inventory(user_id, expiry_date);
-CREATE INDEX IF NOT EXISTS idx_meal_plans_user_date ON meal_plans(user_id, planned_date);
-CREATE INDEX IF NOT EXISTS idx_shopping_lists_user_purchased ON shopping_lists(user_id, is_purchased);
-
--- Row Level Security (RLS) 設定
+-- Row Level Security (RLS) 設定 - CLAUDE.md仕様書に準拠
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE inventory ENABLE ROW LEVEL SECURITY;
+ALTER TABLE stock_items ENABLE ROW LEVEL SECURITY;
 ALTER TABLE recipes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE meal_plans ENABLE ROW LEVEL SECURITY;
-ALTER TABLE shopping_lists ENABLE ROW LEVEL SECURITY;
+ALTER TABLE shopping_list ENABLE ROW LEVEL SECURITY;
+ALTER TABLE cost_records ENABLE ROW LEVEL SECURITY;
+ALTER TABLE saved_recipes ENABLE ROW LEVEL SECURITY;
 
 -- RLSポリシー作成 (ユーザーは自分のデータのみアクセス可能)
 CREATE POLICY "Users can view own profile" ON users FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update own profile" ON users FOR UPDATE USING (auth.uid() = id);
 CREATE POLICY "Users can insert own profile" ON users FOR INSERT WITH CHECK (auth.uid() = id);
 
-CREATE POLICY "Users can view own inventory" ON inventory FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can view own recipes" ON recipes FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can view own meal plans" ON meal_plans FOR ALL USING (auth.uid() = user_id);
-CREATE POLICY "Users can view own shopping lists" ON shopping_lists FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage own stock items" ON stock_items FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage own recipes" ON recipes FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage own meal plans" ON meal_plans FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage own shopping list" ON shopping_list FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage own cost records" ON cost_records FOR ALL USING (auth.uid() = user_id);
+CREATE POLICY "Users can manage own saved recipes" ON saved_recipes FOR ALL USING (auth.uid() = user_id);
 
 -- ingredients テーブルは全ユーザーが参照可能
 CREATE POLICY "Everyone can view ingredients" ON ingredients FOR SELECT USING (true);
@@ -166,7 +184,8 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- トリガー設定
+-- トリガー設定 - CLAUDE.md仕様書に準拠
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_inventory_updated_at BEFORE UPDATE ON inventory FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_stock_items_updated_at BEFORE UPDATE ON stock_items FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_recipes_updated_at BEFORE UPDATE ON recipes FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+CREATE TRIGGER update_meal_plans_updated_at BEFORE UPDATE ON meal_plans FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();

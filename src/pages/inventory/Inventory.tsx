@@ -3,7 +3,7 @@ import { useInventory } from '../../hooks/useInventory';
 import { AddInventoryModal } from './AddInventoryModal';
 
 export const Inventory: React.FC = () => {
-  const { inventory, loading, error } = useInventory();
+  const { inventory, loading, error, addInventoryItem } = useInventory();
   const [showAddModal, setShowAddModal] = useState(false);
 
   if (loading) {
@@ -134,6 +134,7 @@ export const Inventory: React.FC = () => {
           onSuccess={() => {
             setShowAddModal(false);
           }}
+          addInventoryItem={addInventoryItem}
         />
       )}
     </div>

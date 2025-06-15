@@ -3,18 +3,21 @@ import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
 import { User } from '../types';
 
+// 認証コンテキストの型定義
 interface AuthContextType {
-  user: User | null;
-  supabaseUser: SupabaseUser | null;
-  session: Session | null;
-  loading: boolean;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
-  signUp: (email: string, password: string) => Promise<{ error: any }>;
-  signOut: () => Promise<void>;
+  user: User | null; // アプリケーション内のユーザー情報
+  supabaseUser: SupabaseUser | null; // Supabase認証ユーザー情報
+  session: Session | null; // 認証セッション
+  loading: boolean; // 認証状態の読み込み中フラグ
+  signIn: (email: string, password: string) => Promise<{ error: any }>; // ログイン関数
+  signUp: (email: string, password: string) => Promise<{ error: any }>; // サインアップ関数
+  signOut: () => Promise<void>; // ログアウト関数
 }
 
+// 認証コンテキストを作成
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// 認証コンテキストを利用するためのカスタムフック
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -23,13 +26,15 @@ export const useAuth = () => {
   return context;
 };
 
+// 認証プロバイダーコンポーネント
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
-  const [session, setSession] = useState<Session | null>(null);
-  const [loading, setLoading] = useState(true);
+  // 認証状態の管理
+  const [user, setUser] = useState<User | null>(null); // アプリケーション内ユーザー情報
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null); // Supabaseユーザー情報
+  const [session, setSession] = useState<Session | null>(null); // 認証セッション
+  const [loading, setLoading] = useState(true); // 読み込み状態
 
-  // ユーザープロフィールを取得する関数
+  // Supabaseユーザーからアプリケーション内ユーザー情報を取得する関数
   const fetchUserProfile = async (supabaseUser: SupabaseUser): Promise<User | null> => {
     try {
       console.log('ユーザープロフィール取得開始:', supabaseUser.id);
@@ -191,6 +196,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
+  // メール・パスワードでログインする関数
   const signIn = async (email: string, password: string) => {
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -199,6 +205,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  // メール・パスワードでアカウント作成する関数
   const signUp = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -225,6 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return { error };
   };
 
+  // ログアウトする関数
   const signOut = async () => {
     await supabase.auth.signOut();
   };

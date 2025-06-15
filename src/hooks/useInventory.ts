@@ -3,17 +3,21 @@ import { supabase } from '../lib/supabase';
 import { InventoryItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
+// 在庫管理機能を提供するカスタムフック
 export const useInventory = () => {
-  const [inventory, setInventory] = useState<InventoryItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  // 状態管理
+  const [inventory, setInventory] = useState<InventoryItem[]>([]); // 在庫アイテム配列
+  const [loading, setLoading] = useState(true); // 読み込み状態
+  const [error, setError] = useState<string | null>(null); // エラーメッセージ
+  const { user } = useAuth(); // 認証ユーザー情報
 
+  // 在庫データを取得する関数
   const fetchInventory = async () => {
     if (!user) return;
 
     try {
       setLoading(true);
+      // inventoryテーブルとingredientsテーブルをJOINして取得
       const { data, error } = await supabase
         .from('inventory')
         .select(`
@@ -21,7 +25,7 @@ export const useInventory = () => {
           ingredient:ingredients(*)
         `)
         .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false }); // 作成日降順で並び替え
 
       if (error) throw error;
       setInventory(data || []);
@@ -32,10 +36,12 @@ export const useInventory = () => {
     }
   };
 
+  // 新しい在庫アイテムを追加する関数
   const addInventoryItem = async (item: Omit<InventoryItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
 
     try {
+      // ユーザーIDを付与して在庫アイテムを作成
       const { data, error } = await supabase
         .from('inventory')
         .insert([{ ...item, user_id: user.id }])
@@ -46,6 +52,7 @@ export const useInventory = () => {
         .single();
 
       if (error) throw error;
+      // ローカル状態を更新（新しいアイテムを先頭に追加）
       setInventory(prev => [data, ...prev]);
       return data;
     } catch (err) {
@@ -54,8 +61,10 @@ export const useInventory = () => {
     }
   };
 
+  // 在庫アイテムを更新する関数
   const updateInventoryItem = async (id: number, updates: Partial<InventoryItem>) => {
     try {
+      // 指定されたIDの在庫アイテムを更新
       const { data, error } = await supabase
         .from('inventory')
         .update(updates)
@@ -67,6 +76,7 @@ export const useInventory = () => {
         .single();
 
       if (error) throw error;
+      // ローカル状態を更新（該当アイテムのみ更新）
       setInventory(prev => prev.map(item => item.id === id ? data : item));
       return data;
     } catch (err) {
@@ -75,14 +85,17 @@ export const useInventory = () => {
     }
   };
 
+  // 在庫アイテムを削除する関数
   const deleteInventoryItem = async (id: number) => {
     try {
+      // 指定されたIDの在庫アイテムを削除
       const { error } = await supabase
         .from('inventory')
         .delete()
         .eq('id', id);
 
       if (error) throw error;
+      // ローカル状態から削除されたアイテムを除外
       setInventory(prev => prev.filter(item => item.id !== id));
     } catch (err) {
       setError(err instanceof Error ? err.message : '在庫の削除に失敗しました');
@@ -90,17 +103,19 @@ export const useInventory = () => {
     }
   };
 
+  // ユーザーが変更されたら在庫データを再取得
   useEffect(() => {
     fetchInventory();
   }, [user]);
 
+  // フックが提供する機能を返す
   return {
-    inventory,
-    loading,
-    error,
-    addInventoryItem,
-    updateInventoryItem,
-    deleteInventoryItem,
-    refetch: fetchInventory,
+    inventory, // 在庫アイテム配列
+    loading, // 読み込み状態
+    error, // エラーメッセージ
+    addInventoryItem, // 在庫追加関数
+    updateInventoryItem, // 在庫更新関数
+    deleteInventoryItem, // 在庫削除関数
+    refetch: fetchInventory, // 再取得関数
   };
 };

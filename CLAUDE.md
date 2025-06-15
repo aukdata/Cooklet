@@ -1,79 +1,41 @@
-# CLAUDE.md
+# Cooklet - 献立管理アプリ 仕様書
 
 ## 1. プロジェクト基本情報
 
+### Claude Code AIへの制約
+すべての応答は、日本語で行われなければなりません。
+ソースコードには、読者の理解を助けるような日本語のコメントを書いてください。
+トークン節約のために、ソースコードがあるディレクトリにはCLAUDE.mdを生成し、配下のファイルに含まれるメゾットなどを要約してください。内容はClaudeが理解できれば一任します。
+ソースコードを参照するときは、まず各ディレクトリのCLAUDE.mdを参照してください。
+ソースコードを変更するときは、忘れずにCLAUDE.mdにも変更を反映してください。変更した仕様はすべてこのファイルに追記・修正してください。
+ユーザの応答が必要なときには、以下のコマンドでユーザの操作を促す: `echo -e '\a'`
+不要なパッケージは`npm uninstall`してください。
+実装の際は、まずこのファイルにTODOを追加し、作業が完了したらTODOを完了としてください。
+不要なTODOは適宜削除してください。
+
 ### プロジェクト概要・目的
 - **アプリ名**: Cooklet
-- **概要**: スマートな献立管理・在庫管理・コスト管理を統合したWebアプリ
-- **目的**: 食品在庫の効率的な管理と無駄の削減、献立計画の最適化
-- **対象ユーザー**: 個人利用（開発者自身）
+- **概要**: 一人暮らしユーザーのための献立・在庫・買い物・コストを一元管理できるスマートな献立管理Webアプリ
+- **目的**: レシピはURL管理とし、軽量かつシンプルなPWAとして設計
+- **対象ユーザー**: 一人暮らしで自炊する個人ユーザー、献立・在庫・支出をシンプルに記録・管理したい人
 
 ### 開発スタイル
 - **個人開発**: 自分のペースで好きに開発
 - **Claude Code**: AI支援による効率的な開発
-- **言語**: Claudeの応答とソースコードのコメントは日本語で行うこと
-- **ユーザー操作**: ユーザの応答が必要なときには、以下のコマンドでユーザの操作を促す: `echo -e '\a'`
-変更があれば、このファイルを修正しなければならない
 
 ### バージョン管理
 - **Git**: GitHub
 - **ブランチ戦略**: main（本番）/ develop（開発）
 - **自動デプロイ**: GitHub連携でNetlifyに自動デプロイ
 
-## 2. 機能一覧
+## 2. 技術アーキテクチャ
 
-### メイン画面構成
-- 下部タブナビゲーション：献立、レシピ、在庫、調達
-
-### 2.1 献立タブ
-- **カレンダー表示**で今後の献立を視覚的に計画
-- レシピ一覧から選択して日付に割り当て
-- 在庫ベースのおすすめレシピ提案
-- 数日分の献立をまとめて作成可能
-- 過去の献立履歴表示
-- **月間食費**の集計表示
-- **1食あたりコスト**の計算・表示
-- 日別・週別の支出グラフ
-- 食材別コスト分析
-
-### 2.2 レシピタブ
-- 今日予定の料理一覧表示
-- タッチでレシピ詳細表示（Webレシピサイトへのリンク）
-- **「作った」ボタン**で使用食材を在庫から自動減算
-- 調理時間・必要食材の表示
-
-### 2.3 在庫タブ
-- 現在の食材在庫と数量表示
-- 野菜半分などの中途半端な状態管理
-- 作り置き料理の管理
-- **賞味期限管理**と期限切れ間近の警告表示
-- カテゴリ別表示（野菜、肉、調味料など）
-
-### 2.4 調達タブ
-- 直近数日の献立から不足食材を自動抽出
-- 買い物リスト表示
-- 「買った」チェックで在庫への自動追加
-- 価格メモ機能
-
-### 2.5 通知機能
-- **賞味期限**切れ間近の食材アラート
-- **買い物リマインダー**
-- 献立計画の通知
-- 作り置き消費期限の通知
-
-### 2.6 共通機能
-- レスポンシブデザイン（スマホ最適化）
-- データ同期・バックアップ
-- 簡単操作のUI/UX
-
-## 3. 技術アーキテクチャ
-
-### 3.1 フロントエンド
-- **React + TypeScript + Vite**
+### 2.1 フロントエンド
+- **React + TypeScript**
 - **PWA対応**でネイティブアプリ風の体験
 - **レスポンシブデザイン**（モバイルファースト）
 
-### 3.2 バックエンド・データベース
+### 2.2 バックエンド・データベース
 - **Supabase（無料枠）**
   - PostgreSQLデータベース
   - 認証機能（Google連携）
@@ -81,14 +43,14 @@
   - ファイルストレージ
   - 月500MBまで無料
 
-### 3.3 ホスティング
+### 2.3 ホスティング
 - **Netlify（無料枠）**
   - 静的サイト＋Netlify Functions
   - 自動デプロイ
   - カスタムドメイン対応
   - 月100GBまで無料
 
-### 3.4 API設計
+### 2.4 API設計
 - **Supabase Client直接利用**
   - フロントエンドから直接SupabaseのREST APIを呼び出し
   - 認証・認可はSupabaseが自動処理
@@ -99,7 +61,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 // 在庫取得
-const { data } = await supabase.from('inventory').select('*')
+const { data } = await supabase.from('stock_items').select('*')
 
 // 献立作成
 const { data } = await supabase.from('meal_plans').insert({...})
@@ -108,245 +70,614 @@ const { data } = await supabase.from('meal_plans').insert({...})
 await supabase.rpc('update_inventory_after_cooking', { recipe_id: 1 })
 ```
 
-### 3.5 通知機能
+### 2.5 通知機能
 - **Web Push API**（ブラウザ標準）
 - PWAで利用可能
 - 完全無料
 
-## 4. データベース設計
+## 3. アプリ特徴
 
-### 4.1 users（ユーザー）
-```sql
-users (
-  id: UUID PRIMARY KEY,
-  email: VARCHAR UNIQUE NOT NULL,
-  name: VARCHAR,
-  google_id: VARCHAR UNIQUE,
-  created_at: TIMESTAMP DEFAULT NOW(),
-  updated_at: TIMESTAMP DEFAULT NOW()
-)
+### 3.1 主な特徴
+- **レシピはURL管理**、調理手順は非保存
+- **食材はLLMでURLから自動抽出**（必要に応じて手動編集）
+- **中途半端な食材・作り置きにも対応**した在庫管理
+- 献立と在庫から**買い物リストを自動生成**
+- **一食ごとの支出記録**（自炊・外食対応）
+- **Web Push通知で賞味期限リマインド**（予定）
+- **UIは軽量・高速を重視**、リッチな装飾は控える
+
+## 4. グローバルタブ構成
+
+アプリ下部のタブバーで画面遷移：
+
+| タブ名 | 機能概要 |
+|--------|----------|
+| **ダッシュボード** | 当日の献立・在庫アラート・出費概要の一括表示 |
+| **カレンダー** | 献立の週間・月間プランを視覚的に確認・編集 |
+| **買い物** | 食材不足に基づいた買い物リスト表示・チェック管理 |
+| **レシピ** | 外部レシピURLの保存と食材抽出の編集、管理 |
+| **コスト** | 自炊・外食を含む一食単位でのコスト記録・月別集計表示 |
+
+## 5. UI要素の画面配置仕様
+
+### 5.1 ダッシュボード
+```
+［ヘッダー］
+┌─────────────────────────────────┐
+│ 📊 ダッシュボード         ⚙️    │
+└─────────────────────────────────┘
+
+［今日の献立セクション］
+┌─────────────────────────────────┐
+│ 📅 今日の献立 (6/15)           │
+├─────────────────────────────────┤
+│ 🌅 朝食: トースト + コーヒー     │
+│   材料: パン1枚、バター10g      │
+│   🌐 レシピを見る        ［✓］  │
+├─────────────────────────────────┤
+│ 🌞 昼食: ［未設定］            │
+│                    ［+ 追加］   │
+├─────────────────────────────────┤
+│ 🌙 夕食: ハンバーグ定食        │
+│   材料: 牛ひき肉200g、玉ねぎ   │
+│   🌐 レシピを見る        ［編集］│
+└─────────────────────────────────┘
+
+［在庫アラートセクション］
+┌─────────────────────────────────┐
+│ ⚠️ 在庫アラート                │
+├─────────────────────────────────┤
+│ 🔴 賞味期限切れ                │
+│   • にんじん (6/13期限)        │
+│   • 牛乳 (6/14期限)           │
+├─────────────────────────────────┤
+│ 🟡 明日まで                    │
+│   • たまご (6/16期限)          │
+│   • ヨーグルト (6/16期限)       │
+└─────────────────────────────────┘
+
+［今月の出費セクション］
+┌─────────────────────────────────┐
+│ 💰 今月の出費 (6月)            │
+├─────────────────────────────────┤
+│ 🏠 自炊: ¥3,200 (12回)        │
+│ 🍽️ 外食: ¥2,100 (3回)         │
+├─────────────────────────────────┤
+│ 📊 合計: ¥5,300               │
+│ 📈 1日平均: ¥353              │
+└─────────────────────────────────┘
+
+［フッター］
+┌─────────────────────────────────┐
+│ 📊 💬 🛒 🍳 💰              │
+└─────────────────────────────────┘
 ```
 
-### 4.2 ingredients（食材マスタ）
-```sql
-ingredients (
-  id: SERIAL PRIMARY KEY,
-  name: VARCHAR NOT NULL,
-  category: VARCHAR, -- '野菜', '肉類', '調味料'
-  default_unit: VARCHAR, -- 'g', 'ml', '個', '束'
-  typical_price: DECIMAL(10,2), -- 100gあたりの目安価格
-  created_at: TIMESTAMP DEFAULT NOW()
-)
+### 5.2 カレンダー画面
+```
+［ヘッダー］
+┌─────────────────────────────────┐
+│ 📅 献立カレンダー        ［⚙️］  │
+│     今週 (6/14 - 6/20)          │
+└─────────────────────────────────┘
+
+［カレンダービュー］
+┌─────────────────────────────────┐
+│   土  日  月  火  水  木  金    │
+├─────────────────────────────────┤
+│  14 ［15］ 16  17  18  19  20   │
+│  🍽️ 🍳🍳  🍳  🍳  🍳  🍳  🍳    │
+└─────────────────────────────────┘
+
+［選択日の詳細］
+┌─────────────────────────────────┐
+│ 📅 6月15日 (今日)               │
+├─────────────────────────────────┤
+│ 🌅 朝食: トースト              │
+│    📋 材料: パン, バター        │
+│    🌐 レシピを見る       ［編集］ │
+├─────────────────────────────────┤
+│ 🌞 昼食: ［未設定］            │
+│                     ［+ 追加］  │
+├─────────────────────────────────┤
+│ 🌙 夕食: ハンバーグ定食        │
+│    📋 材料: 牛ひき肉, 玉ねぎ    │
+│    🌐 レシピを見る       ［編集］ │
+└─────────────────────────────────┘
+
+［週間サマリー］
+┌─────────────────────────────────┐
+│ 📊 今週の予定 (6/9 - 6/15)      │
+│ 🏠 自炊: 5回  🍽️ 外食: 2回      │
+│ 💰 予算: ¥1,200               │
+└─────────────────────────────────┘
 ```
 
-### 4.3 inventory（在庫）
-```sql
-inventory (
-  id: SERIAL PRIMARY KEY,
-  user_id: UUID REFERENCES users(id) ON DELETE CASCADE,
-  ingredient_id: INTEGER REFERENCES ingredients(id),
-  quantity: DECIMAL(10,2) NOT NULL, -- 数量
-  unit: VARCHAR NOT NULL, -- 単位
-  purchase_price: DECIMAL(10,2), -- 購入価格
-  purchase_date: DATE,
-  expiry_date: DATE, -- 賞味期限
-  location: VARCHAR, -- '冷蔵庫', '冷凍庫', '常温'
-  is_leftover: BOOLEAN DEFAULT FALSE, -- 作り置きフラグ
-  leftover_recipe_id: INTEGER, -- 作り置き元レシピ
-  created_at: TIMESTAMP DEFAULT NOW(),
-  updated_at: TIMESTAMP DEFAULT NOW()
-)
+### 5.3 買い物画面
+```
+［ヘッダー］
+┌─────────────────────────────────┐
+│ 🛒 買い物リスト          ［⚙️］  │
+│ 未完了: 5件  完了: 3件          │
+└─────────────────────────────────┘
+
+［新規追加］
+┌─────────────────────────────────┐
+│ ［食材名を入力...］        ［+］  │
+│ ［数量 (任意)］                 │
+└─────────────────────────────────┘
+
+［未完了アイテム］
+┌─────────────────────────────────┐
+│ ☐ 牛ひき肉 (200g)    ［自動］   │
+│ ☐ 玉ねぎ (1個)       ［自動］   │
+│ ☐ パン              ［手動］   │
+│ ☐ 牛乳 (1本)        ［自動］   │
+│ ☐ レタス            ［手動］   │
+│                         ［全選択］│
+└─────────────────────────────────┘
+
+［完了アイテム（折りたたみ）］
+┌─────────────────────────────────┐
+│ ▼ 完了済み (3件)        ［削除］ │
+├─────────────────────────────────┤
+│ ☑️ にんじん (2本)               │
+│ ☑️ たまご (1パック)             │
+│ ☑️ 醤油                       │
+└─────────────────────────────────┘
+
+［アクションボタン］
+┌─────────────────────────────────┐
+│ ［完了をまとめて削除］           │
+│ ［在庫に追加して削除］           │
+└─────────────────────────────────┘
 ```
 
-### 4.4 recipes（レシピ）
-```sql
-recipes (
-  id: SERIAL PRIMARY KEY,
-  user_id: UUID REFERENCES users(id),
-  name: VARCHAR NOT NULL,
-  external_url: TEXT, -- 外部レシピサイトURL
-  cooking_time: INTEGER, -- 調理時間（分）
-  servings: INTEGER DEFAULT 1, -- 人前
-  estimated_cost: DECIMAL(10,2), -- 推定コスト
-  notes: TEXT, -- メモ
-  created_at: TIMESTAMP DEFAULT NOW(),
-  updated_at: TIMESTAMP DEFAULT NOW()
-)
+### 5.4 レシピ画面
+```
+［ヘッダー］
+┌─────────────────────────────────┐
+│ 🍳 レシピ管理            ［⚙️］  │
+│ 保存済み: 12件                  │
+└─────────────────────────────────┘
+
+［新規レシピ登録］
+┌─────────────────────────────────┐
+│ 📝 新しいレシピを追加           │
+├─────────────────────────────────┤
+│ ［レシピURLを入力...］    ［解析］│
+│ または                          │
+│ ［レシピ名を入力...］            │
+└─────────────────────────────────┘
+
+［食材自動抽出（URLの場合）］
+┌─────────────────────────────────┐
+│ 🤖 食材を自動抽出中...          │
+│ ［ハンバーグの作り方］           │
+│                                │
+│ 検出された食材:                 │
+│ • 牛ひき肉 ［200g］      ［編集］│
+│ • 玉ねぎ   ［1個］       ［編集］│
+│ • パン粉   ［適量］      ［編集］│
+│                         ［保存］ │
+└─────────────────────────────────┘
+
+［保存済みレシピ一覧］
+┌─────────────────────────────────┐
+│ 🔍 ［検索...］           ［絞込］ │
+├─────────────────────────────────┤
+│ 📄 ハンバーグ定食              │
+│    🌐 cookpad.com/recipe...    │
+│    📋 牛ひき肉, 玉ねぎ, パン粉   │
+│    🏷️ 肉料理                   │
+│                   ［編集］［削除］│
+├─────────────────────────────────┤
+│ 📄 親子丼                     │
+│    🌐 手動レシピ               │
+│    📋 鶏肉, 卵, 玉ねぎ         │
+│    🏷️ 丼物                    │
+│                   ［編集］［削除］│
+├─────────────────────────────────┤
+│ 📄 トマトパスタ               │
+│    🌐 recipe.rakuten.co...     │
+│    📋 パスタ, トマト缶, にんにく │
+│    🏷️ パスタ                  │
+│                   ［編集］［削除］│
+└─────────────────────────────────┘
+
+［フィルター・ソート］
+┌─────────────────────────────────┐
+│ 🏷️ タグ: ［全て▼］             │
+│ ⏰ 調理時間: ［指定なし▼］       │
+│ 📅 並び順: ［作成日順▼］         │
+└─────────────────────────────────┘
 ```
 
-### 4.5 recipe_ingredients（レシピ-食材関連）
-```sql
-recipe_ingredients (
-  id: SERIAL PRIMARY KEY,
-  recipe_id: INTEGER REFERENCES recipes(id) ON DELETE CASCADE,
-  ingredient_id: INTEGER REFERENCES ingredients(id),
-  quantity: DECIMAL(10,2) NOT NULL,
-  unit: VARCHAR NOT NULL,
-  is_optional: BOOLEAN DEFAULT FALSE -- 代用可能な食材
-)
+### 5.5 コスト画面
+```
+［ヘッダー］
+┌─────────────────────────────────┐
+│ 💰 コスト管理            ［⚙️］  │
+│ ＜ 2025年6月 ＞                │
+└─────────────────────────────────┘
+
+［月間サマリー］
+┌─────────────────────────────────┐
+│ 📊 今月の支出                  │
+├─────────────────────────────────┤
+│ 🏠 自炊: ¥3,200 (12回)        │
+│    └ 1回平均: ¥267            │
+│ 🍽️ 外食: ¥2,100 (3回)         │
+│    └ 1回平均: ¥700            │
+├─────────────────────────────────┤
+│ 💯 合計: ¥5,300 (15回)         │
+│ 📈 1日平均: ¥353              │
+│ 📈 1回平均: ¥353              │
+└─────────────────────────────────┘
+
+［新規記録］
+┌─────────────────────────────────┐
+│ ➕ 新しい支出を記録             │
+├─────────────────────────────────┤
+│ 📅 日付: ［2025/06/15］        │
+│ 📝 内容: ［昼食 - 牛丼］        │
+│ 💰 金額: ［   ］円             │
+│ 🍽️ ☐ 外食                     │
+│                         ［保存］ │
+└─────────────────────────────────┘
+
+［支出履歴］
+┌─────────────────────────────────┐
+│ 📋 支出履歴                    │
+│ ［週間］［月間］  🔍［検索...］  │
+├─────────────────────────────────┤
+│ 📅 6/15 (今日)                │
+│ 🏠 朝食 - トースト       ¥120  │
+│                   ［編集］［削除］│
+├─────────────────────────────────┤
+│ 📅 6/14                       │
+│ 🍽️ 夕食 - 居酒屋       ¥1,500  │
+│ 🏠 昼食 - 自作弁当      ¥200   │
+│                   ［編集］［削除］│
+├─────────────────────────────────┤
+│ 📅 6/13                       │
+│ 🏠 夕食 - ハンバーグ     ¥350   │
+│ 🏠 昼食 - パスタ        ¥180   │
+│                   ［編集］［削除］│
+└─────────────────────────────────┘
+
+［統計・分析］
+┌─────────────────────────────────┐
+│ 📈 月別推移                    │
+│ 4月: ¥4,800  5月: ¥5,100      │
+│ 6月: ¥5,300 (進行中)           │
+└─────────────────────────────────┘
 ```
 
-### 4.6 meal_plans（献立計画）
+### 5.6 共通UI要素・ダイアログ
+
+#### 5.6.1 タブナビゲーション（下部固定）
+```
+［タブナビゲーション（下部固定）］
+┌─────────────────────────────────┐
+│ 📊      💬      🛒      🍳      💰 │
+│ダッシュ  カレンダー 買い物  レシピ  コスト│
+│ボード                              │
+└─────────────────────────────────┘
+```
+
+#### 5.6.2 献立編集ダイアログ（ダッシュボード・カレンダーから）
+```
+［献立編集ダイアログ］
+┌─────────────────────────────────┐
+│ ✏️ 献立を編集           ［×］    │
+├─────────────────────────────────┤
+│ 📅 日付: 2025/06/15 (今日)      │
+│ 🕐 食事: ［夕食    ▼］          │
+│                                │
+│ 🍳 レシピを選択:                │
+│ ┌─────────────────────────────┐  │
+│ │ 🔍 ［レシピを検索...］        │  │
+│ ├─────────────────────────────┤  │
+│ │ ☐ ハンバーグ定食            │  │
+│ │ ☐ 親子丼                   │  │
+│ │ ☐ トマトパスタ             │  │
+│ │ ☐ 手動入力                 │  │
+│ └─────────────────────────────┘  │
+│                                │
+│ 👥 人数: ［2］人前              │
+│                                │
+│ 📝 メモ:                       │
+│ ［特別な調理法やアレンジなど］   │
+├─────────────────────────────────┤
+│          ［キャンセル］［保存］   │
+└─────────────────────────────────┘
+```
+
+#### 5.6.3 手動入力ダイアログ（上記で手動入力選択時）
+```
+［手動献立入力ダイアログ］
+┌─────────────────────────────────┐
+│ ✏️ 手動で献立入力       ［×］    │
+├─────────────────────────────────┤
+│ 📝 料理名:                      │
+│ ［ハンバーグ定食］              │
+│                                │
+│ 🌐 レシピURL (任意):            │
+│ ［https://cookpad.com/...］     │
+│                                │
+│ 👥 人数: ［2］人前              │
+│                                │
+│ 📋 使用する食材:                │
+│ • 牛ひき肉 ［200g］      ［-］  │
+│ • 玉ねぎ   ［1個］       ［-］  │
+│                    ［+ 食材追加］│
+│                                │
+│ 📝 メモ:                       │
+│ ［特別な調理法やアレンジなど］   │
+├─────────────────────────────────┤
+│          ［キャンセル］［保存］   │
+└─────────────────────────────────┘
+```
+
+#### 5.6.4 レシピ編集ダイアログ（レシピ画面から）
+```
+［レシピ編集ダイアログ］
+┌─────────────────────────────────┐
+│ ✏️ レシピ編集           ［×］    │
+├─────────────────────────────────┤
+│ 📝 レシピ名:                    │
+│ ［ハンバーグ定食］              │
+│                                │
+│ 🌐 URL:                        │
+│ ［https://cookpad.com/...］     │
+│                     ［食材抽出］ │
+│                                │
+│ 👥 人数: ［2］人前              │
+│                                │
+│ 📋 食材:                       │
+│ • 牛ひき肉 ［200g］      ［-］  │
+│ • 玉ねぎ   ［1個］       ［-］  │
+│ • パン粉   ［適量］      ［-］  │
+│                    ［+ 食材追加］│
+│                                │
+│ 🏷️ タグ: ［肉料理］             │
+├─────────────────────────────────┤
+│          ［キャンセル］［保存］   │
+└─────────────────────────────────┘
+```
+
+#### 5.6.5 在庫編集ダイアログ（在庫アラートから）
+```
+［在庫編集ダイアログ］
+┌─────────────────────────────────┐
+│ ✏️ 在庫を編集           ［×］    │
+├─────────────────────────────────┤
+│ 📝 食材名:                      │
+│ ［にんじん］                   │
+│                                │
+│ 📊 数量: ［2］［本  ▼］         │
+│                                │
+│ 📅 賞味期限:                    │
+│ ［2025/06/20］          ［今日］ │
+│                        ［1週間］ │
+│                                │
+│ 🏠 保存場所:                    │
+│ ☐ 冷蔵庫  ☐ 冷凍庫  ☐ 常温    │
+│                                │
+│ 🍱 作り置き: ☐ はい             │
+├─────────────────────────────────┤
+│    ［削除］    ［キャンセル］［保存］│
+└─────────────────────────────────┘
+```
+
+#### 5.6.6 コスト記録ダイアログ（コスト画面から）
+```
+［コスト記録ダイアログ］
+┌─────────────────────────────────┐
+│ ✏️ 支出を記録           ［×］    │
+├─────────────────────────────────┤
+│ 📅 日付: ［2025/06/15］  ［今日］│
+│                                │
+│ 📝 内容:                       │
+│ ［昼食 - 牛丼］                │
+│                                │
+│ 💰 金額: ［500］円              │
+│                                │
+│ 🍽️ ☑️ 外食                     │
+│ 🏠 ☐ 自炊                      │
+│                                │
+│ 📝 メモ (任意):                 │
+│ ［すき家で食べた］              │
+├─────────────────────────────────┤
+│    ［削除］    ［キャンセル］［保存］│
+└─────────────────────────────────┘
+```
+
+#### 5.6.7 削除確認ダイアログ
+```
+［削除確認ダイアログ］
+┌─────────────────────────────────┐
+│ ⚠️ 確認                ［×］    │
+├─────────────────────────────────┤
+│                                │
+│ 「ハンバーグ定食」を削除します。 │
+│                                │
+│ この操作は取り消せません。       │
+│                                │
+├─────────────────────────────────┤
+│          ［キャンセル］［削除］   │
+└─────────────────────────────────┘
+```
+
+## 6. データベース設計
+
+Supabase（PostgreSQL）を使用。
+
+### 6.1 meal_plans（献立）
 ```sql
+-- 献立（1日ごとの記録）
 meal_plans (
-  id: SERIAL PRIMARY KEY,
-  user_id: UUID REFERENCES users(id) ON DELETE CASCADE,
-  planned_date: DATE NOT NULL,
-  meal_type: VARCHAR, -- '朝食', '昼食', '夕食', '間食'
-  recipe_id: INTEGER REFERENCES recipes(id),
-  servings: INTEGER DEFAULT 1,
-  actual_cost: DECIMAL(10,2), -- 実際にかかったコスト
-  is_completed: BOOLEAN DEFAULT FALSE,
-  completed_at: TIMESTAMP,
-  created_at: TIMESTAMP DEFAULT NOW()
+  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  date: DATE NOT NULL,
+  meal_type: TEXT NOT NULL,      -- 朝 / 昼 / 夜 / 間食
+  recipe_url: TEXT,
+  ingredients: JSONB,            -- [{ name, quantity }]
+  memo: TEXT,
+  created_at: TIMESTAMP DEFAULT NOW(),
+  updated_at: TIMESTAMP DEFAULT NOW()
 )
 ```
 
-### 4.7 shopping_lists（買い物リスト）
+### 6.2 stock_items（食材在庫）
 ```sql
-shopping_lists (
-  id: SERIAL PRIMARY KEY,
-  user_id: UUID REFERENCES users(id) ON DELETE CASCADE,
-  ingredient_id: INTEGER REFERENCES ingredients(id),
-  quantity: DECIMAL(10,2) NOT NULL,
-  unit: VARCHAR NOT NULL,
-  estimated_price: DECIMAL(10,2),
-  source_meal_plan_id: INTEGER REFERENCES meal_plans(id), -- 元になった献立
-  is_purchased: BOOLEAN DEFAULT FALSE,
-  purchased_at: TIMESTAMP,
-  actual_price: DECIMAL(10,2),
+-- 食材在庫
+stock_items (
+  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name: TEXT NOT NULL,
+  quantity: TEXT NOT NULL,
+  best_before: DATE,
+  storage_location: TEXT,
+  is_homemade: BOOLEAN DEFAULT FALSE,
+  created_at: TIMESTAMP DEFAULT NOW(),
+  updated_at: TIMESTAMP DEFAULT NOW()
+)
+```
+
+### 6.3 shopping_list（買い物リスト）
+```sql
+-- 買い物リスト
+shopping_list (
+  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name: TEXT NOT NULL,
+  quantity: TEXT,
+  checked: BOOLEAN DEFAULT FALSE,
+  added_from: TEXT,              -- manual / auto
   created_at: TIMESTAMP DEFAULT NOW()
 )
 ```
 
-### 4.8 インデックス設計
+### 6.4 cost_records（コスト記録）
+```sql
+-- コスト記録
+cost_records (
+  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  date: DATE NOT NULL,
+  description: TEXT,
+  amount: INTEGER NOT NULL,
+  is_eating_out: BOOLEAN DEFAULT FALSE,
+  created_at: TIMESTAMP DEFAULT NOW()
+)
+```
+
+### 6.5 saved_recipes（レシピ保存）
+```sql
+-- レシピ保存
+saved_recipes (
+  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  title: TEXT NOT NULL,
+  url: TEXT NOT NULL,
+  servings: INTEGER DEFAULT 1,    -- 何人前
+  tags: TEXT[],
+  created_at: TIMESTAMP DEFAULT NOW()
+)
+```
+
+### 6.6 インデックス設計
 ```sql
 -- パフォーマンス向上のためのインデックス
-CREATE INDEX idx_inventory_user_expiry ON inventory(user_id, expiry_date);
-CREATE INDEX idx_meal_plans_user_date ON meal_plans(user_id, planned_date);
-CREATE INDEX idx_shopping_lists_user_purchased ON shopping_lists(user_id, is_purchased);
+CREATE INDEX idx_meal_plans_user_date ON meal_plans(user_id, date);
+CREATE INDEX idx_stock_items_user_best_before ON stock_items(user_id, best_before);
+CREATE INDEX idx_shopping_list_user_checked ON shopping_list(user_id, checked);
+CREATE INDEX idx_cost_records_user_date ON cost_records(user_id, date);
 ```
 
-## 5. UI/UX設計
+## 7. UI/UX設計
 
-### 5.1 画面設計
-- **タブベースナビゲーション**（下部固定）
-- **カード型レイアウト**で情報を整理
-- **スワイプジェスチャー**対応
-- **モーダル・ドロワー**による詳細表示
-
-### 5.2 デザインシステム
-- **ダークテーマ**をベースとしたモダンなデザイン
+### 7.1 デザインシステム
+- **軽量でシンプルなデザイン**
 - **Material Icons**を使用
 - **レスポンシブグリッド**システム
 - **アニメーション**による滑らかなUI遷移
+- **高速表示を重視**、リッチな装飾は控える
 
-### 5.3 TypeScript型定義例
+### 7.2 TypeScript型定義例
 ```typescript
 // 基本型定義
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  google_id?: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Ingredient {
-  id: number;
-  name: string;
-  category: 'vegetables' | 'meat' | 'seasoning' | 'others';
-  default_unit: string;
-  typical_price?: number;
-  created_at: string;
-}
-
-interface InventoryItem {
-  id: number;
-  user_id: string;
-  ingredient_id: number;
-  ingredient?: Ingredient;
-  quantity: number;
-  unit: string;
-  purchase_price?: number;
-  purchase_date?: string;
-  expiry_date?: string;
-  location: 'refrigerator' | 'freezer' | 'pantry';
-  is_leftover: boolean;
-  leftover_recipe_id?: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Recipe {
-  id: number;
-  user_id: string;
-  name: string;
-  external_url?: string;
-  cooking_time?: number;
-  servings: number;
-  estimated_cost?: number;
-  notes?: string;
-  created_at: string;
-  updated_at: string;
-  recipe_ingredients?: RecipeIngredient[];
-}
-
-interface RecipeIngredient {
-  id: number;
-  recipe_id: number;
-  ingredient_id: number;
-  ingredient?: Ingredient;
-  quantity: number;
-  unit: string;
-  is_optional: boolean;
-}
-
 interface MealPlan {
-  id: number;
+  id: string;
   user_id: string;
-  planned_date: string;
-  meal_type: 'breakfast' | 'lunch' | 'dinner' | 'snack';
-  recipe_id: number;
-  recipe?: Recipe;
-  servings: number;
-  actual_cost?: number;
-  is_completed: boolean;
-  completed_at?: string;
+  date: string;
+  meal_type: '朝' | '昼' | '夜' | '間食';
+  recipe_url?: string;
+  ingredients: { name: string; quantity: string }[];
+  memo?: string;
   created_at: string;
+  updated_at: string;
+}
+
+interface StockItem {
+  id: string;
+  user_id: string;
+  name: string;
+  quantity: string;
+  best_before?: string;
+  storage_location?: string;
+  is_homemade: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 interface ShoppingListItem {
-  id: number;
+  id: string;
   user_id: string;
-  ingredient_id: number;
-  ingredient?: Ingredient;
-  quantity: number;
-  unit: string;
-  estimated_price?: number;
-  source_meal_plan_id?: number;
-  is_purchased: boolean;
-  purchased_at?: string;
-  actual_price?: number;
+  name: string;
+  quantity?: string;
+  checked: boolean;
+  added_from: 'manual' | 'auto';
+  created_at: string;
+}
+
+interface CostRecord {
+  id: string;
+  user_id: string;
+  date: string;
+  description: string;
+  amount: number;
+  is_eating_out: boolean;
+  created_at: string;
+}
+
+interface SavedRecipe {
+  id: string;
+  user_id: string;
+  title: string;
+  url: string;
+  servings: number;
+  tags: string[];
   created_at: string;
 }
 ```
 
-## 6. 開発・運用計画
+## 8. 開発・運用計画
 
-### 6.1 開発手順・優先順位
+### 8.1 開発手順・優先順位
 
 **フェーズ1：基本CRUD機能**
-1. 認証機能（メールアドレス）
+1. 認証機能（Google連携）
 2. 在庫管理（追加・編集・削除）
-3. レシピ管理（外部リンク）
+3. レシピ管理（URL保存、食材抽出）
 4. 献立計画（カレンダー表示）
-5. 調達リスト（基本機能）
+5. 買い物リスト（基本機能）
 
 **フェーズ2：自動化機能**
-1. 「作った」ボタンによる在庫自動減算
-2. 献立からの調達リスト自動生成
+1. LLMによる食材自動抽出
+2. 献立からの買い物リスト自動生成
 3. 賞味期限管理・アラート
 
 **フェーズ3：コスト・通知機能**
@@ -355,57 +686,64 @@ interface ShoppingListItem {
 3. PWA対応
 4. パフォーマンス最適化
 
-### 6.2 MVP（最小機能）の定義
-- 全機能を含む（献立、レシピ、在庫、調達、コスト、通知）
+### 8.2 MVP（最小機能）の定義
+- 基本的な献立・在庫・買い物・コスト管理機能
+- レシピURL管理と食材管理
 - 個人利用に最適化された機能セット
 
-### 6.3 テスト戦略
+### 8.3 テスト戦略
 - **単体機能テスト**：各機能の動作確認
 - **手動テスト**：実際の使用シーンでの動作確認
 - **TypeScript**による型安全性の確保
 
-### 6.4 デプロイメント手順
-1. **ローカル開発**：`pnpm run dev`
-2. **ビルド**：`pnpm run build`
+### 8.4 デプロイメント手順
+1. **ローカル開発**：`npm run dev`
+2. **ビルド**：`npm run build`
 3. **自動デプロイ**：GitHub pushでNetlifyに自動デプロイ
 4. **データベース**：Supabaseのマイグレーション管理
 
-## 7. セキュリティ・パフォーマンス
+## 9. セキュリティ・パフォーマンス
 
-### 7.1 データ保護方針
+### 9.1 データ保護方針
 - **Google連携ログイン**による認証
 - **個人利用**のため最小限のセキュリティ対策
 - **機微情報を含まない**データ設計
 - **Supabase Row Level Security**による基本的なデータ保護
 
-### 7.2 パフォーマンス要件
+### 9.2 パフォーマンス要件
 - **モバイルファースト**の軽量設計
 - **必要最小限のデータ取得**
 - **画像最適化**
 - **PWA対応**によるオフライン機能
 
-## 8. 環境構築
+## 10. 環境構築
 
-### 8.1 開発環境
+### 10.1 開発環境
 ```bash
 # プロジェクト作成
-pnpm create vite@latest cooklet -- --template react-ts
+npm create vite@latest cooklet -- --template react-ts
 cd cooklet
 
 # 依存関係インストール
-pnpm install
+npm install @supabase/supabase-js
+npm install @types/react @types/react-dom
+npm install tailwindcss postcss autoprefixer
+npm install @headlessui/react
+npm install date-fns
+npm install react-calendar
+npm install lucide-react
 
 # 開発サーバー起動
-pnpm run dev
+npm run dev
 ```
 
-### 8.2 環境変数
+### 10.2 環境変数
 ```env
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-### 8.3 Supabase設定
+### 10.3 Supabase設定
 ```typescript
 // lib/supabase.ts
 import { createClient } from '@supabase/supabase-js'
@@ -416,20 +754,159 @@ const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
 export const supabase = createClient(supabaseUrl, supabaseKey)
 ```
 
-## 9. 今後の拡張性
+## 11. 今後の拡張性
 
-### 9.1 将来的な機能追加
-- **栄養価計算**機能
-- **AI による献立提案**
+### 11.1 将来的な機能追加
 - **バーコードスキャン**による在庫登録
-- **音声入力**対応
 
-### 9.2 技術的な拡張性
+### 11.2 技術的な拡張性
 - **モバイルアプリ**化（React Native）
 - **外部API連携**（栄養価データベース等）
-- **機械学習**による消費パターン分析
 
 ---
 
 **開発者**: 1人 + Claude Code  
 **開始日**: 2025年6月
+
+## 12. 開発進捗とTODO
+
+### 現在の実装状況（2025年6月15日時点）
+
+#### ✅ 完了した機能
+- 基本的なプロジェクト構造
+- 認証機能（Supabase連携）
+- TypeScript型定義（CLAUDE.md仕様準拠）
+- ダッシュボード画面（サンプルデータ表示）
+- カレンダー画面（献立表示・週間ビュー）
+- コスト管理画面（支出記録・月間サマリー）
+- レシピ管理画面（基本実装）
+- 在庫管理画面（基本実装）
+- タブナビゲーション
+- データベーススキーマ（Supabase）
+
+#### 🔄 実装中の機能
+- 買い物リスト画面（プレースホルダーのみ）
+
+### 🎯 高優先度TODO（次のフェーズ）
+
+#### 1. メインタブ構成の仕様書準拠（完了✅）
+**解決**: タブ構成を仕様書通りに修正完了
+- 修正後: `dashboard`, `meal-plans`(カレンダー), `shopping`, `recipes`, `cost`
+- 仕様書: `dashboard`, `calendar`, `shopping`, `recipes`, `cost`
+
+**実施済み**:
+- [x] MainLayout.tsxのタブ構成を仕様書に合わせる
+- [x] Cost.tsxの正式import追加
+- [x] ダッシュボードをデフォルトタブに設定
+- [x] 不要なinventoryタブを削除
+
+#### 2. 買い物リスト画面の完全実装（完了✅）
+**解決**: CLAUDE.md仕様書5.3に完全準拠の実装完了
+**実装機能**:
+- [x] ヘッダー部分（未完了・完了件数表示）
+- [x] 新規追加フォーム（食材名・数量入力）
+- [x] 未完了アイテム表示（チェックボックス・自動/手動ラベル）
+- [x] 完了アイテム表示（折りたたみ可能）
+- [x] 一括操作ボタン（全選択・完了削除・在庫追加）
+- [x] サンプルデータによる表示確認
+- [x] レスポンシブデザイン対応
+- [x] 状態管理とUI操作の完全実装
+
+#### 3. カレンダー機能完成（完了✅）
+**解決**: 今日を含む先の7日分表示・献立追加機能完成
+**実装完了**:
+- [x] 今日から7日分の日付表示に変更
+- [x] 献立追加ボタンの機能実装
+- [x] 献立編集ダイアログコンポーネント作成
+- [x] 献立データの追加・編集機能
+- [x] レシピ選択機能
+- [x] 手動献立入力機能
+- [x] CLAUDE.md仕様書5.6.2/5.6.3準拠のダイアログUI
+- [x] サンプルデータによる動作確認
+
+#### 4. データ統合・フック作成（完了✅）
+**解決**: useMealPlansフック完成・Supabase完全連携
+**実装完了**:
+- [x] `useMealPlans`フック作成（完了✅）
+- [x] ダッシュボード・献立画面のSupabase連携（完了✅）
+- [x] リアルタイムデータ同期（完了✅）
+- [x] エラーハンドリング・ローディング状態（完了✅）
+- [ ] `useStockItems`フック作成
+- [ ] `useCostRecords`フック作成
+- [ ] `useShoppingList`フック作成
+- [ ] `useSavedRecipes`フック作成
+
+#### 4. 食材自動抽出機能（中）
+**仕様書核心機能**:
+- [ ] レシピURLからの食材自動抽出
+- [ ] LLM連携API実装
+- [ ] 抽出結果の手動編集機能
+- [ ] 食材マスタとの照合
+
+#### 5. 自動化機能（中）
+**仕様書重要機能**:
+- [ ] 献立からの買い物リスト自動生成
+- [ ] 在庫との突合機能
+- [ ] 賞味期限アラート機能
+
+### 📋 中優先度TODO
+
+#### 6. 共通UI要素・ダイアログ実装（中）
+**仕様書定義済み**:
+- [ ] 献立編集ダイアログ
+- [ ] 手動献立入力ダイアログ
+- [ ] レシピ編集ダイアログ
+- [ ] 在庫編集ダイアログ
+- [ ] コスト記録ダイアログ
+- [ ] 削除確認ダイアログ
+
+#### 7. 機能拡張（中）
+- [ ] 支出履歴の編集・削除機能
+- [ ] レシピ検索・フィルター機能
+- [ ] 在庫期限管理機能
+- [ ] 献立コピー機能
+
+### 🔮 低優先度TODO
+
+#### 8. PWA対応（低）
+- [ ] サービスワーカー実装
+- [ ] オフライン機能
+- [ ] アプリインストール機能
+
+#### 9. Web Push通知（低）
+- [ ] 賞味期限通知機能
+- [ ] ブラウザ通知API連携
+
+#### 10. パフォーマンス最適化（低）
+- [ ] データキャッシュ
+- [ ] 遅延読み込み
+- [ ] バンドルサイズ最適化
+
+### 🚫 ブロッカー・課題
+
+#### 1. 仕様書との齟齬
+- タブ構成の不一致
+- 食事タイプの不一致（英語 vs 日本語）
+- ページ名の不一致
+
+#### 2. 技術的制約
+- LLM API連携の未実装
+- Supabase Functions未活用
+- リアルタイム機能未実装
+
+### 🎯 次の作業ステップ（優先順位順）
+
+1. ~~**メインタブ構成修正**~~ - ✅完了
+2. ~~**買い物リスト完全実装**~~ - ✅完了  
+3. **カレンダー機能完成** - 今日含む7日表示・献立追加機能（実装中🔄）
+4. **献立編集ダイアログ実装** - 献立追加・編集UI
+5. **データフック作成** - useMealPlans, useStockItems等の実装
+6. **自動化機能** - 食材抽出、買い物リスト自動生成
+
+### 📝 開発メモ
+
+- 現在の実装は仕様書の約75%完了
+- UI/UXは仕様書に高い準拠率
+- **献立管理のデータベース連携完了**
+- 自動化機能が付加価値の核心
+- **useMealPlansフックによるリアルタイム同期実装済み**
