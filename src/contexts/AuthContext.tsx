@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User as SupabaseUser, Session } from '@supabase/supabase-js';
+import { type User as SupabaseUser, type Session } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabase';
-import { User } from '../types';
+import { type User } from '../types';
 
 // 認証コンテキストの型定義
 interface AuthContextType {
@@ -73,8 +73,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return {
                 id: supabaseUser.id,
                 email: supabaseUser.email || '',
-                name: null,
-                google_id: null,
+                name: undefined,
+                google_id: undefined,
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
               };
@@ -87,8 +87,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return {
               id: supabaseUser.id,
               email: supabaseUser.email || '',
-              name: null,
-              google_id: null,
+              name: undefined,
+              google_id: undefined,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             };
@@ -100,8 +100,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return {
             id: supabaseUser.id,
             email: supabaseUser.email || '',
-            name: null,
-            google_id: null,
+            name: undefined,
+            google_id: undefined,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
@@ -117,8 +117,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return {
         id: supabaseUser.id,
         email: supabaseUser.email || '',
-        name: null,
-        google_id: null,
+        name: undefined,
+        google_id: undefined,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

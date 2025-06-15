@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { InventoryItem } from '../types';
+import { type StockItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 // 在庫管理機能を提供するカスタムフック
 export const useInventory = () => {
   // 状態管理
-  const [inventory, setInventory] = useState<InventoryItem[]>([]); // 在庫アイテム配列
+  const [inventory, setInventory] = useState<StockItem[]>([]); // 在庫アイテム配列
   const [loading, setLoading] = useState(true); // 読み込み状態
   const [error, setError] = useState<string | null>(null); // エラーメッセージ
   const { user } = useAuth(); // 認証ユーザー情報
@@ -37,7 +37,7 @@ export const useInventory = () => {
   };
 
   // 新しい在庫アイテムを追加する関数
-  const addInventoryItem = async (item: Omit<InventoryItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const addInventoryItem = async (item: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) return;
 
     try {
@@ -62,7 +62,7 @@ export const useInventory = () => {
   };
 
   // 在庫アイテムを更新する関数
-  const updateInventoryItem = async (id: number, updates: Partial<InventoryItem>) => {
+  const updateInventoryItem = async (id: string, updates: Partial<StockItem>) => {
     try {
       // 指定されたIDの在庫アイテムを更新
       const { data, error } = await supabase
@@ -86,7 +86,7 @@ export const useInventory = () => {
   };
 
   // 在庫アイテムを削除する関数
-  const deleteInventoryItem = async (id: number) => {
+  const deleteInventoryItem = async (id: string) => {
     try {
       // 指定されたIDの在庫アイテムを削除
       const { error } = await supabase

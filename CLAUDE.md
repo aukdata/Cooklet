@@ -9,9 +9,12 @@
 ソースコードを参照するときは、まず各ディレクトリのCLAUDE.mdを参照してください。
 ソースコードを変更するときは、忘れずにCLAUDE.mdにも変更を反映してください。変更した仕様はすべてこのファイルに追記・修正してください。
 ユーザの応答が必要なときには、以下のコマンドでユーザの操作を促す: `echo -e '\a'`
-不要なパッケージは`npm uninstall`してください。
+不要なパッケージは`pnpm uninstall`してください。
 実装の際は、まずこのファイルにTODOを追加し、作業が完了したらTODOを完了としてください。
 不要なTODOは適宜削除してください。
+変数を定義するときは必ず型を記述してください。`any`は決して使用してはいけません。
+適宜`pnpm run build`を実行してエラーを修正してください。
+`import`は、`import {...}`の形式を使用してください。`import ...`は使用しないでください。
 
 ### プロジェクト概要・目的
 - **アプリ名**: Cooklet
@@ -44,11 +47,11 @@
   - 月500MBまで無料
 
 ### 2.3 ホスティング
-- **Netlify（無料枠）**
-  - 静的サイト＋Netlify Functions
-  - 自動デプロイ
+- **GitHub Pages（無料）**
+  - 静的サイトホスティング
+  - GitHub Actions連携で自動デプロイ
   - カスタムドメイン対応
-  - 月100GBまで無料
+  - 無制限の使用（パブリックリポジトリ）
 
 ### 2.4 API設計
 - **Supabase Client直接利用**
@@ -697,10 +700,11 @@ interface SavedRecipe {
 - **TypeScript**による型安全性の確保
 
 ### 8.4 デプロイメント手順
-1. **ローカル開発**：`npm run dev`
-2. **ビルド**：`npm run build`
-3. **自動デプロイ**：GitHub pushでNetlifyに自動デプロイ
+1. **ローカル開発**：`pnpm run dev`
+2. **ビルド**：`pnpm run build`
+3. **自動デプロイ**：GitHub pushでGitHub Pagesに自動デプロイ
 4. **データベース**：Supabaseのマイグレーション管理
+5. **CI/CD**：GitHub Actionsによる自動ビルド・デプロイ
 
 ## 9. セキュリティ・パフォーマンス
 
@@ -721,20 +725,20 @@ interface SavedRecipe {
 ### 10.1 開発環境
 ```bash
 # プロジェクト作成
-npm create vite@latest cooklet -- --template react-ts
+pnpm create vite@latest cooklet -- --template react-ts
 cd cooklet
 
 # 依存関係インストール
-npm install @supabase/supabase-js
-npm install @types/react @types/react-dom
-npm install tailwindcss postcss autoprefixer
-npm install @headlessui/react
-npm install date-fns
-npm install react-calendar
-npm install lucide-react
+pnpm install @supabase/supabase-js
+pnpm install @types/react @types/react-dom
+pnpm install tailwindcss postcss autoprefixer
+pnpm install @headlessui/react
+pnpm install date-fns
+pnpm install react-calendar
+pnpm install lucide-react
 
 # 開発サーバー起動
-npm run dev
+pnpm run dev
 ```
 
 ### 10.2 環境変数

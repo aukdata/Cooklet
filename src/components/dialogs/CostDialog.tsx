@@ -190,8 +190,8 @@ export const CostDialog: React.FC<CostDialogProps> = ({
               📝 メモ (任意):
             </label>
             <textarea
-              value={formData.memo}
-              onChange={(e) => setCostData(prev => ({ ...prev, memo: e.target.value }))}
+              value=""
+              onChange={() => {}}
               placeholder="すき家で食べた"
               rows={3}
               className="w-full border border-gray-300 rounded px-3 py-2 text-sm"

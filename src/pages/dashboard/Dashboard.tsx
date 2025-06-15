@@ -20,7 +20,7 @@ export const Dashboard: React.FC = () => {
   const { mealPlans, loading: mealLoading, error: mealError, saveMealPlan } = useMealPlans();
   
   // 在庫データの取得
-  const { stockItems, getExpiredItems, getExpiringItems, loading: stockLoading } = useStockItems();
+  const { getExpiredItems, getExpiringItems, loading: stockLoading } = useStockItems();
   
   // コストデータの取得
   const { getMonthlyStats, loading: costLoading } = useCostRecords();

@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useIngredients } from '../../hooks/useIngredients';
-import { Recipe, RecipeIngredient } from '../../types';
 
 interface AddRecipeModalProps {
   onClose: () => void;
@@ -16,7 +15,7 @@ interface RecipeIngredientForm {
 }
 
 export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onClose, onSuccess }) => {
-  const { addRecipe, addRecipeIngredients } = useRecipes();
+  const { addRecipe } = useRecipes();
   const { ingredients } = useIngredients();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -41,20 +40,14 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onClose, onSucce
     setLoading(true);
 
     try {
-      const recipe: Omit<Recipe, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
-        name: formData.name,
-        external_url: formData.external_url || undefined,
-        cooking_time: formData.cooking_time ? parseInt(formData.cooking_time) : undefined,
+      const recipe = {
+        title: formData.name,
+        url: formData.external_url || '',
         servings: formData.servings,
-        estimated_cost: formData.estimated_cost ? parseFloat(formData.estimated_cost) : undefined,
-        notes: formData.notes || undefined,
+        tags: []
       };
 
-      const newRecipe = await addRecipe(recipe);
-      
-      if (recipeIngredients.length > 0 && newRecipe) {
-        await addRecipeIngredients(newRecipe.id, recipeIngredients);
-      }
+      await addRecipe(recipe);
 
       onSuccess();
     } catch (error) {

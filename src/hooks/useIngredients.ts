@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Ingredient } from '../types';
+import { type Ingredient } from '../types';
 
 // 食材マスタ管理機能を提供するカスタムフック
 export const useIngredients = () => {

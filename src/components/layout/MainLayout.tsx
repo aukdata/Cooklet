@@ -15,23 +15,6 @@ export const MainLayout: React.FC = () => {
   // 認証情報とサインアウト関数を取得
   const { user, signOut } = useAuth();
   
-  // タブ名のマッピング
-  const getTabName = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return 'ダッシュボード';
-      case 'meal-plans':
-        return '献立';
-      case 'shopping':
-        return '買い物';
-      case 'recipes':
-        return 'レシピ';
-      case 'cost':
-        return 'コスト';
-      default:
-        return 'ダッシュボード';
-    }
-  };
 
   // サインアウト処理
   const handleSignOut = async () => {

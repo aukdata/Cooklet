@@ -1,15 +1,14 @@
 import React, { useState } from 'react';
-import { useInventory } from '../../hooks/useInventory';
 import { useIngredients } from '../../hooks/useIngredients';
-import { InventoryItem } from '../../types';
+import { type StockItem } from '../../types';
 
 interface AddInventoryModalProps {
   onClose: () => void;
   onSuccess: () => void;
-  addInventoryItem: (item: Omit<InventoryItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<InventoryItem>;
+  addStockItem: (item: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<StockItem>;
 }
 
-export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({ onClose, onSuccess, addInventoryItem }) => {
+export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({ onClose, onSuccess, addStockItem }) => {
   const { ingredients, addIngredient } = useIngredients();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,7 +31,7 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({ onClose, o
     setLoading(true);
 
     try {
-      let ingredientId: number;
+      let selectedIngredient;
 
       if (formData.use_custom_ingredient && formData.custom_ingredient_name.trim()) {
         // 新しい食材を追加
@@ -42,26 +41,22 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({ onClose, o
           default_unit: formData.unit || 'g',
           typical_price: undefined,
         });
-        ingredientId = newIngredient.id;
+        selectedIngredient = newIngredient;
       } else if (formData.ingredient_id) {
-        ingredientId = parseInt(formData.ingredient_id);
+        selectedIngredient = ingredients.find(ing => ing.id === parseInt(formData.ingredient_id));
       } else {
         throw new Error('食材を選択するか、新しい食材名を入力してください');
       }
 
-      const inventoryItem: Omit<InventoryItem, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
-        ingredient_id: ingredientId,
-        quantity: parseFloat(formData.quantity),
-        unit: formData.unit || selectedIngredient?.default_unit || 'g',
-        purchase_price: formData.purchase_price ? parseFloat(formData.purchase_price) : undefined,
-        purchase_date: formData.purchase_date || undefined,
-        expiry_date: formData.expiry_date || undefined,
-        location: formData.location,
-        is_leftover: formData.is_leftover,
-        leftover_recipe_id: undefined,
+      const stockItem = {
+        name: selectedIngredient?.name || formData.custom_ingredient_name,
+        quantity: `${formData.quantity} ${formData.unit || selectedIngredient?.default_unit || 'g'}`,
+        best_before: formData.expiry_date,
+        storage_location: formData.location,
+        is_homemade: formData.is_leftover,
       };
 
-      await addInventoryItem(inventoryItem);
+      await addStockItem(stockItem);
       onSuccess();
     } catch (error) {
       console.error('在庫追加エラー:', error);

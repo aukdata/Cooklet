@@ -355,7 +355,10 @@ export const Recipes: React.FC = () => {
         isOpen={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
         onSave={handleSaveEditedRecipe}
-        onExtractIngredients={extractIngredientsFromURL}
+        onExtractIngredients={async (url: string) => {
+          const result = await extractIngredientsFromURL(url);
+          return result.ingredients;
+        }}
         initialData={editingRecipe ? {
           title: editingRecipe.title,
           url: editingRecipe.url,

@@ -34,7 +34,7 @@ export const useStockItems = () => {
         .from('stock_items')
         .select('*')
         .eq('user_id', user.id)
-        .order('best_before', { ascending: true, nullsLast: true })
+        .order('best_before', { ascending: true })
         .order('created_at', { ascending: false });
 
       if (fetchError) {

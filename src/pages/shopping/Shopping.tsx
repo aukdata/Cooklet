@@ -8,7 +8,6 @@ import { type StockItem } from '../../hooks/useStockItems';
 export const Shopping: React.FC = () => {
   // useShoppingListフックを使用してデータを取得
   const {
-    shoppingList,
     loading,
     error,
     addShoppingItem,
@@ -16,7 +15,6 @@ export const Shopping: React.FC = () => {
     getUncompletedItems,
     getCompletedItems,
     deleteCompletedItems,
-    selectAllItems,
     addCompletedItemsToStock,
     getStats
   } = useShoppingList();
@@ -95,13 +93,13 @@ export const Shopping: React.FC = () => {
         // 現在全選択状態の場合は全解除
         const checkedItems = pendingItems.filter(item => item.checked);
         for (const item of checkedItems) {
-          await toggleShoppingItem(item.id);
+          if (item.id) await toggleShoppingItem(item.id);
         }
       } else {
         // 現在未選択状態の場合は全選択
         const uncheckedItems = pendingItems.filter(item => !item.checked);
         for (const item of uncheckedItems) {
-          await toggleShoppingItem(item.id);
+          if (item.id) await toggleShoppingItem(item.id);
         }
       }
     } catch (err) {
@@ -366,7 +364,7 @@ export const Shopping: React.FC = () => {
                 <input
                   type="checkbox"
                   checked={item.checked}
-                  onChange={() => handleToggleItem(item.id)}
+                  onChange={() => item.id && handleToggleItem(item.id)}
                   className="mr-3"
                 />
                 <div className="flex-1">
@@ -424,7 +422,7 @@ export const Shopping: React.FC = () => {
                   <input
                     type="checkbox"
                     checked={item.checked}
-                    onChange={() => handleToggleItem(item.id)}
+                    onChange={() => item.id && handleToggleItem(item.id)}
                     className="mr-3"
                   />
                   <div className="flex-1">
