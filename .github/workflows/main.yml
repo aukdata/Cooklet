@@ -72,6 +72,8 @@ jobs:
         run: pnpm run build
         env:
           NODE_ENV: production
+          VITE_SUPABASE_URL: ${{secrets.VITE_SUPABASE_URL}}
+          VITE_SUPABASE_ANON_KEY: ${{secrets.VITE_SUPABASE_ANON_KEY}}
 
       # GitHub Pagesへアップロード
       - name: Upload artifact
