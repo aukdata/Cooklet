@@ -93,7 +93,7 @@ export const Recipes: React.FC = () => {
   };
 
   // レシピ編集ダイアログの保存ハンドラー
-  const handleSaveEditedRecipe = async (recipeData: any) => {
+  const handleSaveEditedRecipe = async (recipeData: { title: string; url: string; servings: number; tags: string[] }) => {
     if (!editingRecipe) return;
     
     try {

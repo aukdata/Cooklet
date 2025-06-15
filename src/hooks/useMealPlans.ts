@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -23,7 +23,7 @@ export const useMealPlans = () => {
   const { user } = useAuth();
 
   // 献立データを取得
-  const fetchMealPlans = async () => {
+  const fetchMealPlans = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -48,7 +48,7 @@ export const useMealPlans = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // 献立を追加
   const addMealPlan = async (mealPlan: Omit<MealPlan, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
@@ -170,7 +170,7 @@ export const useMealPlans = () => {
   // 初回データ取得
   useEffect(() => {
     fetchMealPlans();
-  }, [user]);
+  }, [fetchMealPlans]);
 
   // リアルタイム更新の設定
   useEffect(() => {
@@ -196,7 +196,7 @@ export const useMealPlans = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user]);
+  }, [user, fetchMealPlans]);
 
   return {
     mealPlans,

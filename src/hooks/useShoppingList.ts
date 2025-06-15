@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -21,7 +21,7 @@ export const useShoppingList = () => {
   const { user } = useAuth();
 
   // 買い物リストデータを取得
-  const fetchShoppingList = async () => {
+  const fetchShoppingList = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -46,7 +46,7 @@ export const useShoppingList = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // 買い物リストアイテムを追加
   const addShoppingItem = async (item: Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>) => {
@@ -282,7 +282,7 @@ export const useShoppingList = () => {
   // 初回データ取得
   useEffect(() => {
     fetchShoppingList();
-  }, [user]);
+  }, [fetchShoppingList]);
 
   // リアルタイム更新の設定
   useEffect(() => {
@@ -308,7 +308,7 @@ export const useShoppingList = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user]);
+  }, [user, fetchShoppingList]);
 
   return {
     shoppingList,

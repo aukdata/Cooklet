@@ -20,7 +20,7 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({ onClose, o
     purchase_price: '',
     purchase_date: '',
     expiry_date: '',
-    location: 'refrigerator' as const,
+    location: 'refrigerator' as 'refrigerator' | 'freezer' | 'pantry',
     is_leftover: false,
   });
 
@@ -180,7 +180,7 @@ export const AddInventoryModal: React.FC<AddInventoryModalProps> = ({ onClose, o
             </label>
             <select
               value={formData.location}
-              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value as any }))}
+              onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value as 'refrigerator' | 'freezer' | 'pantry' }))}
               className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
             >
               <option value="refrigerator">冷蔵庫</option>

@@ -9,8 +9,8 @@ interface AuthContextType {
   supabaseUser: SupabaseUser | null; // Supabase認証ユーザー情報
   session: Session | null; // 認証セッション
   loading: boolean; // 認証状態の読み込み中フラグ
-  signIn: (email: string, password: string) => Promise<{ error: any }>; // ログイン関数
-  signUp: (email: string, password: string) => Promise<{ error: any }>; // サインアップ関数
+  signIn: (email: string, password: string) => Promise<{ error: Error | null }>; // ログイン関数
+  signUp: (email: string, password: string) => Promise<{ error: Error | null }>; // サインアップ関数
   signOut: () => Promise<void>; // ログアウト関数
 }
 

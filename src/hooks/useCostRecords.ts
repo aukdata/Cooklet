@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -21,7 +21,7 @@ export const useCostRecords = () => {
   const { user } = useAuth();
 
   // コスト記録データを取得
-  const fetchCostRecords = async () => {
+  const fetchCostRecords = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -46,7 +46,7 @@ export const useCostRecords = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // コスト記録を追加
   const addCostRecord = async (costRecord: Omit<CostRecord, 'id' | 'user_id' | 'created_at'>) => {
@@ -209,7 +209,7 @@ export const useCostRecords = () => {
   // 初回データ取得
   useEffect(() => {
     fetchCostRecords();
-  }, [user]);
+  }, [fetchCostRecords]);
 
   // リアルタイム更新の設定
   useEffect(() => {
@@ -235,7 +235,7 @@ export const useCostRecords = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user]);
+  }, [user, fetchCostRecords]);
 
   return {
     costRecords,

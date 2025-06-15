@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,7 +22,7 @@ export const useRecipes = () => {
   const { user } = useAuth(); // 認証ユーザー情報
 
   // レシピデータを取得する関数
-  const fetchRecipes = async () => {
+  const fetchRecipes = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -46,7 +46,7 @@ export const useRecipes = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // 新しいレシピを追加する関数
   const addRecipe = async (recipe: Omit<SavedRecipe, 'id' | 'user_id' | 'created_at'>) => {
@@ -143,7 +143,7 @@ export const useRecipes = () => {
   // 初回データ取得
   useEffect(() => {
     fetchRecipes();
-  }, [user]);
+  }, [fetchRecipes]);
 
   // リアルタイム更新の設定
   useEffect(() => {
@@ -169,7 +169,7 @@ export const useRecipes = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user]);
+  }, [user, fetchRecipes]);
 
   return {
     recipes,

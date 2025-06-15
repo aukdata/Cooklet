@@ -147,7 +147,7 @@ export const Dashboard: React.FC = () => {
                 <button 
                   onClick={() => {
                     const plan = getTodayMealPlan('朝');
-                    plan ? handleEditMeal(plan) : handleAddMeal('朝');
+                    void (plan ? handleEditMeal(plan) : handleAddMeal('朝'));
                   }}
                   className="text-sm bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                 >
@@ -186,7 +186,7 @@ export const Dashboard: React.FC = () => {
                 <button 
                   onClick={() => {
                     const plan = getTodayMealPlan('昼');
-                    plan ? handleEditMeal(plan) : handleAddMeal('昼');
+                    void (plan ? handleEditMeal(plan) : handleAddMeal('昼'));
                   }}
                   className="text-sm bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                 >
@@ -225,7 +225,7 @@ export const Dashboard: React.FC = () => {
                 <button 
                   onClick={() => {
                     const plan = getTodayMealPlan('夜');
-                    plan ? handleEditMeal(plan) : handleAddMeal('夜');
+                    void (plan ? handleEditMeal(plan) : handleAddMeal('夜'));
                   }}
                   className="text-sm bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
                 >

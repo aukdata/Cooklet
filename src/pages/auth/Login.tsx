@@ -22,7 +22,7 @@ export const Login: React.FC = () => {
       if (error) {
         setError(error.message);
       }
-    } catch (err) {
+    } catch {
       setError('予期しないエラーが発生しました');
     } finally {
       setLoading(false);

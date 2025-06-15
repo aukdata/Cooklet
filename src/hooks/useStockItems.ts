@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -23,7 +23,7 @@ export const useStockItems = () => {
   const { user } = useAuth();
 
   // 在庫データを取得
-  const fetchStockItems = async () => {
+  const fetchStockItems = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -48,7 +48,7 @@ export const useStockItems = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // 在庫を追加
   const addStockItem = async (stockItem: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
@@ -192,7 +192,7 @@ export const useStockItems = () => {
   // 初回データ取得
   useEffect(() => {
     fetchStockItems();
-  }, [user]);
+  }, [fetchStockItems]);
 
   // リアルタイム更新の設定
   useEffect(() => {
@@ -218,7 +218,7 @@ export const useStockItems = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user]);
+  }, [user, fetchStockItems]);
 
   return {
     stockItems,

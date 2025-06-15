@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { type StockItem } from '../types';
 import { useAuth } from '../contexts/AuthContext';
@@ -12,7 +12,7 @@ export const useInventory = () => {
   const { user } = useAuth(); // 認証ユーザー情報
 
   // 在庫データを取得する関数
-  const fetchInventory = async () => {
+  const fetchInventory = useCallback(async () => {
     if (!user) return;
 
     try {
@@ -34,7 +34,7 @@ export const useInventory = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   // 新しい在庫アイテムを追加する関数
   const addInventoryItem = async (item: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
@@ -106,7 +106,7 @@ export const useInventory = () => {
   // ユーザーが変更されたら在庫データを再取得
   useEffect(() => {
     fetchInventory();
-  }, [user]);
+  }, [fetchInventory]);
 
   // フックが提供する機能を返す
   return {

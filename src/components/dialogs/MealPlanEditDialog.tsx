@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { type MealPlan } from '../../hooks';
 
 // サンプルレシピデータ
@@ -40,7 +40,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   const [memo, setMemo] = useState('');
 
   // サンプルレシピデータ（後でuseRecipesフックに置き換え）
-  const sampleRecipes: Recipe[] = [
+  const sampleRecipes: Recipe[] = useMemo(() => [
     {
       id: '1',
       title: 'ハンバーグ定食',
@@ -71,7 +71,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
         { name: 'にんにく', quantity: '1片' }
       ]
     }
-  ];
+  ], []);
 
   // 検索クエリでフィルタリングされたレシピ
   const filteredRecipes = sampleRecipes.filter(recipe =>
@@ -117,7 +117,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       setIngredients([]);
       setMemo('');
     }
-  }, [initialData, selectedMealType, isOpen]);
+  }, [initialData, selectedMealType, isOpen, sampleRecipes]);
 
   // レシピ選択処理（コンボボックス用）
   const handleRecipeChange = (recipeId: string) => {
