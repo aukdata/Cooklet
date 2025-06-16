@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useRecipes, type SavedRecipe } from '../../hooks/useRecipes';
-import { extractIngredientsFromURL, extractRecipeTitleFromURL } from '../../services/ingredientExtraction';
+import { extractIngredientsFromURL } from '../../services/ingredientExtraction';
 import { RecipeDialog } from '../../components/dialogs/RecipeDialog';
 import { RecipeDetailDialog } from '../../components/dialogs/RecipeDetailDialog';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';  
@@ -9,8 +9,6 @@ import { EditButton } from '../../components/ui/Button';
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
 export const Recipes: React.FC = () => {
   const { recipes, loading, error, addRecipe, updateRecipe, deleteRecipe } = useRecipes();
-  const [newRecipeUrl, setNewRecipeUrl] = useState('');
-  const [newRecipeTitle, setNewRecipeTitle] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('全て');
   
@@ -21,74 +19,31 @@ export const Recipes: React.FC = () => {
   const [editingRecipe, setEditingRecipe] = useState<SavedRecipe | undefined>();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [deletingRecipe, setDeletingRecipe] = useState<SavedRecipe | undefined>();
-  
-  // 食材自動抽出の状態管理
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [extractionResult, setExtractionResult] = useState<{
-    ingredients: { name: string; quantity: string }[];
-    error?: string;
-  } | null>(null);
 
-  // 食材自動抽出処理
-  const handleExtractIngredients = async () => {
-    if (!newRecipeUrl.trim()) {
-      alert('レシピURLを入力してください');
-      return;
-    }
+  // レシピ追加ボタンのハンドラー
+  const handleAddNewRecipe = () => {
+    setEditingRecipe(undefined); // 新規追加なのでundefined
+    setIsEditDialogOpen(true);
+  };
 
-    setIsExtracting(true);
-    setExtractionResult(null);
-
+  // レシピ保存ハンドラー（新規追加と編集を統合）
+  const handleSaveRecipe = async (recipeData: { title: string; url: string; servings: number; tags: string[] }) => {
     try {
-      // URLからレシピタイトルを抽出
-      if (!newRecipeTitle.trim()) {
-        const title = await extractRecipeTitleFromURL(newRecipeUrl);
-        setNewRecipeTitle(title);
-      }
-
-      // 食材を自動抽出
-      const result = await extractIngredientsFromURL(newRecipeUrl);
-      
-      if (result.success) {
-        setExtractionResult({
-          ingredients: result.ingredients,
-          error: result.error // 警告メッセージがある場合
-        });
+      if (editingRecipe) {
+        // 編集の場合
+        await updateRecipe(editingRecipe.id, recipeData);
       } else {
-        setExtractionResult({
-          ingredients: [],
-          error: result.error
-        });
+        // 新規追加の場合
+        await addRecipe(recipeData);
       }
+      setIsEditDialogOpen(false);
+      setEditingRecipe(undefined);
     } catch (err) {
-      console.error('食材抽出に失敗しました:', err);
-      setExtractionResult({
-        ingredients: [],
-        error: '食材抽出中にエラーが発生しました'
-      });
-    } finally {
-      setIsExtracting(false);
+      console.error(editingRecipe ? 'レシピの更新に失敗しました:' : 'レシピの追加に失敗しました:', err);
+      alert(editingRecipe ? 'レシピの更新に失敗しました' : 'レシピの追加に失敗しました');
     }
   };
 
-  // URLからレシピを追加する処理
-  const handleAddRecipe = async () => {
-    if (!newRecipeUrl.trim() && !newRecipeTitle.trim()) return;
-    
-    try {
-      await addRecipe({
-        title: newRecipeTitle || 'レシピ',
-        url: newRecipeUrl,
-        servings: 1,
-        tags: []
-      });
-      setNewRecipeUrl('');
-      setNewRecipeTitle('');
-      setExtractionResult(null);
-    } catch (err) {
-      console.error('レシピの追加に失敗しました:', err);
-    }
-  };
 
   // レシピ詳細表示ハンドラー（issue #5対応）
   const handleShowRecipeDetail = (recipe: SavedRecipe) => {
@@ -108,24 +63,6 @@ export const Recipes: React.FC = () => {
     setIsEditDialogOpen(true);
   };
 
-  // レシピ編集ダイアログの保存ハンドラー
-  const handleSaveEditedRecipe = async (recipeData: { title: string; url: string; servings: number; tags: string[] }) => {
-    if (!editingRecipe) return;
-    
-    try {
-      await updateRecipe(editingRecipe.id, {
-        title: recipeData.title,
-        url: recipeData.url,
-        servings: recipeData.servings,
-        tags: recipeData.tags
-      });
-      setIsEditDialogOpen(false);
-      setEditingRecipe(undefined);
-    } catch (err) {
-      console.error('レシピの更新に失敗しました:', err);
-      alert('レシピの更新に失敗しました');
-    }
-  };
 
   // レシピ削除ボタンのハンドラー
   const handleDeleteRecipe = (recipe: SavedRecipe) => {
@@ -178,82 +115,14 @@ export const Recipes: React.FC = () => {
             {error && <span className="ml-2 text-red-500">エラー: {error}</span>}
           </div>
         </div>
+        <button
+          onClick={handleAddNewRecipe}
+          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm font-medium"
+        >
+          + レシピを追加
+        </button>
       </div>
 
-      {/* 新規レシピ登録 */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
-        <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-          <span className="mr-2">📝</span>
-          新しいレシピを追加
-        </h3>
-        <div className="space-y-3">
-          <div className="flex gap-2">
-            <input
-              type="url"
-              value={newRecipeUrl}
-              onChange={(e) => setNewRecipeUrl(e.target.value)}
-              placeholder="レシピURLを入力..."
-              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
-            />
-            <button
-              onClick={handleExtractIngredients}
-              disabled={isExtracting || !newRecipeUrl.trim()}
-              className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
-            >
-              {isExtracting ? '解析中...' : '食材抽出'}
-            </button>
-          </div>
-          
-          {/* 食材自動抽出結果 */}
-          {extractionResult && (
-            <div className="bg-gray-50 rounded-lg p-3">
-              <h4 className="font-medium text-sm mb-2 flex items-center">
-                <span className="mr-1">🔍</span>
-                食材自動抽出結果
-              </h4>
-              
-              {extractionResult.error && (
-                <div className="text-orange-600 text-sm mb-2 p-2 bg-orange-50 rounded">
-                  ⚠️ {extractionResult.error}
-                </div>
-              )}
-              
-              {extractionResult.ingredients.length > 0 ? (
-                <div className="space-y-1">
-                  <div className="text-sm text-gray-600 mb-2">検出された食材:</div>
-                  {extractionResult.ingredients.map((ingredient, index) => (
-                    <div key={index} className="flex justify-between items-center bg-white rounded px-3 py-2 text-sm">
-                      <span className="font-medium">{ingredient.name}</span>
-                      <span className="text-gray-600">{ingredient.quantity}</span>
-                    </div>
-                  ))}
-                  <div className="text-xs text-gray-500 mt-2">
-                    ※ 抽出結果は保存時に自動でレシピに追加されます
-                  </div>
-                </div>
-              ) : (
-                <div className="text-gray-500 text-sm">食材を抽出できませんでした</div>
-              )}
-            </div>
-          )}
-          
-          <div className="text-center text-gray-500 text-sm">または</div>
-          <input
-            type="text"
-            value={newRecipeTitle}
-            onChange={(e) => setNewRecipeTitle(e.target.value)}
-            placeholder="レシピ名を入力..."
-            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-          />
-          <button
-            onClick={handleAddRecipe}
-            disabled={!newRecipeUrl.trim() && !newRecipeTitle.trim()}
-            className="w-full bg-indigo-600 hover:bg-indigo-700 disabled:bg-gray-300 text-white py-2 px-4 rounded text-sm"
-          >
-            {newRecipeUrl ? '解析' : '保存'}
-          </button>
-        </div>
-      </div>
 
       {/* 検索・フィルター */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
@@ -314,16 +183,13 @@ export const Recipes: React.FC = () => {
                     </div>
                     
                     {recipe.url && (
-                      <div className="text-sm text-blue-600 mb-1 flex items-center">
-                        <span className="mr-1">🌐</span>
-                        <a
-                          href={recipe.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="hover:underline truncate"
+                      <div className="mb-1">
+                        <button 
+                          onClick={() => window.open(recipe.url, '_blank')}
+                          className="text-sm text-blue-600 hover:text-blue-500"
                         >
-                          {recipe.url.replace(/^https?:\/\//, '').substring(0, 50)}...
-                        </a>
+                          🌐 レシピを見る
+                        </button>
                       </div>
                     )}
                     
@@ -370,7 +236,7 @@ export const Recipes: React.FC = () => {
       <RecipeDialog
         isOpen={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
-        onSave={handleSaveEditedRecipe}
+        onSave={handleSaveRecipe}
         onDelete={() => editingRecipe && handleDeleteRecipe(editingRecipe)}
         onExtractIngredients={async (url: string) => {
           const result = await extractIngredientsFromURL(url);
