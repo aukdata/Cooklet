@@ -123,7 +123,7 @@ export const Dashboard: React.FC = () => {
                   <span className="mr-2">🌅</span>
                   <span className="font-medium">朝食:</span>
                   <span className="ml-2">
-                    {getTodayMealPlan('朝')?.memo || '未設定'}
+                    {getTodayMealPlan('朝')?.memo || '［未設定］'}
                   </span>
                 </div>
                 {getTodayMealPlan('朝') && (
