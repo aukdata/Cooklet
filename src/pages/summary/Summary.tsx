@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
-import { useMealPlans, useStockItems, useCostRecords, type MealPlan } from '../../hooks';
+import { CostDialog } from '../../components/dialogs/CostDialog';
+import { useMealPlans, useStockItems, useCostRecords, type MealPlan, type CostRecord } from '../../hooks';
 
 
 // ダッシュボード画面コンポーネント - CLAUDE.md仕様書に準拠
@@ -15,6 +16,7 @@ export const Dashboard: React.FC = () => {
   // ダイアログの状態管理
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<{ date: string; mealType: '朝' | '昼' | '夜' | '間食' } | null>(null);
+  const [isCostDialogOpen, setIsCostDialogOpen] = useState(false);
   
   // 献立データの取得（Supabase連携）
   const { mealPlans, loading: mealLoading, error: mealError, saveMealPlan } = useMealPlans();
@@ -23,7 +25,7 @@ export const Dashboard: React.FC = () => {
   const { getExpiredItems, getExpiringItems, loading: stockLoading } = useStockItems();
   
   // コストデータの取得
-  const { getMonthlyStats, loading: costLoading } = useCostRecords();
+  const { getMonthlyStats, saveCostRecord, loading: costLoading } = useCostRecords();
 
   // 全体のローディング状態
   const isLoading = mealLoading || stockLoading || costLoading;
@@ -61,6 +63,26 @@ export const Dashboard: React.FC = () => {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingMeal(null);
+  };
+
+  // コスト追加ボタンクリック処理
+  const handleAddCost = () => {
+    setIsCostDialogOpen(true);
+  };
+
+  // コスト保存処理（Supabase連携）
+  const handleSaveCost = async (costData: CostRecord) => {
+    try {
+      await saveCostRecord(costData);
+    } catch (err) {
+      console.error('支出の保存に失敗しました:', err);
+      // TODO: エラートースト表示
+    }
+  };
+
+  // コストダイアログを閉じる処理
+  const handleCloseCostDialog = () => {
+    setIsCostDialogOpen(false);
   };
 
   // 在庫アラートデータ（動的データ）
@@ -288,10 +310,18 @@ export const Dashboard: React.FC = () => {
 
       {/* 今月の出費セクション */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
-        <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-          <span className="mr-2">💰</span>
-          今月の出費 ({currentMonth}月)
-        </h3>
+        <div className="flex justify-between items-center mb-3">
+          <h3 className="font-medium text-gray-900 flex items-center">
+            <span className="mr-2">💰</span>
+            今月の出費 ({currentMonth}月)
+          </h3>
+          <button
+            onClick={handleAddCost}
+            className="text-sm bg-indigo-600 text-white px-3 py-1 rounded hover:bg-indigo-700"
+          >
+            + 支出記録
+          </button>
+        </div>
         
         <div className="space-y-3">
           {/* 自炊・外食の内訳 */}
@@ -353,6 +383,14 @@ export const Dashboard: React.FC = () => {
             plan.meal_type === editingMeal.mealType
           ) : undefined
         }
+      />
+
+      {/* コスト記録ダイアログ */}
+      <CostDialog
+        isOpen={isCostDialogOpen}
+        onClose={handleCloseCostDialog}
+        onSave={handleSaveCost}
+        isEditing={false}
       />
     </div>
   );
