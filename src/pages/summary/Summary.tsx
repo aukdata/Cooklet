@@ -19,7 +19,7 @@ export const Dashboard: React.FC = () => {
   const [isCostDialogOpen, setIsCostDialogOpen] = useState(false);
   
   // 献立データの取得（Supabase連携）
-  const { mealPlans, loading: mealLoading, error: mealError, saveMealPlan } = useMealPlans();
+  const { mealPlans, loading: mealLoading, error: mealError, saveMealPlan, deleteMealPlan } = useMealPlans();
   
   // 在庫データの取得
   const { getExpiredItems, getExpiringItems, loading: stockLoading } = useStockItems();
@@ -55,6 +55,25 @@ export const Dashboard: React.FC = () => {
       await saveMealPlan(newMealPlan);
     } catch (err) {
       console.error('献立の保存に失敗しました:', err);
+      // TODO: エラートースト表示
+    }
+  };
+
+  // 献立削除処理（Supabase連携）
+  const handleDeleteMeal = async () => {
+    if (!editingMeal) return;
+    
+    try {
+      const mealPlan = mealPlans.find(plan => 
+        plan.date === editingMeal.date && 
+        plan.meal_type === editingMeal.mealType
+      );
+      
+      if (mealPlan?.id) {
+        await deleteMealPlan(mealPlan.id);
+      }
+    } catch (err) {
+      console.error('献立の削除に失敗しました:', err);
       // TODO: エラートースト表示
     }
   };
@@ -375,6 +394,7 @@ export const Dashboard: React.FC = () => {
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}
         onSave={handleSaveMeal}
+        onDelete={handleDeleteMeal}
         selectedDate={editingMeal?.date || today.toISOString().split('T')[0]}
         selectedMealType={editingMeal?.mealType || '夜'}
         initialData={editingMeal ? 

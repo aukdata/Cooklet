@@ -16,6 +16,7 @@ interface MealPlanEditDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onSave: (mealPlan: MealPlan) => void;
+  onDelete?: () => void; // 献立を削除する関数（編集時のみ）
   initialData?: MealPlan;
   selectedDate: string;
   selectedMealType?: '朝' | '昼' | '夜' | '間食';
@@ -26,6 +27,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   isOpen,
   onClose,
   onSave,
+  onDelete,
   initialData,
   selectedDate,
   selectedMealType = '夜'
@@ -184,6 +186,15 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
 
     onSave(mealPlan);
     onClose();
+  };
+
+  // 削除確認ハンドラ
+  const handleDelete = () => {
+    const mealDescription = manualRecipeName || memo || `${mealType}食`;
+    if (window.confirm(`「${mealDescription}」の献立を削除しますか？`)) {
+      onDelete?.();
+      onClose();
+    }
   };
 
   // ダイアログが閉じている場合は何も表示しない
@@ -382,7 +393,16 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
         </div>
 
         {/* フッター */}
-        <div className="flex space-x-2 p-4 border-t border-gray-200">
+        <div className="flex gap-3 p-4 border-t border-gray-200">
+          {initialData && onDelete && (
+            <button
+              type="button"
+              onClick={handleDelete}
+              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
+            >
+              削除
+            </button>
+          )}
           <button
             onClick={onClose}
             className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded text-sm"

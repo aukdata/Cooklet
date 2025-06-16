@@ -55,7 +55,7 @@ export const MealPlans: React.FC = () => {
   const today = new Date();
 
   // 献立データの取得（Supabase連携）
-  const { mealPlans, loading, error, saveMealPlan, getMealPlansForDate, getMealPlan } = useMealPlans();
+  const { mealPlans, loading, error, saveMealPlan, deleteMealPlan, getMealPlansForDate, getMealPlan } = useMealPlans();
 
   // 週の範囲を表示用にフォーマット
   const weekRange = `${weekDates[0].getMonth() + 1}/${weekDates[0].getDate()} - ${weekDates[6].getMonth() + 1}/${weekDates[6].getDate()}`;
@@ -86,6 +86,25 @@ export const MealPlans: React.FC = () => {
       await saveMealPlan(newMealPlan);
     } catch (err) {
       console.error('献立の保存に失敗しました:', err);
+      // TODO: エラートースト表示
+    }
+  };
+
+  // 献立削除処理（Supabase連携）
+  const handleDeleteMeal = async () => {
+    if (!editingMeal) return;
+    
+    try {
+      const mealPlan = mealPlans.find(plan => 
+        plan.date === editingMeal.date && 
+        plan.meal_type === editingMeal.mealType
+      );
+      
+      if (mealPlan?.id) {
+        await deleteMealPlan(mealPlan.id);
+      }
+    } catch (err) {
+      console.error('献立の削除に失敗しました:', err);
       // TODO: エラートースト表示
     }
   };
@@ -387,6 +406,7 @@ export const MealPlans: React.FC = () => {
         isOpen={isDialogOpen}
         onClose={handleCloseDialog}
         onSave={handleSaveMeal}
+        onDelete={handleDeleteMeal}
         selectedDate={editingMeal?.date || selectedDate.toISOString().split('T')[0]}
         selectedMealType={editingMeal?.mealType || '夜'}
         initialData={editingMeal ? 
