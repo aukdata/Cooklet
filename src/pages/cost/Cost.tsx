@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useCostRecords, type CostRecord } from '../../hooks';
 import { CostDialog } from '../../components/dialogs';
+import { EditButton } from '../../components/ui/Button';
 
 // コスト管理画面コンポーネント - CLAUDE.md仕様書に準拠
 export const Cost: React.FC = () => {
@@ -410,22 +411,8 @@ export const Cost: React.FC = () => {
                     </span>
                   </div>
                 </div>
-                <div className="flex space-x-2 ml-3">
-                  <button 
-                    onClick={() => handleEditCost(record)}
-                    className="text-xs text-gray-500 hover:text-gray-700"
-                  >
-                    編集
-                  </button>
-                  <button 
-                    onClick={() => {
-                      setEditingCost(record);
-                      handleDeleteCost();
-                    }}
-                    className="text-xs text-gray-500 hover:text-red-600"
-                  >
-                    削除
-                  </button>
+                <div className="ml-3">
+                  <EditButton onClick={() => handleEditCost(record)} />
                 </div>
               </div>
             </div>

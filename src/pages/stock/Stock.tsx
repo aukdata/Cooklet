@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useStockItems, type StockItem } from '../../hooks/useStockItems';
 import { StockDialog } from '../../components/dialogs/StockDialog';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
+import { EditButton, AddButton } from '../../components/ui/Button';
 
 // 在庫管理画面コンポーネント - issue #3対応
 export const Stock: React.FC = () => {
@@ -128,12 +129,9 @@ export const Stock: React.FC = () => {
             在庫: {stockItems.length}件
           </p>
         </div>
-        <button
-          onClick={handleAddStock}
-          className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-        >
+        <AddButton onClick={handleAddStock}>
           + 在庫追加
-        </button>
+        </AddButton>
       </div>
 
       {/* 在庫一覧 */}
@@ -200,12 +198,7 @@ export const Stock: React.FC = () => {
 
                 {/* アクションボタン */}
                 <div className="flex space-x-2">
-                  <button 
-                    onClick={() => handleEditStock(item)}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
-                  >
-                    編集
-                  </button>
+                  <EditButton onClick={() => handleEditStock(item)} />
                 </div>
               </div>
             </div>

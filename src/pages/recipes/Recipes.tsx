@@ -3,7 +3,8 @@ import { useRecipes, type SavedRecipe } from '../../hooks/useRecipes';
 import { extractIngredientsFromURL, extractRecipeTitleFromURL } from '../../services/ingredientExtraction';
 import { RecipeDialog } from '../../components/dialogs/RecipeDialog';
 import { RecipeDetailDialog } from '../../components/dialogs/RecipeDetailDialog';
-import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
+import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';  
+import { EditButton } from '../../components/ui/Button';
 
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
 export const Recipes: React.FC = () => {
@@ -347,12 +348,7 @@ export const Recipes: React.FC = () => {
                   </div>
                   
                   <div className="flex gap-2">
-                    <button 
-                      onClick={() => handleEditRecipe(recipe)}
-                      className="text-sm text-gray-600 hover:text-gray-800"
-                    >
-                      編集
-                    </button>
+                    <EditButton onClick={() => handleEditRecipe(recipe)} />
                   </div>
                 </div>
               </div>
