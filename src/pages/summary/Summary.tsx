@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
 import { CostDialog } from '../../components/dialogs/CostDialog';
 import { useMealPlans, useStockItems, useCostRecords, type MealPlan, type CostRecord } from '../../hooks';
+import { useToast } from '../../hooks/useToast.tsx';
 
 
 // ダッシュボード画面コンポーネント - CLAUDE.md仕様書に準拠
@@ -26,6 +27,9 @@ export const Dashboard: React.FC = () => {
   
   // コストデータの取得
   const { getMonthlyStats, saveCostRecord, loading: costLoading } = useCostRecords();
+  
+  // トーストフック
+  const { showSuccess, showError, showInfo } = useToast();
 
   // 全体のローディング状態
   const isLoading = mealLoading || stockLoading || costLoading;
@@ -412,6 +416,28 @@ export const Dashboard: React.FC = () => {
         onSave={handleSaveCost}
         isEditing={false}
       />
+
+      {/* トーストテストボタン（開発用） */}
+      <div className="fixed bottom-20 right-4 space-y-2">
+        <button
+          onClick={() => showSuccess('成功メッセージをテストしています！')}
+          className="block w-full bg-green-500 text-white px-3 py-2 rounded text-sm hover:bg-green-600"
+        >
+          成功トースト
+        </button>
+        <button
+          onClick={() => showError('エラーメッセージをテストしています！')}
+          className="block w-full bg-red-500 text-white px-3 py-2 rounded text-sm hover:bg-red-600"
+        >
+          エラートースト
+        </button>
+        <button
+          onClick={() => showInfo('情報メッセージをテストしています！')}
+          className="block w-full bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600"
+        >
+          情報トースト
+        </button>
+      </div>
     </div>
   );
 };

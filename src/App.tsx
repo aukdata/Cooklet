@@ -1,6 +1,7 @@
 import React from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DialogProvider } from './contexts/DialogContext'
+import { ToastProvider } from './hooks/useToast.tsx'
 import { Login } from './pages/auth/Login'
 import { MainLayout } from './components/layout/MainLayout'
 import './App.css'
@@ -27,7 +28,9 @@ function App() {
   return (
     <AuthProvider>
       <DialogProvider>
-        <AppContent />
+        <ToastProvider>
+          <AppContent />
+        </ToastProvider>
       </DialogProvider>
     </AuthProvider>
   )
