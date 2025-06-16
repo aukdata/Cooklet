@@ -129,6 +129,54 @@ export const Dashboard: React.FC = () => {
     return `${date.getMonth() + 1}/${date.getDate()}`;
   };
 
+  // 期限切れ期間を計算する関数
+  const getExpiredPeriod = (expiredDate: string): string => {
+    const today = new Date();
+    const expired = new Date(expiredDate);
+    const diffInDays = Math.floor((today.getTime() - expired.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffInDays === 0) {
+      return '今日';
+    } else if (diffInDays === 1) {
+      return '1日前';
+    } else if (diffInDays < 31) {
+      return `${diffInDays}日前`;
+    } else if (diffInDays < 365) {
+      const months = Math.floor(diffInDays / 30);
+      return `${months}ヶ月前`;
+    } else {
+      const years = Math.floor(diffInDays / 365);
+      return `${years}年前`;
+    }
+  };
+
+  // 期限切れアイテムを期間別にグループ化する関数
+  const groupExpiredItemsByPeriod = () => {
+    const grouped: Record<string, typeof expiredItems> = {};
+    
+    expiredItems.forEach(item => {
+      if (item.best_before) {
+        const period = getExpiredPeriod(item.best_before);
+        if (!grouped[period]) {
+          grouped[period] = [];
+        }
+        grouped[period].push(item);
+      }
+    });
+    
+    // 期間順にソート（今日、1日前、2日前...1ヶ月前...1年前...）
+    return Object.entries(grouped).sort(([a], [b]) => {
+      const getPeriodWeight = (period: string): number => {
+        if (period === '今日') return 0;
+        if (period.includes('日前')) return parseInt(period);
+        if (period.includes('ヶ月前')) return parseInt(period) * 30;
+        if (period.includes('年前')) return parseInt(period) * 365;
+        return 999999;
+      };
+      return getPeriodWeight(a) - getPeriodWeight(b);
+    });
+  };
+
   // ローディング中の表示
   if (isLoading) {
     return (
@@ -146,7 +194,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold flex items-center">
           <span className="mr-2">📊</span>
-          ダッシュボード
+          サマリー
         </h2>
       </div>
 
@@ -183,7 +231,7 @@ export const Dashboard: React.FC = () => {
                     onClick={() => window.open(getTodayMealPlan('朝')!.recipe_url, '_blank')}
                     className="text-sm text-blue-600 hover:text-blue-500"
                   >
-                    🌐 レシピを見る
+                    🌐 レシピ
                   </button>
                 )}
                 <button 
@@ -222,7 +270,7 @@ export const Dashboard: React.FC = () => {
                     onClick={() => window.open(getTodayMealPlan('昼')!.recipe_url, '_blank')}
                     className="text-sm text-blue-600 hover:text-blue-500"
                   >
-                    🌐 レシピを見る
+                    🌐 レシピ
                   </button>
                 )}
                 <button 
@@ -261,7 +309,7 @@ export const Dashboard: React.FC = () => {
                     onClick={() => window.open(getTodayMealPlan('夜')!.recipe_url, '_blank')}
                     className="text-sm text-blue-600 hover:text-blue-500"
                   >
-                    🌐 レシピを見る
+                    🌐 レシピ
                   </button>
                 )}
                 <button 
@@ -287,17 +335,31 @@ export const Dashboard: React.FC = () => {
         </h3>
         
         <div className="space-y-3">
-          {/* 賞味期限切れ */}
+          {/* 賞味期限切れ（期間別グループ化） */}
           {expiredItems.length > 0 && (
             <div>
               <h4 className="text-sm font-medium text-red-600 mb-2 flex items-center">
                 <span className="mr-1">🔴</span>
                 賞味期限切れ
               </h4>
-              <div className="ml-4 space-y-1">
-                {expiredItems.map((item) => (
-                  <div key={item.id} className="text-sm text-gray-700">
-                    • {item.name} ({item.best_before ? formatDate(item.best_before) : '不明'}期限)
+              <div className="ml-4 space-y-3">
+                {groupExpiredItemsByPeriod().map(([period, items]) => (
+                  <div key={period}>
+                    <div className="text-sm font-medium text-gray-800 mb-1">
+                      **{period}**
+                      {period !== '今日' && (
+                        <span className="text-xs text-gray-500 ml-2">
+                          ({items[0]?.best_before ? formatDate(items[0].best_before) : ''})
+                        </span>
+                      )}
+                    </div>
+                    <div className="ml-4 space-y-1">
+                      {items.map((item) => (
+                        <div key={item.id} className="text-sm text-gray-700">
+                          {item.name}
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 ))}
               </div>
