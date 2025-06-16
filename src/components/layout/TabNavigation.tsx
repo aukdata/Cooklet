@@ -16,12 +16,13 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
     { id: 'shopping', label: '買い物', icon: '🛒' },
     { id: 'stock', label: '在庫', icon: '📦' },
     { id: 'cost', label: 'コスト', icon: '💰' },
+    { id: 'settings', label: '設定', icon: '⚙️' },
   ];
 
   return (
     // 下部固定のナビゲーションバー
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="grid grid-cols-6 gap-1">
+      <div className="grid grid-cols-7 gap-1">
         {/* 各タブボタンをレンダリング */}
         {tabs.map((tab) => (
           <button

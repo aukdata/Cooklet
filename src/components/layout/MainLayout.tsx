@@ -14,8 +14,6 @@ import { ErrorBoundary } from '../ErrorBoundary';
 export const MainLayout: React.FC = () => {
   // アクティブタブの状態管理（デフォルトはダッシュボード）
   const [activeTab, setActiveTab] = useState('dashboard');
-  // 設定画面の表示状態を管理
-  const [showSettings, setShowSettings] = useState(false);
   // ダイアログの表示状態を取得
   const { isDialogOpen } = useDialog();
 
@@ -48,6 +46,8 @@ export const MainLayout: React.FC = () => {
         return <Stock /> // 在庫管理ページ
       case 'cost':
         return <Cost /> // コスト管理ページ
+      case 'settings':
+        return <Settings onClose={() => setActiveTab('dashboard')} /> // 設定ページ
       default:
         return <Dashboard /> // デフォルトはダッシュボードページ
     }
@@ -64,7 +64,7 @@ export const MainLayout: React.FC = () => {
           {/* 設定ボタン（issue #8: ユーザ設定画面表示） */}
           <div className="flex items-center">
             <button 
-              onClick={() => setShowSettings(true)}
+              onClick={() => setActiveTab('settings')}
               className="text-gray-400 hover:text-gray-600"
             >
               <span className="text-xl">⚙️</span>
@@ -81,11 +81,6 @@ export const MainLayout: React.FC = () => {
       {/* 下部固定タブナビゲーション（ダイアログ表示時は非表示） */}
       {!isDialogOpen && (
         <TabNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-      )}
-
-      {/* ユーザ設定画面（issue #8） */}
-      {showSettings && (
-        <Settings onClose={() => setShowSettings(false)} />
       )}
     </div>
   );
