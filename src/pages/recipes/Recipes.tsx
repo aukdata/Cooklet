@@ -207,7 +207,7 @@ export const Recipes: React.FC = () => {
           {extractionResult && (
             <div className="bg-gray-50 rounded-lg p-3">
               <h4 className="font-medium text-sm mb-2 flex items-center">
-                <span className="mr-1">🤖</span>
+                <span className="mr-1">🔍</span>
                 食材自動抽出結果
               </h4>
               

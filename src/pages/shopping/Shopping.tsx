@@ -257,7 +257,7 @@ export const Shopping: React.FC = () => {
       {/* 自動作成セクション */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
         <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-          <span className="mr-2">🤖</span>
+          <span className="mr-2">⚡</span>
           献立から自動追加
         </h3>
         <div className="space-y-3">

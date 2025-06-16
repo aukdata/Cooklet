@@ -370,7 +370,7 @@ export const MealPlans: React.FC = () => {
               onClick={() => alert('献立の提案機能は今後実装予定です')}
               className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
             >
-              🤖 今日の献立を提案
+              💡 今日の献立を提案
             </button>
             <button 
               onClick={() => alert('週間提案機能は今後実装予定です')}
