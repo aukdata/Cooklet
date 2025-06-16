@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import { QuantityInput } from '../common/QuantityInput';
+import { analyzeRecipeFromUrl, isValidRecipeUrl } from '../../services/recipeAnalysis';
 
 // 手動献立入力ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface ManualMealDialogProps {
@@ -33,6 +35,9 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
     memo: initialData?.memo || ''
   });
 
+  // レシピ解析の状態管理
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   // 食材を追加する関数
   const addIngredient = () => {
     setFormData(prev => ({
@@ -57,6 +62,36 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
         i === index ? { ...ingredient, [field]: value } : ingredient
       )
     }));
+  };
+
+  // レシピ解析ハンドラ
+  const handleAnalyzeRecipe = async () => {
+    if (!isValidRecipeUrl(formData.recipe_url || '')) {
+      alert('HTTPまたはHTTPSから始まる有効なURLを入力してください');
+      return;
+    }
+
+    setIsAnalyzing(true);
+    try {
+      const result = await analyzeRecipeFromUrl(formData.recipe_url!);
+      
+      if (result.success && result.data) {
+        // 解析結果をフォームに反映
+        setFormData(prev => ({
+          ...prev,
+          dish_name: result.data!.recipeName,
+          servings: result.data!.servings,
+          ingredients: result.data!.ingredients
+        }));
+        alert('レシピを解析しました！');
+      } else {
+        alert(result.error || 'レシピの解析に失敗しました');
+      }
+    } catch {
+      alert('解析中にエラーが発生しました');
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // フォーム送信ハンドラ
@@ -111,13 +146,27 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               🌐 レシピURL (任意):
             </label>
-            <input
-              type="url"
-              value={formData.recipe_url}
-              onChange={(e) => setFormData(prev => ({ ...prev, recipe_url: e.target.value }))}
-              placeholder="https://cookpad.com/..."
-              className="w-full border border-gray-300 rounded px-3 py-2"
-            />
+            <div className="space-y-2">
+              <input
+                type="url"
+                value={formData.recipe_url}
+                onChange={(e) => setFormData(prev => ({ ...prev, recipe_url: e.target.value }))}
+                placeholder="https://cookpad.com/..."
+                className="w-full border border-gray-300 rounded px-3 py-2"
+              />
+              <button
+                type="button"
+                onClick={handleAnalyzeRecipe}
+                disabled={!isValidRecipeUrl(formData.recipe_url || '') || isAnalyzing}
+                className={`w-full py-2 px-4 text-sm rounded ${
+                  isValidRecipeUrl(formData.recipe_url || '') && !isAnalyzing
+                    ? 'bg-green-600 hover:bg-green-700 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                {isAnalyzing ? '🤖 解析中...' : '🔍 解析'}
+              </button>
+            </div>
           </div>
 
           {/* 人数入力 */}
@@ -154,12 +203,11 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
                     placeholder="牛ひき肉"
                     className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
                   />
-                  <input
-                    type="text"
+                  <QuantityInput
                     value={ingredient.quantity}
-                    onChange={(e) => updateIngredient(index, 'quantity', e.target.value)}
-                    placeholder="200g"
-                    className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                    onChange={(value) => updateIngredient(index, 'quantity', value)}
+                    placeholder="数量"
+                    className="w-24"
                   />
                   {formData.ingredients.length > 1 && (
                     <button

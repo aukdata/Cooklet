@@ -42,45 +42,54 @@ const isSupportedRecipeSite = (url: string): boolean => {
 
 // モックのLLM API呼び出し（実際のAPI実装時に置き換え）
 const mockLLMExtraction = async (url: string): Promise<ExtractedIngredient[]> => {
-  // 実際の実装では、ここでOpenAI API やClaude API等を呼び出す
-  // 今回はサンプルデータを返す
+  // 実際の実装では、ここでOpenAI API やClaude API等を呼び出し
+  // 将来的にはDBから類似レシピの食材パターンを学習して提案
   
   await new Promise(resolve => setTimeout(resolve, 1500)); // 処理時間をシミュレート
   
-  // URLに基づいて適切なサンプルデータを返す
+  // URLやドメインに基づいて一般的な食材パターンを返す
+  const domain = new URL(url).hostname.toLowerCase();
+  
+  // レシピサイト別の一般的な食材パターン
+  if (domain.includes('cookpad')) {
+    return [
+      { name: '主材料', quantity: '200g' },
+      { name: '調味料', quantity: '適量' }
+    ];
+  }
+  
+  if (domain.includes('kurashiru') || domain.includes('delishkitchen')) {
+    return [
+      { name: 'メイン食材', quantity: '1人前' },
+      { name: '野菜', quantity: '適量' }
+    ];
+  }
+  
+  if (domain.includes('rakuten')) {
+    return [
+      { name: '材料', quantity: '必要量' }
+    ];
+  }
+  
+  // その他のサイトやURLパターンに基づく推測
   if (url.includes('hamburger') || url.includes('ハンバーグ')) {
     return [
-      { name: '牛ひき肉', quantity: '200g' },
+      { name: 'ひき肉', quantity: '200g' },
       { name: '玉ねぎ', quantity: '1個' },
-      { name: 'パン粉', quantity: '大さじ3' },
-      { name: '卵', quantity: '1個' },
-      { name: '牛乳', quantity: '大さじ2' }
+      { name: 'パン粉', quantity: '適量' }
     ];
   }
   
   if (url.includes('pasta') || url.includes('パスタ')) {
     return [
-      { name: 'スパゲッティ', quantity: '100g' },
-      { name: 'トマト缶', quantity: '1缶' },
-      { name: 'にんにく', quantity: '1片' },
-      { name: 'オリーブオイル', quantity: '大さじ2' }
+      { name: 'パスタ', quantity: '100g' },
+      { name: 'ソース材料', quantity: '適量' }
     ];
   }
   
-  if (url.includes('curry') || url.includes('カレー')) {
-    return [
-      { name: '豚肉', quantity: '200g' },
-      { name: '玉ねぎ', quantity: '2個' },
-      { name: 'じゃがいも', quantity: '2個' },
-      { name: 'にんじん', quantity: '1本' },
-      { name: 'カレールウ', quantity: '1/2箱' }
-    ];
-  }
-  
-  // デフォルトサンプル
+  // デフォルト：最小限の食材入力を促す
   return [
-    { name: '材料A', quantity: '適量' },
-    { name: '材料B', quantity: '1個' }
+    { name: '', quantity: '適量' }
   ];
 };
 

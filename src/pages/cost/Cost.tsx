@@ -167,9 +167,6 @@ export const Cost: React.FC = () => {
             コスト管理
           </h2>
         </div>
-        <button className="text-gray-400 hover:text-gray-600">
-          <span className="text-xl">⚙️</span>
-        </button>
       </div>
 
       {/* 月間ナビゲーション */}

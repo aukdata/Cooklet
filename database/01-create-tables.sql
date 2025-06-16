@@ -11,14 +11,16 @@ CREATE TABLE IF NOT EXISTS users (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- 2. ingredients テーブル (食材マスタ)
+-- 2. ingredients テーブル (食材マスタ) - ユーザー認証対応
 CREATE TABLE IF NOT EXISTS ingredients (
   id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL UNIQUE,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
+  name TEXT NOT NULL,
   category TEXT NOT NULL CHECK (category IN ('vegetables', 'meat', 'seasoning', 'others')),
   default_unit TEXT NOT NULL,
   typical_price DECIMAL(10,2),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  UNIQUE(user_id, name) -- ユーザーごとに食材名がユニーク
 );
 
 -- 3. stock_items テーブル (食材在庫) - CLAUDE.md仕様書に準拠

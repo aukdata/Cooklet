@@ -49,10 +49,11 @@ CREATE POLICY "Users can manage own cost records" ON cost_records
 CREATE POLICY "Users can manage own saved recipes" ON saved_recipes 
   FOR ALL USING (auth.uid() = user_id);
 
--- ingredientsテーブルは全ユーザーが参照可能
+-- ingredientsテーブルはユーザー認証必須
 DROP POLICY IF EXISTS "Everyone can view ingredients" ON ingredients;
-CREATE POLICY "Everyone can view ingredients" ON ingredients 
-  FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Users can manage own ingredients" ON ingredients;
+CREATE POLICY "Users can manage own ingredients" ON ingredients 
+  FOR ALL USING (auth.uid() = user_id);
 
 -- Database Function: 認証ユーザー作成時に自動的にusersテーブルにプロファイルを作成
 CREATE OR REPLACE FUNCTION public.handle_new_user()

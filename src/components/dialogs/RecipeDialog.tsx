@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
+import { QuantityInput } from '../common/QuantityInput';
 
 // レシピ編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface RecipeDialogProps {
   isOpen: boolean; // ダイアログの表示状態
   onClose: () => void; // ダイアログを閉じる関数
   onSave: (recipeData: RecipeForm) => void; // レシピデータを保存する関数
+  onDelete?: () => void; // レシピ削除関数（編集時）
   onExtractIngredients?: (url: string) => Promise<{ name: string; quantity: string }[]>; // 食材抽出関数
   initialData?: RecipeForm; // 初期データ（編集時）
+  isEditing?: boolean; // 編集モードかどうか
 }
 
 // レシピフォームの型定義
@@ -23,8 +26,10 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   isOpen,
   onClose,
   onSave,
+  onDelete,
   onExtractIngredients,
-  initialData
+  initialData,
+  isEditing = false
 }) => {
   // フォームデータの状態管理
   const [formData, setFormData] = useState<RecipeForm>({
@@ -100,6 +105,14 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
     }));
+  };
+
+  // 削除ハンドラー
+  const handleDelete = () => {
+    if (onDelete) {
+      onDelete();
+      onClose();
+    }
   };
 
   // フォーム送信ハンドラ
@@ -209,12 +222,11 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                     placeholder="牛ひき肉"
                     className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
                   />
-                  <input
-                    type="text"
+                  <QuantityInput
                     value={ingredient.quantity}
-                    onChange={(e) => updateIngredient(index, 'quantity', e.target.value)}
-                    placeholder="200g"
-                    className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                    onChange={(value) => updateIngredient(index, 'quantity', value)}
+                    placeholder="数量"
+                    className="w-24"
                   />
                   {formData.ingredients.length > 1 && (
                     <button
@@ -280,6 +292,15 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
 
           {/* ボタン */}
           <div className="flex gap-3 pt-4">
+            {isEditing && onDelete && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                削除
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}

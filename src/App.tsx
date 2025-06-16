@@ -1,5 +1,6 @@
 import React from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { DialogProvider } from './contexts/DialogContext'
 import { Login } from './pages/auth/Login'
 import { MainLayout } from './components/layout/MainLayout'
 import './App.css'
@@ -25,7 +26,9 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <AuthProvider>
-      <AppContent />
+      <DialogProvider>
+        <AppContent />
+      </DialogProvider>
     </AuthProvider>
   )
 }

@@ -55,6 +55,41 @@
 />
 ```
 
+### RecipeDetailDialog.tsx
+レシピ詳細表示ダイアログコンポーネント - GitHub issue #5対応
+
+#### 機能
+- レシピ基本情報の表示（タイトル・人数・URL・作成日・タグ）
+- 外部レシピURLへのリンク
+- 編集・削除アクションボタン
+- 詳細ダイアログから編集・削除ダイアログへの遷移
+- 将来実装予定の食材情報・メモ表示
+
+#### Props
+- `isOpen`: ダイアログの表示状態
+- `recipe`: 表示するレシピデータ（SavedRecipe型）
+- `onClose`: ダイアログを閉じるコールバック関数
+- `onEdit`: 編集ボタンクリック時のコールバック関数
+- `onDelete`: 削除ボタンクリック時のコールバック関数
+
+#### 使用例
+```typescript
+<RecipeDetailDialog
+  isOpen={isDetailDialogOpen}
+  recipe={selectedRecipe}
+  onClose={handleCloseDetailDialog}
+  onEdit={handleEditRecipe}
+  onDelete={handleDeleteRecipe}
+/>
+```
+
+#### UI設計
+- 中サイズモーダル（max-w-lg）
+- 3段階ボタン配置（削除・閉じる・編集・外部リンク）
+- アイコン付き情報表示
+- タグバッジ表示
+- レスポンシブ対応
+
 ### RecipeDialog.tsx
 レシピ編集ダイアログコンポーネント - CLAUDE.md仕様書 5.6.4に準拠
 
@@ -63,6 +98,8 @@
 - 食材自動抽出機能（API連携対応）
 - 動的タグ管理（追加・削除）
 - 動的食材リスト編集
+- 削除機能（編集時のみ表示）
+- 在庫ダイアログと統一デザイン
 
 #### 使用例
 ```typescript
@@ -70,10 +107,17 @@
   isOpen={isRecipeDialogOpen}
   onClose={() => setIsRecipeDialogOpen(false)}
   onSave={(recipeData) => handleSaveRecipe(recipeData)}
+  onDelete={() => handleDeleteRecipe()}
   onExtractIngredients={extractIngredientsFromURL}
   initialData={editingRecipe}
+  isEditing={!!editingRecipe}
 />
 ```
+
+#### 最新の実装特徴
+- **ボタン配置**: 在庫ダイアログと同じ3段階配置（削除・キャンセル・保存）
+- **削除ボタン**: 編集時のみ表示、赤色背景（bg-red-600）
+- **統一デザイン**: 在庫管理ダイアログと同じデザインルール準拠
 
 ### StockDialog.tsx
 在庫編集ダイアログコンポーネント - CLAUDE.md仕様書 5.6.5に準拠

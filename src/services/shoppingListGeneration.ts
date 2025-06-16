@@ -107,7 +107,8 @@ const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, s
 // メイン関数：献立から買い物リストを自動生成
 export const generateShoppingListFromMealPlans = async (
   mealPlans: MealPlan[],
-  stockItems: StockItem[]
+  stockItems: StockItem[],
+  existingShoppingItems: ShoppingListItem[] = []
 ): Promise<ShoppingListGenerationResult> => {
   try {
     if (mealPlans.length === 0) {
@@ -121,6 +122,13 @@ export const generateShoppingListFromMealPlans = async (
     
     // 献立から必要な食材を集計
     const aggregatedIngredients = aggregateIngredientsFromMealPlans(mealPlans);
+    
+    // 既存の買い物リストアイテムを正規化してマップ化
+    const existingItemsMap = new Map<string, ShoppingListItem>();
+    existingShoppingItems.forEach(item => {
+      const normalizedName = normalizeIngredientName(item.name);
+      existingItemsMap.set(normalizedName, item);
+    });
     
     const generatedItems: Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>[] = [];
     let totalIngredients = 0;
@@ -150,6 +158,13 @@ export const generateShoppingListFromMealPlans = async (
         // 在庫が十分な場合
         inStock++;
       } else {
+        // 既存の買い物リストに同じアイテムがあるかチェック
+        if (existingItemsMap.has(normalizedName)) {
+          // 既に買い物リストにあるのでスキップ
+          needToBuy++;
+          continue;
+        }
+        
         // 在庫が不足している場合は買い物リストに追加
         needToBuy++;
         
@@ -201,7 +216,8 @@ export const generateShoppingListForPeriod = async (
   startDate: Date,
   endDate: Date,
   allMealPlans: MealPlan[],
-  stockItems: StockItem[]
+  stockItems: StockItem[],
+  existingShoppingItems: ShoppingListItem[] = []
 ): Promise<ShoppingListGenerationResult> => {
   const startDateStr = startDate.toISOString().split('T')[0];
   const endDateStr = endDate.toISOString().split('T')[0];
@@ -211,13 +227,14 @@ export const generateShoppingListForPeriod = async (
     plan.date >= startDateStr && plan.date <= endDateStr
   );
   
-  return generateShoppingListFromMealPlans(periodMealPlans, stockItems);
+  return generateShoppingListFromMealPlans(periodMealPlans, stockItems, existingShoppingItems);
 };
 
 // 今週の買い物リストを生成
 export const generateWeeklyShoppingList = async (
   allMealPlans: MealPlan[],
-  stockItems: StockItem[]
+  stockItems: StockItem[],
+  existingShoppingItems: ShoppingListItem[] = []
 ): Promise<ShoppingListGenerationResult> => {
   const today = new Date();
   const startOfWeek = new Date(today);
@@ -226,18 +243,19 @@ export const generateWeeklyShoppingList = async (
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6); // 土曜日
   
-  return generateShoppingListForPeriod(startOfWeek, endOfWeek, allMealPlans, stockItems);
+  return generateShoppingListForPeriod(startOfWeek, endOfWeek, allMealPlans, stockItems, existingShoppingItems);
 };
 
 // 次の数日分の買い物リストを生成
 export const generateShoppingListForNextDays = async (
   days: number,
   allMealPlans: MealPlan[],
-  stockItems: StockItem[]
+  stockItems: StockItem[],
+  existingShoppingItems: ShoppingListItem[] = []
 ): Promise<ShoppingListGenerationResult> => {
   const today = new Date();
   const endDate = new Date(today);
   endDate.setDate(today.getDate() + days - 1);
   
-  return generateShoppingListForPeriod(today, endDate, allMealPlans, stockItems);
+  return generateShoppingListForPeriod(today, endDate, allMealPlans, stockItems, existingShoppingItems);
 };

@@ -10,17 +10,18 @@ interface TabNavigationProps {
 export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabChange }) => {
   // タブの定義（ID、ラベル、アイコン） - CLAUDE.md仕様書に準拠
   const tabs = [
-    { id: 'dashboard', label: 'ダッシュボード', icon: '📊' },
+    { id: 'dashboard', label: 'サマリー', icon: '📊' },
     { id: 'meal-plans', label: '献立', icon: '📅' },
-    { id: 'shopping', label: '買い物', icon: '🛒' },
     { id: 'recipes', label: 'レシピ', icon: '🍳' },
+    { id: 'shopping', label: '買い物', icon: '🛒' },
+    { id: 'stock', label: '在庫', icon: '📦' },
     { id: 'cost', label: 'コスト', icon: '💰' },
   ];
 
   return (
     // 下部固定のナビゲーションバー
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
-      <div className="flex justify-around">
+      <div className="grid grid-cols-6 gap-1">
         {/* 各タブボタンをレンダリング */}
         {tabs.map((tab) => (
           <button

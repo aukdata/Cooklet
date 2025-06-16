@@ -1,11 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import { useRecipes } from '../../hooks/useRecipes';
 
 // 献立編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface MealPlanDialogProps {
   isOpen: boolean; // ダイアログの表示状態
   onClose: () => void; // ダイアログを閉じる関数
   onSave: (mealPlan: MealPlanForm) => void; // 献立を保存する関数
+  onDelete?: () => void; // 献立を削除する関数（編集時のみ）
   initialData?: MealPlanForm; // 初期データ（編集時）
+  isEditing?: boolean; // 編集モードかどうか
 }
 
 // 献立フォームの型定義
@@ -18,21 +21,38 @@ interface MealPlanForm {
   memo?: string; // メモ
 }
 
-// サンプルレシピデータ
-const sampleRecipes = [
-  { id: '1', name: 'ハンバーグ定食' },
-  { id: '2', name: '親子丼' },
-  { id: '3', name: 'トマトパスタ' },
-  { id: 'manual', name: '手動入力' }
-];
+// レシピ選択用の型定義
+interface RecipeOption {
+  id: string;
+  name: string;
+}
 
 // 献立編集ダイアログコンポーネント - CLAUDE.md仕様書 5.6.2に準拠
 export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
   isOpen,
   onClose,
   onSave,
-  initialData
+  onDelete,
+  initialData,
+  isEditing = false
 }) => {
+  // DBからレシピデータを取得
+  const { recipes, loading: recipesLoading } = useRecipes();
+  
+  // レシピオプションの生成（DBデータ + 手動入力オプション）
+  const recipeOptions: RecipeOption[] = useMemo(() => {
+    if (recipesLoading || !recipes) {
+      return [{ id: 'manual', name: '手動入力' }];
+    }
+    
+    const dbRecipes = recipes.map(recipe => ({
+      id: recipe.id,
+      name: recipe.title
+    }));
+    
+    return [...dbRecipes, { id: 'manual', name: '手動入力' }];
+  }, [recipes, recipesLoading]);
+  
   // フォームデータの状態管理
   const [formData, setFormData] = useState<MealPlanForm>({
     date: initialData?.date || new Date().toISOString().split('T')[0],
@@ -48,6 +68,14 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
     e.preventDefault();
     onSave(formData);
     onClose();
+  };
+
+  // 削除確認ハンドラ
+  const handleDelete = () => {
+    if (window.confirm('この献立を削除しますか？')) {
+      onDelete?.();
+      onClose();
+    }
   };
 
   // ダイアログが閉じている場合は何も表示しない
@@ -112,7 +140,7 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
                 className="w-full border border-gray-200 rounded px-2 py-1 mb-2 text-sm"
               />
               <div className="space-y-1">
-                {sampleRecipes.map((recipe) => (
+                {recipeOptions.map((recipe) => (
                   <label key={recipe.id} className="flex items-center">
                     <input
                       type="radio"
@@ -130,6 +158,13 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
                   </label>
                 ))}
               </div>
+              
+              {/* レシピ読み込み状態表示 */}
+              {recipesLoading && (
+                <div className="text-xs text-gray-500 mt-2">
+                  レシピを読み込み中...
+                </div>
+              )}
             </div>
           </div>
 
@@ -167,6 +202,16 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
 
           {/* ボタン */}
           <div className="flex gap-3 pt-4">
+            {/* 削除ボタン（編集時のみ表示） */}
+            {isEditing && onDelete && (
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+              >
+                削除
+              </button>
+            )}
             <button
               type="button"
               onClick={onClose}

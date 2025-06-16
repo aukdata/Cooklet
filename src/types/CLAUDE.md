@@ -14,7 +14,8 @@ Cookletアプリケーションの主要なデータ型を定義。
 - ユーザー情報（id, email, name, google_id, 作成日時等）
 
 **Ingredient型**  
-- 食材マスタ情報（id, name, category, default_unit, typical_price等）
+- 食材マスタ情報（id, user_id, name, category, default_unit, typical_price等）
+- ユーザー認証対応：各ユーザーが独自の食材マスタを管理
 - category: 'vegetables' | 'meat' | 'seasoning' | 'others'
 
 **InventoryItem型**

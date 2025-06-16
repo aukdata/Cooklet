@@ -103,9 +103,6 @@ export const Dashboard: React.FC = () => {
           <span className="mr-2">📊</span>
           ダッシュボード
         </h2>
-        <button className="text-gray-400 hover:text-gray-600">
-          <span className="text-xl">⚙️</span>
-        </button>
       </div>
 
       {/* 今日の献立セクション */}

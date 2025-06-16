@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useRecipes, type SavedRecipe } from '../../hooks/useRecipes';
 import { extractIngredientsFromURL, extractRecipeTitleFromURL } from '../../services/ingredientExtraction';
 import { RecipeDialog } from '../../components/dialogs/RecipeDialog';
+import { RecipeDetailDialog } from '../../components/dialogs/RecipeDetailDialog';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
@@ -13,6 +14,8 @@ export const Recipes: React.FC = () => {
   const [selectedTag, setSelectedTag] = useState('全て');
   
   // ダイアログの状態管理
+  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [selectedRecipe, setSelectedRecipe] = useState<SavedRecipe | undefined>();
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingRecipe, setEditingRecipe] = useState<SavedRecipe | undefined>();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
@@ -84,6 +87,18 @@ export const Recipes: React.FC = () => {
     } catch (err) {
       console.error('レシピの追加に失敗しました:', err);
     }
+  };
+
+  // レシピ詳細表示ハンドラー（issue #5対応）
+  const handleShowRecipeDetail = (recipe: SavedRecipe) => {
+    setSelectedRecipe(recipe);
+    setIsDetailDialogOpen(true);
+  };
+
+  // レシピ詳細ダイアログを閉じるハンドラー
+  const handleCloseDetailDialog = () => {
+    setIsDetailDialogOpen(false);
+    setSelectedRecipe(undefined);
   };
 
   // レシピ編集ボタンのハンドラー
@@ -162,9 +177,6 @@ export const Recipes: React.FC = () => {
             {error && <span className="ml-2 text-red-500">エラー: {error}</span>}
           </div>
         </div>
-        <button className="text-gray-400 hover:text-gray-600">
-          <span className="text-xl">⚙️</span>
-        </button>
       </div>
 
       {/* 新規レシピ登録 */}
@@ -292,7 +304,12 @@ export const Recipes: React.FC = () => {
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
                       <span className="text-sm">📄</span>
-                      <h3 className="font-medium text-gray-900">{recipe.title}</h3>
+                      <h3 
+                        onClick={() => handleShowRecipeDetail(recipe)}
+                        className="font-medium text-gray-900 cursor-pointer hover:text-indigo-600 hover:underline"
+                      >
+                        {recipe.title}
+                      </h3>
                     </div>
                     
                     {recipe.url && (
@@ -336,12 +353,6 @@ export const Recipes: React.FC = () => {
                     >
                       編集
                     </button>
-                    <button 
-                      onClick={() => handleDeleteRecipe(recipe)}
-                      className="text-sm text-red-600 hover:text-red-800"
-                    >
-                      削除
-                    </button>
                   </div>
                 </div>
               </div>
@@ -350,11 +361,21 @@ export const Recipes: React.FC = () => {
         )}
       </div>
 
+      {/* レシピ詳細ダイアログ（issue #5対応） */}
+      <RecipeDetailDialog
+        isOpen={isDetailDialogOpen}
+        recipe={selectedRecipe || null}
+        onClose={handleCloseDetailDialog}
+        onEdit={handleEditRecipe}
+        onDelete={handleDeleteRecipe}
+      />
+
       {/* レシピ編集ダイアログ */}
       <RecipeDialog
         isOpen={isEditDialogOpen}
         onClose={() => setIsEditDialogOpen(false)}
         onSave={handleSaveEditedRecipe}
+        onDelete={() => editingRecipe && handleDeleteRecipe(editingRecipe)}
         onExtractIngredients={async (url: string) => {
           const result = await extractIngredientsFromURL(url);
           return result.ingredients;
@@ -366,6 +387,7 @@ export const Recipes: React.FC = () => {
           ingredients: [], // レシピ仕様では食材は直接保存しないためデフォルト値
           tags: editingRecipe.tags
         } : undefined}
+        isEditing={!!editingRecipe}
       />
 
       {/* 削除確認ダイアログ */}

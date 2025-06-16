@@ -8,9 +8,10 @@ export interface User {
   updated_at: string; // 更新日時
 }
 
-// 食材マスタ情報を表すインターフェース
+// 食材マスタ情報を表すインターフェース（ユーザー認証対応）
 export interface Ingredient {
   id: number; // 食材ID
+  user_id: string; // 所有ユーザーID
   name: string; // 食材名
   category: 'vegetables' | 'meat' | 'seasoning' | 'others'; // カテゴリ（野菜・肉・調味料・その他）
   default_unit: string; // デフォルト単位（g, 個, etc.）

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { type MealPlan } from '../../hooks';
+import { useDialog } from '../../contexts/DialogContext';
+import { useRecipes } from '../../hooks/useRecipes';
 
-// サンプルレシピデータ
+// レシピデータ型（食材情報付き）
 interface Recipe {
   id: string;
   title: string;
@@ -28,6 +30,12 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   selectedDate,
   selectedMealType = '夜'
 }) => {
+  // ダイアログ状態管理フック
+  const { openDialog, closeDialog } = useDialog();
+  
+  // レシピデータ取得フック
+  const { recipes, loading: recipesLoading } = useRecipes();
+
   // フォームの状態管理
   const [mealType, setMealType] = useState<'朝' | '昼' | '夜' | '間食'>(selectedMealType);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
@@ -39,42 +47,21 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   const [ingredients, setIngredients] = useState<{ name: string; quantity: string }[]>([]);
   const [memo, setMemo] = useState('');
 
-  // サンプルレシピデータ（後でuseRecipesフックに置き換え）
-  const sampleRecipes: Recipe[] = useMemo(() => [
-    {
-      id: '1',
-      title: 'ハンバーグ定食',
-      url: 'https://cookpad.com/recipe/hamburger-set',
-      ingredients: [
-        { name: '牛ひき肉', quantity: '200g' },
-        { name: '玉ねぎ', quantity: '1個' },
-        { name: 'パン粉', quantity: '適量' }
-      ]
-    },
-    {
-      id: '2',
-      title: '親子丼',
-      url: 'https://cookpad.com/recipe/oyakodon',
-      ingredients: [
-        { name: '鶏肉（もも）', quantity: '100g' },
-        { name: '卵', quantity: '2個' },
-        { name: '米', quantity: '150g' }
-      ]
-    },
-    {
-      id: '3',
-      title: 'トマトパスタ',
-      url: 'https://recipe.rakuten.co.jp/tomato-pasta',
-      ingredients: [
-        { name: 'パスタ', quantity: '100g' },
-        { name: 'トマト缶', quantity: '1缶' },
-        { name: 'にんにく', quantity: '1片' }
-      ]
-    }
-  ], []);
+  // DBからレシピデータを取得（食材情報は献立計画時に入力）
+  const recipeList: Recipe[] = useMemo(() => {
+    if (recipesLoading || !recipes) return [];
+    
+    // SavedRecipeをRecipe型に変換（食材は空配列）
+    return recipes.map(recipe => ({
+      id: recipe.id,
+      title: recipe.title,
+      url: recipe.url,
+      ingredients: [] // 食材は献立計画時に入力
+    }));
+  }, [recipes, recipesLoading]);
 
   // 検索クエリでフィルタリングされたレシピ
-  const filteredRecipes = sampleRecipes.filter(recipe =>
+  const filteredRecipes = recipeList.filter(recipe =>
     recipe.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
@@ -96,7 +83,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       
       // 既存レシピの場合はIDを設定、そうでなければ手動入力
       if (initialData.recipe_url) {
-        const existingRecipe = sampleRecipes.find(r => r.url === initialData.recipe_url);
+        const existingRecipe = recipeList.find(r => r.url === initialData.recipe_url);
         if (existingRecipe) {
           setSelectedRecipeId(existingRecipe.id);
           setSelectedRecipe(existingRecipe);
@@ -117,7 +104,16 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       setIngredients([]);
       setMemo('');
     }
-  }, [initialData, selectedMealType, isOpen, sampleRecipes]);
+  }, [initialData, selectedMealType, isOpen, recipeList]);
+
+  // ダイアログの表示状態をグローバルに同期
+  useEffect(() => {
+    if (isOpen) {
+      openDialog();
+    } else {
+      closeDialog();
+    }
+  }, [isOpen, openDialog, closeDialog]);
 
   // レシピ選択処理（コンボボックス用）
   const handleRecipeChange = (recipeId: string) => {
@@ -131,10 +127,11 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       }
     } else {
       // 既存レシピを選択した場合
-      const recipe = sampleRecipes.find(r => r.id === recipeId);
+      const recipe = recipeList.find(r => r.id === recipeId);
       if (recipe) {
         setSelectedRecipe(recipe);
-        setIngredients(recipe.ingredients);
+        // 食材は空なので、空の食材を1つ追加して入力を促す
+        setIngredients([{ name: '', quantity: '' }]);
         setManualRecipeName(recipe.title);
         setManualRecipeUrl(recipe.url);
       }
@@ -146,7 +143,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
     setSearchQuery(query);
     // 現在選択されているレシピがフィルター結果に含まれない場合は選択をリセット
     if (selectedRecipeId && selectedRecipeId !== '' && selectedRecipeId !== 'manual') {
-      const isSelectedRecipeVisible = sampleRecipes.some(recipe => 
+      const isSelectedRecipeVisible = recipeList.some(recipe => 
         recipe.id === selectedRecipeId && 
         recipe.title.toLowerCase().includes(query.toLowerCase())
       );

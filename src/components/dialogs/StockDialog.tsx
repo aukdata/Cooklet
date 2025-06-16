@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { type StockItem } from '../../hooks';
+import type { StockItem } from '../../hooks/useStockItems';
+import { QuantityInput } from '../common/QuantityInput';
 
 // 在庫編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface StockDialogProps {
@@ -11,10 +12,6 @@ interface StockDialogProps {
   isEditing?: boolean; // 編集モードかどうか
 }
 
-// 単位の選択肢
-const unitOptions = [
-  '個', '本', 'パック', 'g', 'kg', 'ml', 'l', '袋', '缶', '適量'
-];
 
 // 保存場所の選択肢
 const storageOptions = ['冷蔵庫', '冷凍庫', '常温'];
@@ -29,28 +26,12 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   isEditing = false
 }) => {
   // フォームデータの状態管理（StockItem型に合わせて調整）
-  // quantityは"数量 + 単位"の形式で管理（例: "2本"、"200g"）
   const [formData, setFormData] = useState<StockItem>({
     name: initialData?.name || '',
     quantity: initialData?.quantity || '',
     best_before: initialData?.best_before || '',
     storage_location: initialData?.storage_location || '冷蔵庫',
     is_homemade: initialData?.is_homemade || false
-  });
-
-  // quantityフィールドから数量と単位を分離
-  const [quantityValue, setQuantityValue] = useState(() => {
-    if (!formData.quantity) return '';
-    // 数字部分を抽出
-    const match = formData.quantity.match(/^(\d+(?:\.\d+)?)/);
-    return match ? match[1] : '';
-  });
-
-  const [selectedUnit, setSelectedUnit] = useState(() => {
-    if (!formData.quantity) return '個';
-    // 単位部分を抽出
-    const match = formData.quantity.match(/^(\d+(?:\.\d+)?)(.*)$/);
-    return match && match[2] ? match[2] : '個';
   });
 
   // 今日の日付を取得
@@ -127,39 +108,12 @@ export const StockDialog: React.FC<StockDialogProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-1">
               📊 数量:
             </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={quantityValue}
-                onChange={(e) => {
-                  setQuantityValue(e.target.value);
-                  // quantityフィールドを更新（数量 + 単位の形式）
-                  setFormData(prev => ({ 
-                    ...prev, 
-                    quantity: e.target.value + selectedUnit 
-                  }));
-                }}
-                placeholder="2"
-                className="flex-1 border border-gray-300 rounded px-3 py-2"
-                required
-              />
-              <select
-                value={selectedUnit}
-                onChange={(e) => {
-                  setSelectedUnit(e.target.value);
-                  // quantityフィールドを更新（数量 + 単位の形式）
-                  setFormData(prev => ({ 
-                    ...prev, 
-                    quantity: quantityValue + e.target.value 
-                  }));
-                }}
-                className="w-24 border border-gray-300 rounded px-2 py-2"
-              >
-                {unitOptions.map((unit) => (
-                  <option key={unit} value={unit}>{unit}</option>
-                ))}
-              </select>
-            </div>
+            <QuantityInput
+              value={formData.quantity}
+              onChange={(value) => setFormData(prev => ({ ...prev, quantity: value }))}
+              placeholder="数量"
+              className="w-full"
+            />
           </div>
 
           {/* 賞味期限入力 */}

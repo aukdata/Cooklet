@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useShoppingList, useMealPlans, useStockItems } from '../../hooks';
 import { generateWeeklyShoppingList, generateShoppingListForNextDays } from '../../services/shoppingListGeneration';
-import { StockDialog } from '../../components/dialogs/StockDialog';
 import { type StockItem } from '../../hooks/useStockItems';
+import { QuantityInput } from '../../components/common/QuantityInput';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
 export const Shopping: React.FC = () => {
@@ -15,11 +15,10 @@ export const Shopping: React.FC = () => {
     getUncompletedItems,
     getCompletedItems,
     deleteCompletedItems,
-    addCompletedItemsToStock,
     getStats
   } = useShoppingList();
 
-  // 献立と在庫データを取得（自動生成機能用）
+  // 献立と在庫データを取得（自動作成機能用）
   const { mealPlans } = useMealPlans();
   const { stockItems, addStockItem } = useStockItems();
 
@@ -29,17 +28,17 @@ export const Shopping: React.FC = () => {
   
   // 完了アイテムの表示状態（折りたたみ機能）
   const [showCompleted, setShowCompleted] = useState(false);
+  
+  // 完了アイテムの量編集状態
+  const [editingQuantities, setEditingQuantities] = useState<Record<string, string>>({});
 
-  // 自動生成機能の状態
+  // 自動作成機能の状態
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationResult, setGenerationResult] = useState<{
     summary: { totalIngredients: number; inStock: number; needToBuy: number };
     error?: string;
   } | null>(null);
 
-  // 在庫追加ダイアログの状態
-  const [isStockDialogOpen, setIsStockDialogOpen] = useState(false);
-  const [stockItems2Add, setStockItems2Add] = useState<{ name: string; quantity?: string }[]>([]);
 
   // 全選択状態の管理
   const [selectAll, setSelectAll] = useState(false);
@@ -108,68 +107,63 @@ export const Shopping: React.FC = () => {
     }
   };
 
-  // 完了アイテム一括削除
-  const handleDeleteCompleted = async () => {
-    try {
-      await deleteCompletedItems();
-    } catch (err) {
-      console.error('削除に失敗しました:', err);
-      alert('削除に失敗しました');
-    }
+
+  // 完了済みアイテムの量編集処理
+  const handleQuantityEdit = (itemId: string, newQuantity: string) => {
+    setEditingQuantities(prev => ({
+      ...prev,
+      [itemId]: newQuantity
+    }));
   };
 
-  // 完了アイテムを在庫に追加（詳細設定付き）
-  const handleAddToInventory = () => {
+  // 完了済みアイテムを在庫に追加（ダイアログなしで直接追加）
+  const handleAddToStock = async () => {
     const completedItems = getCompletedItems();
     if (completedItems.length === 0) {
       alert('完了したアイテムがありません');
       return;
     }
     
-    // 完了アイテムを在庫追加候補に設定
-    setStockItems2Add(completedItems.map(item => ({
-      name: item.name,
-      quantity: item.quantity
-    })));
-    setIsStockDialogOpen(true);
-  };
-
-  // 在庫ダイアログでの保存処理
-  const handleSaveStock = async (stockData: StockItem) => {
     try {
-      await addStockItem(stockData);
-      setIsStockDialogOpen(false);
+      // 各完了アイテムを在庫に追加
+      for (const item of completedItems) {
+        const quantity = editingQuantities[item.id!] || item.quantity || '1個';
+        
+        const stockData: StockItem = {
+          name: item.name,
+          quantity: quantity,
+          best_before: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後
+          storage_location: '冷蔵庫',
+          is_homemade: false
+        };
+        
+        await addStockItem(stockData);
+      }
       
-      // 成功時に完了アイテムを削除
+      // 在庫追加後、完了アイテムを削除
       await deleteCompletedItems();
-      alert('在庫に追加し、買い物リストから削除しました');
+      
+      // 編集中の量をクリア
+      setEditingQuantities({});
+      
+      alert(`${completedItems.length}件のアイテムを在庫に追加しました`);
     } catch (err) {
       console.error('在庫追加に失敗しました:', err);
       alert('在庫追加に失敗しました');
     }
   };
 
-  // 簡単な在庫追加（詳細設定なし）
-  const handleQuickAddToInventory = async () => {
-    try {
-      await addCompletedItemsToStock();
-      alert('在庫に追加しました');
-    } catch (err) {
-      console.error('在庫追加に失敗しました:', err);
-      alert('在庫追加に失敗しました');
-    }
-  };
 
-  // 今週の買い物リストを自動生成
+  // 今週の買い物リストを自動作成
   const handleGenerateWeeklyList = async () => {
     setIsGenerating(true);
     setGenerationResult(null);
 
     try {
-      const result = await generateWeeklyShoppingList(mealPlans, stockItems);
+      const result = await generateWeeklyShoppingList(mealPlans, stockItems, pendingItems);
       
       if (result.success) {
-        // 生成されたアイテムを買い物リストに追加
+        // 作成されたアイテムを買い物リストに追加
         for (const item of result.generatedItems) {
           await addShoppingItem(item);
         }
@@ -178,32 +172,32 @@ export const Shopping: React.FC = () => {
           summary: result.summary
         });
         
-        alert(`買い物リストを生成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
+        alert(`買い物リストを作成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
       } else {
         setGenerationResult({
           summary: result.summary,
           error: result.error
         });
-        alert(`生成に失敗しました: ${result.error}`);
+        alert(`作成に失敗しました: ${result.error}`);
       }
     } catch (err) {
-      console.error('買い物リスト生成に失敗しました:', err);
-      alert('生成に失敗しました');
+      console.error('買い物リスト作成に失敗しました:', err);
+      alert('作成に失敗しました');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // 次の3日分の買い物リストを自動生成
+  // 次の3日分の買い物リストを自動作成
   const handleGenerateNext3Days = async () => {
     setIsGenerating(true);
     setGenerationResult(null);
 
     try {
-      const result = await generateShoppingListForNextDays(3, mealPlans, stockItems);
+      const result = await generateShoppingListForNextDays(3, mealPlans, stockItems, pendingItems);
       
       if (result.success) {
-        // 生成されたアイテムを買い物リストに追加
+        // 作成されたアイテムを買い物リストに追加
         for (const item of result.generatedItems) {
           await addShoppingItem(item);
         }
@@ -212,17 +206,17 @@ export const Shopping: React.FC = () => {
           summary: result.summary
         });
         
-        alert(`買い物リストを生成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
+        alert(`買い物リストを作成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
       } else {
         setGenerationResult({
           summary: result.summary,
           error: result.error
         });
-        alert(`生成に失敗しました: ${result.error}`);
+        alert(`作成に失敗しました: ${result.error}`);
       }
     } catch (err) {
-      console.error('買い物リスト生成に失敗しました:', err);
-      alert('生成に失敗しました');
+      console.error('買い物リスト作成に失敗しました:', err);
+      alert('作成に失敗しました');
     } finally {
       setIsGenerating(false);
     }
@@ -258,16 +252,13 @@ export const Shopping: React.FC = () => {
             未完了: {stats.uncompleted}件  完了: {stats.completed}件
           </div>
         </div>
-        <button className="text-gray-400 hover:text-gray-600">
-          <span className="text-xl">⚙️</span>
-        </button>
       </div>
 
-      {/* 自動生成セクション */}
+      {/* 自動作成セクション */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
         <h3 className="font-medium text-gray-900 mb-3 flex items-center">
           <span className="mr-2">🤖</span>
-          献立から自動生成
+          献立から自動追加
         </h3>
         <div className="space-y-3">
           <div className="flex gap-2">
@@ -276,21 +267,21 @@ export const Shopping: React.FC = () => {
               disabled={isGenerating}
               className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              {isGenerating ? '生成中...' : '次の3日分'}
+              {isGenerating ? '追加中...' : '次の3日分'}
             </button>
             <button
               onClick={handleGenerateWeeklyList}
               disabled={isGenerating}
               className="flex-1 px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
             >
-              {isGenerating ? '生成中...' : '今週分'}
+              {isGenerating ? '追加中...' : '今週分'}
             </button>
           </div>
           
           {generationResult && (
             <div className="bg-gray-50 rounded-lg p-3">
               <div className="text-sm">
-                <div className="font-medium mb-1">生成結果:</div>
+                <div className="font-medium mb-1">買い物リストに追加しました！</div>
                 <div className="text-gray-600">
                   必要な食材: {generationResult.summary.totalIngredients}件 / 
                   在庫あり: {generationResult.summary.inStock}件 / 
@@ -304,10 +295,6 @@ export const Shopping: React.FC = () => {
               </div>
             </div>
           )}
-          
-          <div className="text-xs text-gray-500">
-            ※ 設定済みの献立から在庫を考慮して自動生成します
-          </div>
         </div>
       </div>
 
@@ -328,12 +315,11 @@ export const Shopping: React.FC = () => {
             />
           </div>
           <div className="flex gap-2">
-            <input
-              type="text"
+            <QuantityInput
               value={newItemQuantity}
-              onChange={(e) => setNewItemQuantity(e.target.value)}
+              onChange={setNewItemQuantity}
               placeholder="数量 (任意)"
-              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+              className="flex-1"
             />
             <button
               onClick={handleAddItem}
@@ -408,7 +394,7 @@ export const Shopping: React.FC = () => {
               完了済み ({completedItems.length}件)
             </button>
             <button
-              onClick={handleDeleteCompleted}
+              onClick={() => deleteCompletedItems()}
               className="text-sm text-red-600 hover:text-red-500"
             >
               削除
@@ -418,20 +404,29 @@ export const Shopping: React.FC = () => {
           {showCompleted && (
             <div className="space-y-3">
               {completedItems.map((item) => (
-                <div key={item.id} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={item.checked}
-                    onChange={() => item.id && handleToggleItem(item.id)}
-                    className="mr-3"
-                  />
-                  <div className="flex-1">
-                    <span className="text-gray-700 line-through">
-                      {item.name}
-                      {item.quantity && (
-                        <span className="text-gray-500 ml-1">({item.quantity})</span>
-                      )}
-                    </span>
+                <div key={item.id} className="flex items-center justify-between">
+                  <div className="flex items-center flex-1">
+                    <input
+                      type="checkbox"
+                      checked={item.checked}
+                      onChange={() => item.id && handleToggleItem(item.id)}
+                      className="mr-3"
+                    />
+                    <div className="flex-1">
+                      <span className="text-gray-700 line-through">
+                        {item.name}
+                      </span>
+                    </div>
+                  </div>
+                  
+                  {/* 量調整エディット */}
+                  <div className="flex items-center ml-3">
+                    <QuantityInput
+                      value={editingQuantities[item.id!] || item.quantity || ''}
+                      onChange={(value) => handleQuantityEdit(item.id!, value)}
+                      placeholder="数量"
+                      className="w-32"
+                    />
                   </div>
                 </div>
               ))}
@@ -444,42 +439,14 @@ export const Shopping: React.FC = () => {
       {completedItems.length > 0 && (
         <div className="space-y-2">
           <button
-            onClick={handleDeleteCompleted}
-            className="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded text-sm"
+            onClick={handleAddToStock}
+            className="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded text-sm"
           >
-            完了をまとめて削除
+            完了済みを在庫に追加
           </button>
-          <div className="flex gap-2">
-            <button
-              onClick={handleQuickAddToInventory}
-              className="flex-1 bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded text-sm"
-            >
-              簡単追加
-            </button>
-            <button
-              onClick={handleAddToInventory}
-              className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded text-sm"
-            >
-              詳細設定
-            </button>
-          </div>
         </div>
       )}
 
-      {/* 在庫追加ダイアログ */}
-      <StockDialog
-        isOpen={isStockDialogOpen}
-        onClose={() => setIsStockDialogOpen(false)}
-        onSave={handleSaveStock}
-        initialData={stockItems2Add.length > 0 ? {
-          name: stockItems2Add[0].name,
-          quantity: stockItems2Add[0].quantity || '1個',
-          best_before: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後
-          storage_location: '冷蔵庫',
-          is_homemade: false
-        } : undefined}
-        isEditing={false}
-      />
     </div>
   );
 };

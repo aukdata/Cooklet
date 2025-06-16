@@ -37,7 +37,7 @@
 **一括操作機能**
 - 全選択/全解除機能
 - 完了アイテム一括削除
-- 在庫追加機能（今後実装予定）
+- 完了アイテムを在庫に追加（量調整可能）
 
 #### 状態管理
 
@@ -46,6 +46,7 @@
 - `newItemQuantity`: 新規追加する数量
 - `showCompleted`: 完了アイテム表示状態
 - `selectAll`: 全選択状態
+- `editingQuantities`: 完了アイテムの量編集状態
 - `shoppingItems`: 買い物リストアイテム配列
 
 **データ型定義**
@@ -65,6 +66,8 @@ interface ShoppingItem {
 - 新規追加（handleAddItem）
 - チェック状態変更（handleToggleItem）
 - 一括削除（handleDeleteCompleted）
+- 完了アイテムの量編集（handleQuantityEdit）
+- 完了アイテムの在庫追加（handleAddToStock）
 
 **UI操作**
 - 折りたたみ表示制御
@@ -107,10 +110,11 @@ interface ShoppingItem {
 - 在庫との突合による必要数量計算
 - meal_plansとstock_itemsの連携
 
-**在庫連携**
-- 在庫追加機能の実装
-- stock_itemsテーブルとの連携
-- 完了アイテムの在庫自動登録
+**在庫連携（完了済み）**
+- 在庫追加機能の実装完了
+- stock_itemsテーブルとの連携完了
+- 完了アイテムの在庫自動登録完了
+- 量調整エディット機能完了
 
 ## 注意点
 - CLAUDE.md仕様書5.3に完全準拠の実装完了
