@@ -265,7 +265,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
               value={searchQuery}
               onChange={(e) => handleSearchQueryChange(e.target.value)}
               placeholder="レシピを検索..."
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-2"
+              className="w-full border border-gray-300 rounded px-3 py-2 text-sm mb-2 min-w-0"
             />
             
             {/* レシピ選択コンボボックス */}
@@ -301,7 +301,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
                   value={manualRecipeName}
                   onChange={(e) => setManualRecipeName(e.target.value)}
                   placeholder="料理名を入力..."
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm min-w-0"
                 />
               </div>
 
@@ -314,7 +314,8 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
                   value={manualRecipeUrl}
                   onChange={(e) => setManualRecipeUrl(e.target.value)}
                   placeholder="https://cookpad.com/..."
-                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+                  className="w-full border border-gray-300 rounded px-3 py-2 text-sm min-w-0 overflow-hidden"
+                  style={{ wordBreak: 'break-all' }}
                 />
               </div>
             </div>
@@ -352,7 +353,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
                     value={ingredient.name}
                     onChange={(e) => handleIngredientChange(index, 'name', e.target.value)}
                     placeholder="食材名"
-                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm min-w-0"
                   />
                   <QuantityInput
                     value={ingredient.quantity}

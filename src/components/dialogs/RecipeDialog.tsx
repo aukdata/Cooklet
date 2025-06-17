@@ -208,7 +208,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
               value={formData.title}
               onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
               placeholder="ハンバーグ定食"
-              className="w-full border border-gray-300 rounded px-3 py-2"
+              className="w-full border border-gray-300 rounded px-3 py-2 min-w-0"
               required
             />
           </div>
@@ -224,7 +224,8 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                 value={formData.url}
                 onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
                 placeholder="https://cookpad.com/..."
-                className="flex-1 border border-gray-300 rounded px-3 py-2"
+                className="flex-1 border border-gray-300 rounded px-3 py-2 min-w-0 overflow-hidden"
+                style={{ wordBreak: 'break-all' }}
               />
               {onExtractIngredients && (
                 <button
@@ -271,7 +272,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                     value={ingredient.name}
                     onChange={(e) => updateIngredient(index, 'name', e.target.value)}
                     placeholder="牛ひき肉"
-                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm min-w-0"
                   />
                   <QuantityInput
                     value={ingredient.quantity}
@@ -328,7 +329,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 placeholder="肉料理 和食 簡単 (複数可)"
-                className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm min-w-0"
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
               />
               <button
