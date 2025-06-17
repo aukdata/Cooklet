@@ -11,8 +11,8 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
   // タブの定義（ID、ラベル、アイコン） - CLAUDE.md仕様書に準拠
   const tabs = [
     { id: 'dashboard', label: 'サマリー', icon: '📊' },
-    { id: 'meal-plans', label: '献立', icon: '📅' },
     { id: 'recipes', label: 'レシピ', icon: '🍳' },
+    { id: 'meal-plans', label: '献立', icon: '📅' },
     { id: 'shopping', label: '買い物', icon: '🛒' },
     { id: 'stock', label: '在庫', icon: '📦' },
     { id: 'cost', label: 'コスト', icon: '💰' },

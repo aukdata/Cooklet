@@ -13,14 +13,14 @@ import { ErrorBoundary } from '../ErrorBoundary';
 // アプリケーションのメインレイアウトコンポーネント
 export const MainLayout: React.FC = () => {
   // アクティブタブの状態管理（デフォルトはダッシュボード）
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('summary');
   // ダイアログの表示状態を取得
   const { isDialogOpen } = useDialog();
 
   // アクティブタブに応じてコンテンツをレンダリングする関数
   const renderContent = () => {
     switch (activeTab) {
-      case 'dashboard':
+      case 'summary':
         return (
           <ErrorBoundary fallback={
             <div className="p-4 text-center">
@@ -36,12 +36,12 @@ export const MainLayout: React.FC = () => {
             <Dashboard />
           </ErrorBoundary>
         ) // ダッシュボードページ
+      case 'recipes':
+        return <Recipes /> // レシピ管理ページ
       case 'meal-plans':
         return <MealPlans /> // カレンダー画面（献立計画表示）
       case 'shopping':
         return <Shopping /> // 買い物リストページ
-      case 'recipes':
-        return <Recipes /> // レシピ管理ページ
       case 'stock':
         return <Stock /> // 在庫管理ページ
       case 'cost':
