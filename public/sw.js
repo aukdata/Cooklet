@@ -182,8 +182,8 @@ async function handleStaticRequest(request) {
               line-height: 1.6;
             }
             button {
-              background-color: #10b981;
-              color: white;
+              background-color: #f3f4f6;
+              color: #374151;
               border: none;
               padding: 12px 24px;
               border-radius: 8px;
@@ -192,7 +192,7 @@ async function handleStaticRequest(request) {
               font-size: 16px;
             }
             button:hover {
-              background-color: #059669;
+              background-color: #e5e7eb;
             }
           </style>
         </head>

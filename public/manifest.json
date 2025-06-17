@@ -5,7 +5,7 @@
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#10b981",
+  "theme_color": "#ffffff",
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "ja",
@@ -63,11 +63,11 @@
   ],
   "screenshots": [
     {
-      "src": "/screenshots/dashboard.png",
+      "src": "/screenshots/summary.png",
       "sizes": "390x844",
       "type": "image/png",
       "form_factor": "narrow",
-      "label": "ダッシュボード画面"
+      "label": "サマリー画面"
     },
     {
       "src": "/screenshots/meal-plans.png",
