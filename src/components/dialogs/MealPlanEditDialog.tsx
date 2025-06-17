@@ -358,7 +358,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
                     value={ingredient.quantity}
                     onChange={(value) => handleIngredientChange(index, 'quantity', value)}
                     placeholder="分量"
-                    className="w-24"
+                    className="w-32"
                   />
                   <button
                     onClick={() => handleRemoveIngredient(index)}

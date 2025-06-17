@@ -210,7 +210,7 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
                     value={ingredient.quantity}
                     onChange={(value) => updateIngredient(index, 'quantity', value)}
                     placeholder="数量"
-                    className="w-24"
+                    className="w-32"
                   />
                   {formData.ingredients.length > 1 && (
                     <button
