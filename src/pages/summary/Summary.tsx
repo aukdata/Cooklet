@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
 import { CostDialog } from '../../components/dialogs/CostDialog';
 import { useMealPlans, useStockItems, useCostRecords, type MealPlan, type CostRecord } from '../../hooks';
-import { useToast } from '../../hooks/useToast.tsx';
+// import { useToast } from '../../hooks/useToast.tsx'; // 将来的に使用予定
 
 
 // ダッシュボード画面コンポーネント - CLAUDE.md仕様書に準拠
@@ -28,8 +28,8 @@ export const Dashboard: React.FC = () => {
   // コストデータの取得
   const { getMonthlyStats, saveCostRecord, loading: costLoading } = useCostRecords();
   
-  // トーストフック
-  const { showSuccess, showError } = useToast();
+  // 将来的にトースト機能追加時に使用予定
+  // const { showSuccess, showError } = useToast();
 
   // 全体のローディング状態
   const isLoading = mealLoading || stockLoading || costLoading;

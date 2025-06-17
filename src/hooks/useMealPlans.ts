@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useCache, CacheConfig } from './useCache';
 
 // 献立データの型定義（CLAUDE.md仕様書準拠）
 export interface MealPlan {
@@ -15,48 +16,51 @@ export interface MealPlan {
   updated_at?: string;
 }
 
-// useMealPlansフック - Supabase meal_plansテーブルとの連携
+// useMealPlansフック - Supabase meal_plansテーブルとの連携（キャッシュ対応）
 export const useMealPlans = () => {
-  const [mealPlans, setMealPlans] = useState<MealPlan[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  // 献立データを取得
-  const fetchMealPlans = useCallback(async () => {
-    if (!user) return;
+  // キャッシュ機能付きデータ取得
+  const fetchMealPlansWithCache = useCallback(async (): Promise<MealPlan[]> => {
+    if (!user) return [];
 
-    try {
-      setLoading(true);
-      setError(null);
+    const { data, error: fetchError } = await supabase
+      .from('meal_plans')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('date', { ascending: true })
+      .order('created_at', { ascending: true });
 
-      const { data, error: fetchError } = await supabase
-        .from('meal_plans')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('date', { ascending: true })
-        .order('created_at', { ascending: true });
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      setMealPlans(data || []);
-    } catch (err) {
-      console.error('献立データの取得に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '献立データの取得に失敗しました');
-    } finally {
-      setLoading(false);
+    if (fetchError) {
+      throw fetchError;
     }
+
+    return data || [];
   }, [user]);
+
+  // キャッシュフックの使用
+  const {
+    data: mealPlans,
+    isLoading: loading,
+    error,
+    setCache,
+    invalidateCache,
+    refreshData: fetchMealPlans
+  } = useCache<MealPlan[]>(
+    `meal_plans_${user?.id || 'anonymous'}`,
+    fetchMealPlansWithCache,
+    {
+      ttl: CacheConfig.TTL.MEDIUM,
+      persistToStorage: CacheConfig.PERSIST_TO_STORAGE,
+      storageKey: `meal_plans_${user?.id || 'anonymous'}`
+    }
+  );
 
   // 献立を追加
   const addMealPlan = async (mealPlan: Omit<MealPlan, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     if (!user) throw new Error('ユーザーが認証されていません');
 
     try {
-      setError(null);
-
       const { data, error: insertError } = await supabase
         .from('meal_plans')
         .insert([
@@ -76,12 +80,14 @@ export const useMealPlans = () => {
         throw insertError;
       }
 
-      // ローカル状態を更新
-      setMealPlans(prev => [...prev, data]);
+      // キャッシュを更新（新しいアイテムを追加）
+      const currentPlans = mealPlans || [];
+      const updatedPlans = [...currentPlans, data];
+      setCache(updatedPlans);
+      
       return data;
     } catch (err) {
       console.error('献立の追加に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '献立の追加に失敗しました');
       throw err;
     }
   };
@@ -91,8 +97,6 @@ export const useMealPlans = () => {
     if (!user) throw new Error('ユーザーが認証されていません');
 
     try {
-      setError(null);
-
       const { data, error: updateError } = await supabase
         .from('meal_plans')
         .update({
@@ -108,14 +112,14 @@ export const useMealPlans = () => {
         throw updateError;
       }
 
-      // ローカル状態を更新
-      setMealPlans(prev => 
-        prev.map(plan => plan.id === id ? data : plan)
-      );
+      // キャッシュを更新（該当アイテムを更新）
+      const currentPlans = mealPlans || [];
+      const updatedPlans = currentPlans.map(plan => plan.id === id ? data : plan);
+      setCache(updatedPlans);
+      
       return data;
     } catch (err) {
       console.error('献立の更新に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '献立の更新に失敗しました');
       throw err;
     }
   };
@@ -125,8 +129,6 @@ export const useMealPlans = () => {
     if (!user) throw new Error('ユーザーが認証されていません');
 
     try {
-      setError(null);
-
       const { error: deleteError } = await supabase
         .from('meal_plans')
         .delete()
@@ -137,11 +139,12 @@ export const useMealPlans = () => {
         throw deleteError;
       }
 
-      // ローカル状態を更新
-      setMealPlans(prev => prev.filter(plan => plan.id !== id));
+      // キャッシュを更新（該当アイテムを削除）
+      const currentPlans = mealPlans || [];
+      const updatedPlans = currentPlans.filter(plan => plan.id !== id);
+      setCache(updatedPlans);
     } catch (err) {
       console.error('献立の削除に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '献立の削除に失敗しました');
       throw err;
     }
   };
@@ -158,21 +161,16 @@ export const useMealPlans = () => {
   // 指定日の献立を取得
   const getMealPlansForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
-    return mealPlans.filter(plan => plan.date === dateStr);
+    return (mealPlans || []).filter(plan => plan.date === dateStr);
   };
 
   // 指定日・食事タイプの献立を取得
   const getMealPlan = (date: Date, mealType: '朝' | '昼' | '夜' | '間食') => {
     const dateStr = date.toISOString().split('T')[0];
-    return mealPlans.find(plan => plan.date === dateStr && plan.meal_type === mealType);
+    return (mealPlans || []).find(plan => plan.date === dateStr && plan.meal_type === mealType);
   };
 
-  // 初回データ取得
-  useEffect(() => {
-    fetchMealPlans();
-  }, [fetchMealPlans]);
-
-  // リアルタイム更新の設定
+  // リアルタイム更新の設定（キャッシュ対応）
   useEffect(() => {
     if (!user) return;
 
@@ -187,7 +185,8 @@ export const useMealPlans = () => {
           filter: `user_id=eq.${user.id}`
         },
         () => {
-          // データが変更された場合は再取得
+          // データが変更された場合はキャッシュを無効化して再取得
+          invalidateCache();
           fetchMealPlans();
         }
       )
@@ -196,10 +195,10 @@ export const useMealPlans = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user, fetchMealPlans]);
+  }, [user, invalidateCache, fetchMealPlans]);
 
   return {
-    mealPlans,
+    mealPlans: mealPlans || [],
     loading,
     error,
     addMealPlan,
@@ -208,6 +207,8 @@ export const useMealPlans = () => {
     saveMealPlan,
     getMealPlansForDate,
     getMealPlan,
-    refetch: fetchMealPlans
+    refetch: fetchMealPlans,
+    invalidateCache, // キャッシュ無効化
+    clearCache: invalidateCache // 後方互換性のためのエイリアス
   };
 };
