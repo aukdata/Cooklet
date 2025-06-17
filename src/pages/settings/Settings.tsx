@@ -1,16 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast.tsx';
 
 // ユーザ設定画面コンポーネント - issue #11対応（画面化）
 export const Settings: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { supabaseUser, signOut } = useAuth();
   const { showSuccess, showError } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [displayName, setDisplayName] = useState((user as { user_metadata?: { full_name?: string } })?.user_metadata?.full_name || '');
+  const [displayName, setDisplayName] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // supabaseUserの変更を監視してdisplayNameを同期
+  useEffect(() => {
+    const fullName = supabaseUser?.user_metadata?.full_name || '';
+    setDisplayName(fullName);
+  }, [supabaseUser]);
 
   // ユーザ名保存処理（Supabaseのuser_metadata更新）
   const handleSaveName = async () => {
@@ -26,6 +32,13 @@ export const Settings: React.FC = () => {
         console.error('ユーザ名の更新に失敗しました:', error);
         showError('ユーザ名の更新に失敗しました。');
         return;
+      }
+
+      // セッションを再取得してAuthContextの状態を更新
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        // AuthContextは自動的にセッション変更を検知して更新される
+        console.log('ユーザー情報更新完了:', session.user.user_metadata);
       }
 
       setIsEditing(false);
@@ -77,7 +90,7 @@ export const Settings: React.FC = () => {
               メールアドレス
             </label>
             <div className="bg-gray-50 p-3 rounded-md">
-              <p className="text-sm text-gray-900">{user?.email}</p>
+              <p className="text-sm text-gray-900">{supabaseUser?.email}</p>
             </div>
           </div>
 
@@ -106,7 +119,7 @@ export const Settings: React.FC = () => {
                 <button
                   onClick={() => {
                     setIsEditing(false);
-                    setDisplayName((user as { user_metadata?: { full_name?: string } })?.user_metadata?.full_name || '');
+                    setDisplayName(supabaseUser?.user_metadata?.full_name || '');
                   }}
                   disabled={isSaving}
                   className="bg-gray-300 text-gray-700 px-3 py-2 rounded-md text-sm hover:bg-gray-400 transition-colors disabled:opacity-50"
