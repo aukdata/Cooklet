@@ -126,13 +126,27 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
     }
   };
 
-  // タグを追加する関数
+  // タグを追加する関数 - 複数タグの同時追加に対応
   const addTag = () => {
-    if (!newTag.trim() || formData.tags.includes(newTag.trim())) return;
-    setFormData(prev => ({
-      ...prev,
-      tags: [...prev.tags, newTag.trim()]
-    }));
+    if (!newTag.trim()) return;
+    
+    // デリミタで分割（半角スペース、全角スペース、「,」、「、」）
+    const delimiters = /[\s　,、]+/;
+    const inputTags = newTag
+      .split(delimiters)
+      .map(tag => tag.trim())
+      .filter(tag => tag.length > 0); // 空文字列を除外
+    
+    // 重複を除外して新しいタグのみを追加
+    const newTags = inputTags.filter(tag => !formData.tags.includes(tag));
+    
+    if (newTags.length > 0) {
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, ...newTags]
+      }));
+    }
+    
     setNewTag('');
   };
 
@@ -313,7 +327,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                 type="text"
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
-                placeholder="肉料理"
+                placeholder="肉料理 和食 簡単 (複数可)"
                 className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
                 onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
               />
@@ -325,6 +339,9 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                 追加
               </button>
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              複数タグ入力可能（スペース・カンマ・句点で区切り）
+            </p>
           </div>
 
           {/* ボタン */}
