@@ -3,6 +3,9 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useCache, CacheConfig } from './useCache';
 
+// 献立消費状態の型定義
+export type MealPlanConsumedStatus = 'pending' | 'completed' | 'stored';
+
 // 献立データの型定義（CLAUDE.md仕様書準拠）
 export interface MealPlan {
   id?: string;
@@ -12,6 +15,7 @@ export interface MealPlan {
   recipe_url?: string;
   ingredients: { name: string; quantity: string }[];
   memo?: string;
+  consumed_status?: MealPlanConsumedStatus; // 消費状態（未完了・完了・作り置き）
   created_at?: string;
   updated_at?: string;
 }
@@ -70,7 +74,8 @@ export const useMealPlans = () => {
             meal_type: mealPlan.meal_type,
             recipe_url: mealPlan.recipe_url,
             ingredients: mealPlan.ingredients,
-            memo: mealPlan.memo
+            memo: mealPlan.memo,
+            consumed_status: mealPlan.consumed_status || 'pending'
           }
         ])
         .select()
@@ -149,6 +154,38 @@ export const useMealPlans = () => {
     }
   };
 
+  // 献立の消費状態を更新
+  const updateMealPlanStatus = async (id: string, status: MealPlanConsumedStatus) => {
+    if (!user) throw new Error('ユーザーが認証されていません');
+
+    try {
+      const { data, error: updateError } = await supabase
+        .from('meal_plans')
+        .update({
+          consumed_status: status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      // キャッシュを更新（該当アイテムの状態を更新）
+      const currentPlans = mealPlans || [];
+      const updatedPlans = currentPlans.map(plan => plan.id === id ? data : plan);
+      setCache(updatedPlans);
+      
+      return data;
+    } catch (err) {
+      console.error('献立状態の更新に失敗しました:', err);
+      throw err;
+    }
+  };
+
   // 献立を保存（追加または更新）
   const saveMealPlan = async (mealPlan: MealPlan) => {
     if (mealPlan.id) {
@@ -204,6 +241,7 @@ export const useMealPlans = () => {
     addMealPlan,
     updateMealPlan,
     deleteMealPlan,
+    updateMealPlanStatus, // 献立消費状態更新
     saveMealPlan,
     getMealPlansForDate,
     getMealPlan,

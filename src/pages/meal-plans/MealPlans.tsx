@@ -21,6 +21,10 @@ export const MealPlans: React.FC = () => {
   // ダイアログの表示状態
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingMeal, setEditingMeal] = useState<{ date: string; mealType: '朝' | '昼' | '夜' | '間食' } | null>(null);
+  
+  // 作った選択ダイアログの状態
+  const [isConsumedDialogOpen, setIsConsumedDialogOpen] = useState(false);
+  const [processingMeal, setProcessingMeal] = useState<MealPlan | null>(null);
 
   // 指定した週の開始日から7日分の日付を取得
   const getWeekDates = (weekStart: Date) => {
@@ -58,7 +62,7 @@ export const MealPlans: React.FC = () => {
   const today = new Date();
 
   // 献立データの取得（Supabase連携）
-  const { mealPlans, loading, error, saveMealPlan, deleteMealPlan, getMealPlansForDate, getMealPlan } = useMealPlans();
+  const { mealPlans, loading, error, saveMealPlan, deleteMealPlan, updateMealPlanStatus, getMealPlansForDate, getMealPlan } = useMealPlans();
 
   // 週の範囲を表示用にフォーマット
   const weekRange = `${weekDates[0].getMonth() + 1}/${weekDates[0].getDate()} - ${weekDates[6].getMonth() + 1}/${weekDates[6].getDate()}`;
@@ -116,6 +120,47 @@ export const MealPlans: React.FC = () => {
   const handleCloseDialog = () => {
     setIsDialogOpen(false);
     setEditingMeal(null);
+  };
+
+  // 「作った」ボタンクリック処理
+  const handleCookedClick = (mealPlan: MealPlan) => {
+    setProcessingMeal(mealPlan);
+    setIsConsumedDialogOpen(true);
+  };
+
+  // 完食処理
+  const handleCompleted = async () => {
+    if (!processingMeal?.id) return;
+    
+    try {
+      await updateMealPlanStatus(processingMeal.id, 'completed');
+      setIsConsumedDialogOpen(false);
+      setProcessingMeal(null);
+    } catch (err) {
+      console.error('完食状態の更新に失敗しました:', err);
+      // TODO: エラートースト表示
+    }
+  };
+
+  // 作り置き処理
+  const handleStoreMade = async () => {
+    if (!processingMeal?.id) return;
+    
+    try {
+      await updateMealPlanStatus(processingMeal.id, 'stored');
+      // TODO: 作り置きとして在庫テーブルに追加
+      setIsConsumedDialogOpen(false);
+      setProcessingMeal(null);
+    } catch (err) {
+      console.error('作り置き状態の更新に失敗しました:', err);
+      // TODO: エラートースト表示
+    }
+  };
+
+  // 消費ダイアログを閉じる処理
+  const handleCloseConsumedDialog = () => {
+    setIsConsumedDialogOpen(false);
+    setProcessingMeal(null);
   };
 
   // 週間サマリーデータ
@@ -236,18 +281,27 @@ export const MealPlans: React.FC = () => {
           {/* 朝食 */}
           {(() => {
             const breakfastPlan = getMealPlan(selectedDate, '朝');
+            const isCompleted = breakfastPlan?.consumed_status === 'completed';
+            const isStored = breakfastPlan?.consumed_status === 'stored';
+            const isDone = isCompleted || isStored;
+            
             return (
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center mb-1">
                     <span className="mr-2">🌅</span>
                     <span className="font-medium">朝食:</span>
-                    <span className="ml-2">
+                    <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
                       {breakfastPlan ? (breakfastPlan.memo || '朝食メニュー') : '［未設定］'}
                     </span>
+                    {isDone && (
+                      <span className="ml-2">
+                        ✅ {isCompleted ? '完食' : '作り置き'}
+                      </span>
+                    )}
                   </div>
                   {breakfastPlan && (
-                    <div className="ml-6 text-sm text-gray-600">
+                    <div className={`ml-6 text-sm text-gray-600 ${isDone ? 'opacity-50' : ''}`}>
                       📋 材料: {breakfastPlan.ingredients.map(ing => ing.name).join(', ')}
                     </div>
                   )}
@@ -259,6 +313,14 @@ export const MealPlans: React.FC = () => {
                       className="text-sm text-blue-600 hover:text-blue-500"
                     >
                       🌐 レシピを見る
+                    </button>
+                  )}
+                  {breakfastPlan && !isDone && (
+                    <button 
+                      onClick={() => handleCookedClick(breakfastPlan)}
+                      className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded"
+                    >
+                      🍽️ 作った
                     </button>
                   )}
                   <button 
@@ -275,18 +337,27 @@ export const MealPlans: React.FC = () => {
           {/* 昼食 */}
           {(() => {
             const lunchPlan = getMealPlan(selectedDate, '昼');
+            const isCompleted = lunchPlan?.consumed_status === 'completed';
+            const isStored = lunchPlan?.consumed_status === 'stored';
+            const isDone = isCompleted || isStored;
+            
             return (
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center mb-1">
                     <span className="mr-2">🌞</span>
                     <span className="font-medium">昼食:</span>
-                    <span className="ml-2">
+                    <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
                       {lunchPlan ? (lunchPlan.memo || '昼食メニュー') : '［未設定］'}
                     </span>
+                    {isDone && (
+                      <span className="ml-2">
+                        ✅ {isCompleted ? '完食' : '作り置き'}
+                      </span>
+                    )}
                   </div>
                   {lunchPlan && (
-                    <div className="ml-6 text-sm text-gray-600">
+                    <div className={`ml-6 text-sm text-gray-600 ${isDone ? 'opacity-50' : ''}`}>
                       📋 材料: {lunchPlan.ingredients.map(ing => ing.name).join(', ')}
                     </div>
                   )}
@@ -298,6 +369,14 @@ export const MealPlans: React.FC = () => {
                       className="text-sm text-blue-600 hover:text-blue-500"
                     >
                       🌐 レシピを見る
+                    </button>
+                  )}
+                  {lunchPlan && !isDone && (
+                    <button 
+                      onClick={() => handleCookedClick(lunchPlan)}
+                      className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded"
+                    >
+                      🍽️ 作った
                     </button>
                   )}
                   <button 
@@ -314,18 +393,27 @@ export const MealPlans: React.FC = () => {
           {/* 夕食 */}
           {(() => {
             const dinnerPlan = getMealPlan(selectedDate, '夜');
+            const isCompleted = dinnerPlan?.consumed_status === 'completed';
+            const isStored = dinnerPlan?.consumed_status === 'stored';
+            const isDone = isCompleted || isStored;
+            
             return (
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   <div className="flex items-center mb-1">
                     <span className="mr-2">🌙</span>
                     <span className="font-medium">夕食:</span>
-                    <span className="ml-2">
+                    <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
                       {dinnerPlan ? (dinnerPlan.memo || '夕食メニュー') : '［未設定］'}
                     </span>
+                    {isDone && (
+                      <span className="ml-2">
+                        ✅ {isCompleted ? '完食' : '作り置き'}
+                      </span>
+                    )}
                   </div>
                   {dinnerPlan && (
-                    <div className="ml-6 text-sm text-gray-600">
+                    <div className={`ml-6 text-sm text-gray-600 ${isDone ? 'opacity-50' : ''}`}>
                       📋 材料: {dinnerPlan.ingredients.map(ing => ing.name).join(', ')}
                     </div>
                   )}
@@ -337,6 +425,14 @@ export const MealPlans: React.FC = () => {
                       className="text-sm text-blue-600 hover:text-blue-500"
                     >
                       🌐 レシピを見る
+                    </button>
+                  )}
+                  {dinnerPlan && !isDone && (
+                    <button 
+                      onClick={() => handleCookedClick(dinnerPlan)}
+                      className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded"
+                    >
+                      🍽️ 作った
                     </button>
                   )}
                   <button 
@@ -419,6 +515,58 @@ export const MealPlans: React.FC = () => {
           ) : undefined
         }
       />
+
+      {/* 完食・作り置き選択ダイアログ */}
+      {isConsumedDialogOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-semibold flex items-center">
+                <span className="mr-2">🍽️</span>
+                作った！
+              </h2>
+              <button
+                onClick={handleCloseConsumedDialog}
+                className="text-gray-400 hover:text-gray-600 text-xl"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-3">
+                「{processingMeal?.memo}」を作りました！<br/>
+                どうしますか？
+              </p>
+            </div>
+
+            <div className="space-y-3">
+              <button
+                onClick={handleCompleted}
+                className="w-full px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center justify-center"
+              >
+                <span className="mr-2">✅</span>
+                完食しました
+              </button>
+              
+              <button
+                onClick={handleStoreMade}
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center justify-center"
+              >
+                <span className="mr-2">🥡</span>
+                作り置きにします
+              </button>
+              
+              <button
+                onClick={handleCloseConsumedDialog}
+                className="w-full px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
