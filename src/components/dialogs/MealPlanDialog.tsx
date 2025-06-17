@@ -17,6 +17,7 @@ interface MealPlanForm {
   meal_type: '朝' | '昼' | '夜'; // 食事タイプ
   recipe_id?: string; // レシピID（任意）
   recipe_name?: string; // レシピ名
+  recipe_url?: string; // レシピURL（手動入力時）
   servings: number; // 人数
   memo?: string; // メモ
 }
@@ -36,8 +37,8 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
   initialData,
   isEditing = false
 }) => {
-  // DBからレシピデータを取得
-  const { recipes, loading: recipesLoading } = useRecipes();
+  // DBからレシピデータを取得・操作
+  const { recipes, loading: recipesLoading, addRecipe } = useRecipes();
   
   // レシピオプションの生成（DBデータ + 手動入力オプション）
   const recipeOptions: RecipeOption[] = useMemo(() => {
@@ -59,15 +60,60 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
     meal_type: initialData?.meal_type || '夜',
     recipe_id: initialData?.recipe_id || '',
     recipe_name: initialData?.recipe_name || '',
+    recipe_url: initialData?.recipe_url || '',
     servings: initialData?.servings || 2,
     memo: initialData?.memo || ''
   });
 
   // フォーム送信ハンドラ
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
-    onClose();
+    
+    try {
+      // 手動入力の場合は、レシピも同時に保存
+      if (formData.recipe_id === 'manual' && formData.recipe_name?.trim()) {
+        // 重複チェック: 同じタイトルのレシピが既に存在するかチェック
+        const existingRecipe = recipes?.find(
+          recipe => recipe.title.toLowerCase() === formData.recipe_name?.toLowerCase()
+        );
+        
+        if (!existingRecipe) {
+          // 新しいレシピを保存
+          const newRecipe = await addRecipe({
+            title: formData.recipe_name.trim(),
+            url: formData.recipe_url?.trim() || '',
+            servings: formData.servings,
+            tags: [] // デフォルトでは空のタグ配列
+          });
+          
+          // 保存されたレシピのIDを献立データに設定
+          const updatedFormData = {
+            ...formData,
+            recipe_id: newRecipe.id,
+            recipe_name: newRecipe.title
+          };
+          
+          onSave(updatedFormData);
+        } else {
+          // 既存のレシピを使用
+          const updatedFormData = {
+            ...formData,
+            recipe_id: existingRecipe.id,
+            recipe_name: existingRecipe.title
+          };
+          
+          onSave(updatedFormData);
+        }
+      } else {
+        // 手動入力以外の場合は通常の保存
+        onSave(formData);
+      }
+      
+      onClose();
+    } catch (error) {
+      console.error('献立の保存に失敗しました:', error);
+      alert('献立の保存に失敗しました。もう一度お試しください。');
+    }
   };
 
   // 削除確認ハンドラ
@@ -167,6 +213,38 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
               )}
             </div>
           </div>
+
+          {/* 手動入力時の詳細フィールド */}
+          {formData.recipe_id === 'manual' && (
+            <div className="space-y-4 border-t pt-4 mt-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  📝 料理名:
+                </label>
+                <input
+                  type="text"
+                  value={formData.recipe_name}
+                  onChange={(e) => setFormData(prev => ({ ...prev, recipe_name: e.target.value }))}
+                  placeholder="ハンバーグ定食"
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                  required
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  🌐 レシピURL (任意):
+                </label>
+                <input
+                  type="url"
+                  value={formData.recipe_url}
+                  onChange={(e) => setFormData(prev => ({ ...prev, recipe_url: e.target.value }))}
+                  placeholder="https://cookpad.com/..."
+                  className="w-full border border-gray-300 rounded px-3 py-2"
+                />
+              </div>
+            </div>
+          )}
 
           {/* 人数入力 */}
           <div>
