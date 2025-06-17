@@ -45,8 +45,7 @@ export const useCache = <T>(
   } = options;
 
   // キャッシュストレージ（メモリベース）
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cacheStore = useRef<Map<string, CacheEntry<any>>>(new Map());
+  const cacheStore = useRef<Map<string, CacheEntry<T>>>(new Map());
   
   // 状態管理
   const [data, setData] = useState<T | null>(null);
@@ -218,12 +217,7 @@ export const useCache = <T>(
  * 環境変数 VITE_USE_MOCK_DATA=true の場合、モックデータを返す
  */
 export const createMockCacheHook = <T>(mockData: T) => {
-  return (
-    _key: string,
-    _fetchFunction: () => Promise<T>,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    _options: CacheOptions = {}
-  ): CacheReturn<T> => {
+  return (): CacheReturn<T> => {
     const [data] = useState<T>(mockData);
     
     return {
