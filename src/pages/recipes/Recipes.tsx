@@ -1,16 +1,19 @@
 import React, { useState } from 'react';
 import { useRecipes, type SavedRecipe } from '../../hooks/useRecipes';
+import { useMealPlans } from '../../hooks/useMealPlans';
 import { extractIngredientsFromURL } from '../../services/ingredientExtraction';
 import { RecipeDialog } from '../../components/dialogs/RecipeDialog';
 import { RecipeDetailDialog } from '../../components/dialogs/RecipeDetailDialog';
-import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';  
+import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
+import { AddToMealPlanDialog } from '../../components/dialogs/AddToMealPlanDialog';
 import { EditButton } from '../../components/ui/Button';
 import { useToast } from '../../hooks/useToast.tsx';
 
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
 export const Recipes: React.FC = () => {
   const { recipes, loading, error, addRecipe, updateRecipe, deleteRecipe } = useRecipes();
-  const { showError } = useToast();
+  const { addMealPlan, getMealPlan, getLastCookedDate } = useMealPlans();
+  const { showError, showSuccess } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('全て');
   
@@ -21,6 +24,10 @@ export const Recipes: React.FC = () => {
   const [editingRecipe, setEditingRecipe] = useState<SavedRecipe | undefined>();
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
   const [deletingRecipe, setDeletingRecipe] = useState<SavedRecipe | undefined>();
+  
+  // 献立追加ダイアログの状態管理
+  const [isAddToMealPlanDialogOpen, setIsAddToMealPlanDialogOpen] = useState(false);
+  const [addingToMealPlanRecipe, setAddingToMealPlanRecipe] = useState<SavedRecipe | undefined>();
 
   // レシピ追加ボタンのハンドラー
   const handleAddNewRecipe = () => {
@@ -92,6 +99,52 @@ export const Recipes: React.FC = () => {
     setDeletingRecipe(undefined);
   };
 
+  // 献立追加ボタンのハンドラー
+  const handleAddToMealPlan = (recipe: SavedRecipe) => {
+    setAddingToMealPlanRecipe(recipe);
+    setIsAddToMealPlanDialogOpen(true);
+  };
+
+  // 献立追加ダイアログを閉じるハンドラー
+  const handleCloseAddToMealPlanDialog = () => {
+    setIsAddToMealPlanDialogOpen(false);
+    setAddingToMealPlanRecipe(undefined);
+  };
+
+  // 献立追加処理
+  const handleAddMealPlan = async (date: string, mealType: '朝' | '昼' | '夜') => {
+    if (!addingToMealPlanRecipe) return;
+
+    try {
+      // 同じ日時に既に献立があるかチェック
+      const existingMealPlan = getMealPlan(new Date(date), mealType);
+      
+      if (existingMealPlan) {
+        const confirmReplace = window.confirm(
+          `${date}の${mealType}食には既に「${existingMealPlan.memo || '献立'}」が設定されています。\n置き換えますか？`
+        );
+        
+        if (!confirmReplace) {
+          return;
+        }
+      }
+
+      // 献立を追加
+      await addMealPlan({
+        date,
+        meal_type: mealType,
+        recipe_url: addingToMealPlanRecipe.url,
+        ingredients: [], // TODO: レシピから食材を取得する機能実装時に対応
+        memo: addingToMealPlanRecipe.title
+      });
+
+      showSuccess('献立に追加しました');
+    } catch (err) {
+      console.error('献立への追加に失敗しました:', err);
+      showError('献立への追加に失敗しました');
+    }
+  };
+
   // 検索フィルタリング
   const filteredRecipes = recipes.filter(recipe => {
     const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase());
@@ -101,6 +154,12 @@ export const Recipes: React.FC = () => {
 
   // 全タグを取得
   const allTags = ['全て', ...Array.from(new Set(recipes.flatMap(r => r.tags)))];
+
+  // 日付フォーマット用のヘルパー関数（issue #31対応）
+  const formatDate = (dateStr: string): string => {
+    const date = new Date(dateStr);
+    return `${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getDate().toString().padStart(2, '0')}`;
+  };
 
   return (
     <div className="p-4">
@@ -200,6 +259,17 @@ export const Recipes: React.FC = () => {
                       {recipe.servings}人前
                     </div>
                     
+                    {/* 最後に作った日の表示（issue #31対応） */}
+                    {(() => {
+                      const lastCookedDate = getLastCookedDate(recipe.url);
+                      return lastCookedDate ? (
+                        <div className="text-sm text-gray-600 mb-2 flex items-center">
+                          <span className="mr-1">📅</span>
+                          最後に作った日: {formatDate(lastCookedDate)}
+                        </div>
+                      ) : null;
+                    })()}
+                    
                     {recipe.tags.length > 0 && (
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-gray-600">🏷️</span>
@@ -216,6 +286,12 @@ export const Recipes: React.FC = () => {
                   </div>
                   
                   <div className="flex gap-2">
+                    <button
+                      onClick={() => handleAddToMealPlan(recipe)}
+                      className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded transition-colors"
+                    >
+                      📅 献立に追加
+                    </button>
                     <EditButton onClick={() => handleEditRecipe(recipe)} />
                   </div>
                 </div>
@@ -262,6 +338,14 @@ export const Recipes: React.FC = () => {
         itemName={deletingRecipe?.title || ''}
         onConfirm={handleConfirmDelete}
         onCancel={handleCancelDelete}
+      />
+
+      {/* 献立追加ダイアログ */}
+      <AddToMealPlanDialog
+        isOpen={isAddToMealPlanDialogOpen}
+        recipe={addingToMealPlanRecipe || null}
+        onClose={handleCloseAddToMealPlanDialog}
+        onAdd={handleAddMealPlan}
       />
     </div>
   );

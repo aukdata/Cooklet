@@ -207,6 +207,15 @@ export const useMealPlans = () => {
     return (mealPlans || []).find(plan => plan.date === dateStr && plan.meal_type === mealType);
   };
 
+  // レシピURLに基づいて最後に調理された日付を取得（issue #31対応）
+  const getLastCookedDate = (recipeUrl: string): string | null => {
+    const plansWithRecipe = (mealPlans || [])
+      .filter(plan => plan.recipe_url === recipeUrl)
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    return plansWithRecipe.length > 0 ? plansWithRecipe[0].date : null;
+  };
+
   // リアルタイム更新の設定（キャッシュ対応）
   useEffect(() => {
     if (!user) return;
@@ -245,6 +254,7 @@ export const useMealPlans = () => {
     saveMealPlan,
     getMealPlansForDate,
     getMealPlan,
+    getLastCookedDate, // レシピURLに基づく最後の調理日取得
     refetch: fetchMealPlans,
     invalidateCache, // キャッシュ無効化
     clearCache: invalidateCache // 後方互換性のためのエイリアス
