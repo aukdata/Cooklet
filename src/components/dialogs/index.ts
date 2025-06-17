@@ -17,7 +17,7 @@ export { StockDialog } from './StockDialog';
 export { CostDialog } from './CostDialog';
 
 // 削除確認ダイアログ（5.6.7）
-export { ConfirmDialog, useConfirmDialog } from './ConfirmDialog';
+export { ConfirmDialog } from './ConfirmDialog';
 
 // 各ダイアログの型定義は個別ファイルで定義されています
 // 使用時は個別にインポートしてください
