@@ -5,10 +5,12 @@ import { RecipeDialog } from '../../components/dialogs/RecipeDialog';
 import { RecipeDetailDialog } from '../../components/dialogs/RecipeDetailDialog';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';  
 import { EditButton } from '../../components/ui/Button';
+import { useToast } from '../../hooks/useToast.tsx';
 
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
 export const Recipes: React.FC = () => {
   const { recipes, loading, error, addRecipe, updateRecipe, deleteRecipe } = useRecipes();
+  const { showError } = useToast();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('全て');
   
@@ -40,7 +42,7 @@ export const Recipes: React.FC = () => {
       setEditingRecipe(undefined);
     } catch (err) {
       console.error(editingRecipe ? 'レシピの更新に失敗しました:' : 'レシピの追加に失敗しました:', err);
-      alert(editingRecipe ? 'レシピの更新に失敗しました' : 'レシピの追加に失敗しました');
+      showError(editingRecipe ? 'レシピの更新に失敗しました' : 'レシピの追加に失敗しました');
     }
   };
 
@@ -80,7 +82,7 @@ export const Recipes: React.FC = () => {
       setDeletingRecipe(undefined);
     } catch (err) {
       console.error('レシピの削除に失敗しました:', err);
-      alert('レシピの削除に失敗しました');
+      showError('レシピの削除に失敗しました');
     }
   };
 

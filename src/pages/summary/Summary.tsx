@@ -29,7 +29,7 @@ export const Dashboard: React.FC = () => {
   const { getMonthlyStats, saveCostRecord, loading: costLoading } = useCostRecords();
   
   // トーストフック
-  const { showSuccess, showError, showInfo } = useToast();
+  const { showSuccess, showError } = useToast();
 
   // 全体のローディング状態
   const isLoading = mealLoading || stockLoading || costLoading;
@@ -479,27 +479,6 @@ export const Dashboard: React.FC = () => {
         isEditing={false}
       />
 
-      {/* トーストテストボタン（開発用） */}
-      <div className="fixed bottom-20 right-4 space-y-2">
-        <button
-          onClick={() => showSuccess('成功メッセージをテストしています！')}
-          className="block w-full bg-green-500 text-white px-3 py-2 rounded text-sm hover:bg-green-600"
-        >
-          成功トースト
-        </button>
-        <button
-          onClick={() => showError('エラーメッセージをテストしています！')}
-          className="block w-full bg-red-500 text-white px-3 py-2 rounded text-sm hover:bg-red-600"
-        >
-          エラートースト
-        </button>
-        <button
-          onClick={() => showInfo('情報メッセージをテストしています！')}
-          className="block w-full bg-blue-500 text-white px-3 py-2 rounded text-sm hover:bg-blue-600"
-        >
-          情報トースト
-        </button>
-      </div>
     </div>
   );
 };

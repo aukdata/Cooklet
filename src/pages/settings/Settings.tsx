@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
+import { useToast } from '../../hooks/useToast.tsx';
 
 // ユーザ設定画面コンポーネント - issue #11対応（画面化）
 export const Settings: React.FC = () => {
   const { user, signOut } = useAuth();
+  const { showSuccess, showError } = useToast();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState((user as { user_metadata?: { full_name?: string } })?.user_metadata?.full_name || '');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -22,16 +24,16 @@ export const Settings: React.FC = () => {
 
       if (error) {
         console.error('ユーザ名の更新に失敗しました:', error);
-        alert('ユーザ名の更新に失敗しました。');
+        showError('ユーザ名の更新に失敗しました。');
         return;
       }
 
       setIsEditing(false);
       // 更新成功を表示
-      alert('ユーザ名を更新しました。');
+      showSuccess('ユーザ名を更新しました。');
     } catch (error) {
       console.error('ユーザ名の保存に失敗しました:', error);
-      alert('ユーザ名の保存に失敗しました。');
+      showError('ユーザ名の保存に失敗しました。');
     } finally {
       setIsSaving(false);
     }
@@ -45,7 +47,7 @@ export const Settings: React.FC = () => {
       // ログアウト成功時は自動的にLogin画面にリダイレクト
     } catch (error) {
       console.error('ログアウトに失敗しました:', error);
-      alert('ログアウトに失敗しました。');
+      showError('ログアウトに失敗しました。');
     } finally {
       setIsLoggingOut(false);
     }

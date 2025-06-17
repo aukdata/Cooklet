@@ -3,6 +3,7 @@ import { useStockItems, type StockItem } from '../../hooks/useStockItems';
 import { StockDialog } from '../../components/dialogs/StockDialog';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 import { EditButton, AddButton } from '../../components/ui/Button';
+import { useToast } from '../../hooks/useToast.tsx';
 
 // 在庫管理画面コンポーネント - issue #3対応
 export const Stock: React.FC = () => {
@@ -23,6 +24,8 @@ export const Stock: React.FC = () => {
     updateStockItem,
     deleteStockItem
   } = useStockItems();
+
+  const { showError } = useToast();
 
   // 賞味期限が間近かどうかを判定（3日以内）
   const isExpiringSoon = (bestBefore?: string) => {
@@ -74,7 +77,7 @@ export const Stock: React.FC = () => {
       setEditingStock(undefined);
     } catch (err) {
       console.error('在庫の保存に失敗しました:', err);
-      alert('在庫の保存に失敗しました');
+      showError('在庫の保存に失敗しました');
     }
   };
 
@@ -88,7 +91,7 @@ export const Stock: React.FC = () => {
       setDeletingStock(undefined);
     } catch (err) {
       console.error('在庫の削除に失敗しました:', err);
-      alert('在庫の削除に失敗しました');
+      showError('在庫の削除に失敗しました');
     }
   };
 
