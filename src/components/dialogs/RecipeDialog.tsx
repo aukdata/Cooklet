@@ -131,7 +131,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
     if (!newTag.trim()) return;
     
     // デリミタで分割（半角スペース、全角スペース、「,」、「、」）
-    const delimiters = /[\s　,、]+/;
+    const delimiters = /[\s\u3000,、]+/;
     const inputTags = newTag
       .split(delimiters)
       .map(tag => tag.trim())
