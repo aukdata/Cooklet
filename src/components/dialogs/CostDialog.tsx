@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { type CostRecord } from '../../hooks';
 import { useToast } from '../../hooks/useToast.tsx';
+import { useDialog } from '../../contexts/DialogContext';
 
 // コスト記録ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface CostDialogProps {
@@ -22,6 +23,8 @@ export const CostDialog: React.FC<CostDialogProps> = ({
   isEditing = false
 }) => {
   const { showError } = useToast();
+  // ダイアログ状態管理フック
+  const { openDialog, closeDialog } = useDialog();
 
   // フォームデータの状態管理（CostRecord型に合わせて調整）
   const [formData, setFormData] = useState<CostRecord>({
@@ -38,6 +41,15 @@ export const CostDialog: React.FC<CostDialogProps> = ({
 
   // 今日の日付を取得
   const today = new Date().toISOString().split('T')[0];
+
+  // ダイアログの表示状態をグローバルに同期
+  useEffect(() => {
+    if (isOpen) {
+      openDialog();
+    } else {
+      closeDialog();
+    }
+  }, [isOpen, openDialog, closeDialog]);
 
   // フォーム送信ハンドラ
   const handleSubmit = (e: React.FormEvent) => {

@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { StockItem } from '../../hooks/useStockItems';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
+import { useDialog } from '../../contexts/DialogContext';
 
 // 在庫編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface StockDialogProps {
@@ -27,6 +28,8 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   isEditing = false
 }) => {
   const { showError } = useToast();
+  // ダイアログ状態管理フック
+  const { openDialog, closeDialog } = useDialog();
 
   // フォームデータの状態管理（StockItem型に合わせて調整）
   const [formData, setFormData] = useState<StockItem>({
@@ -40,6 +43,15 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   // 今日の日付を取得
   const today = new Date().toISOString().split('T')[0];
   const oneWeekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+  // ダイアログの表示状態をグローバルに同期
+  useEffect(() => {
+    if (isOpen) {
+      openDialog();
+    } else {
+      closeDialog();
+    }
+  }, [isOpen, openDialog, closeDialog]);
 
   // フォーム送信ハンドラ
   const handleSubmit = (e: React.FormEvent) => {

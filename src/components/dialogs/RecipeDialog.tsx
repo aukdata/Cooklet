@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
+import { useDialog } from '../../contexts/DialogContext';
 
 // レシピ編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface RecipeDialogProps {
@@ -33,6 +34,8 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   isEditing = false
 }) => {
   const { showError } = useToast();
+  // ダイアログ状態管理フック
+  const { openDialog, closeDialog } = useDialog();
 
   // フォームデータの状態管理
   const [formData, setFormData] = useState<RecipeForm>({
@@ -46,6 +49,15 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   // 食材抽出中の状態
   const [isExtracting, setIsExtracting] = useState(false);
   const [newTag, setNewTag] = useState(''); // 新しいタグ入力用
+
+  // ダイアログの表示状態をグローバルに同期
+  useEffect(() => {
+    if (isOpen) {
+      openDialog();
+    } else {
+      closeDialog();
+    }
+  }, [isOpen, openDialog, closeDialog]);
 
   // 食材を追加する関数
   const addIngredient = () => {
