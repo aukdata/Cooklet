@@ -313,7 +313,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
                   type="url"
                   value={manualRecipeUrl}
                   onChange={(e) => setManualRecipeUrl(e.target.value)}
-                  placeholder="https://cookpad.com/..."
+                  placeholder="https://..."
                   className="w-full border border-gray-300 rounded px-3 py-2 text-sm min-w-0 overflow-hidden"
                   style={{ wordBreak: 'break-all' }}
                 />

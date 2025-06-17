@@ -223,7 +223,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                 type="url"
                 value={formData.url}
                 onChange={(e) => setFormData(prev => ({ ...prev, url: e.target.value }))}
-                placeholder="https://cookpad.com/..."
+                placeholder="https://..."
                 className="flex-1 border border-gray-300 rounded px-3 py-2 min-w-0 overflow-hidden"
                 style={{ wordBreak: 'break-all' }}
               />

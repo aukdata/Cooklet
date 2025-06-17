@@ -154,7 +154,7 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
                 type="url"
                 value={formData.recipe_url}
                 onChange={(e) => setFormData(prev => ({ ...prev, recipe_url: e.target.value }))}
-                placeholder="https://cookpad.com/..."
+                placeholder="https://..."
                 className="w-full border border-gray-300 rounded px-3 py-2"
               />
               <button
