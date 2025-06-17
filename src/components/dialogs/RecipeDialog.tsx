@@ -39,11 +39,11 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
 
   // フォームデータの状態管理
   const [formData, setFormData] = useState<RecipeForm>({
-    title: initialData?.title || '',
-    url: initialData?.url || '',
-    servings: initialData?.servings || 2,
-    ingredients: initialData?.ingredients || [{ name: '', quantity: '' }],
-    tags: initialData?.tags || []
+    title: '',
+    url: '',
+    servings: 2,
+    ingredients: [{ name: '', quantity: '' }],
+    tags: []
   });
 
   // 食材抽出中の状態
@@ -58,6 +58,28 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
       closeDialog();
     }
   }, [isOpen, openDialog, closeDialog]);
+
+  // initialDataが変更されたときにフォームデータを更新
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        title: initialData.title || '',
+        url: initialData.url || '',
+        servings: initialData.servings || 2,
+        ingredients: initialData.ingredients || [{ name: '', quantity: '' }],
+        tags: initialData.tags || []
+      });
+    } else {
+      // 新規作成時はフォームをリセット
+      setFormData({
+        title: '',
+        url: '',
+        servings: 2,
+        ingredients: [{ name: '', quantity: '' }],
+        tags: []
+      });
+    }
+  }, [initialData]);
 
   // 食材を追加する関数
   const addIngredient = () => {

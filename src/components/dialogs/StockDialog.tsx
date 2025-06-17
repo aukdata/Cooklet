@@ -33,11 +33,11 @@ export const StockDialog: React.FC<StockDialogProps> = ({
 
   // フォームデータの状態管理（StockItem型に合わせて調整）
   const [formData, setFormData] = useState<StockItem>({
-    name: initialData?.name || '',
-    quantity: initialData?.quantity || '',
-    best_before: initialData?.best_before || '',
-    storage_location: initialData?.storage_location || '冷蔵庫',
-    is_homemade: initialData?.is_homemade || false
+    name: '',
+    quantity: '',
+    best_before: '',
+    storage_location: '冷蔵庫',
+    is_homemade: false
   });
 
   // 今日の日付を取得
@@ -52,6 +52,28 @@ export const StockDialog: React.FC<StockDialogProps> = ({
       closeDialog();
     }
   }, [isOpen, openDialog, closeDialog]);
+
+  // initialDataが変更されたときにフォームデータを更新
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || '',
+        quantity: initialData.quantity || '',
+        best_before: initialData.best_before || '',
+        storage_location: initialData.storage_location || '冷蔵庫',
+        is_homemade: initialData.is_homemade || false
+      });
+    } else {
+      // 新規作成時はフォームをリセット
+      setFormData({
+        name: '',
+        quantity: '',
+        best_before: '',
+        storage_location: '冷蔵庫',
+        is_homemade: false
+      });
+    }
+  }, [initialData]);
 
   // フォーム送信ハンドラ
   const handleSubmit = (e: React.FormEvent) => {
