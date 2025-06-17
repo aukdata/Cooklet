@@ -13,7 +13,9 @@
       "Read(*)",
       "Search(*)",
       "Edit(*)",
-      "Write(*)"
+      "Write(*)",
+      "Bash(convert:*)",
+      "Bash(ls:*)"
     ],
     "deny": [
       "Bash(rm:*)"

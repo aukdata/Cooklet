@@ -885,6 +885,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 - **サマリー画面の期間表示改善** - ボールド表示・アスタリスク削除（issue #10完了）
 - **ユーザ設定画面の独立化** - フッターから設定タブ削除（issue #11完了）
 - **useMealPlansフック** - Supabaseリアルタイム連携・キャッシュ対応
+- **PWA対応** - マニフェスト、Service Worker、アイコン、メタタグ完全実装（issue #35完了）
 
 #### 🔄 実装中の機能
 - 現在実装中の機能はありません（全主要機能が完了）
@@ -923,10 +924,10 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 ### 🔮 低優先度TODO
 
-#### 8. PWA対応（低）
-- [ ] サービスワーカー実装
-- [ ] オフライン機能
-- [ ] アプリインストール機能
+#### 8. ~~PWA対応（低）~~ - ✅完了（issue #35）
+- [x] サービスワーカー実装
+- [x] オフライン機能
+- [x] アプリインストール機能
 
 #### 9. Web Push通知（低）
 - [ ] 賞味期限通知機能
@@ -957,11 +958,12 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 ### 📝 開発メモ
 
-- **現在の実装は仕様書の約90%完了**
+- **現在の実装は仕様書の約95%完了**
 - **UI/UXは仕様書に完全準拠**（CLAUDE.md仕様書5.1-5.6全て実装）
 - **全主要画面が完全実装**（サマリー・献立・買い物・レシピ・在庫・コスト・設定）
 - **献立管理のデータベース連携完了**
 - **useMealPlansフックによるリアルタイム同期実装済み**
-- **GitHub issue #10, #11, #30, #31が完了**
+- **PWA完全対応完了** - マニフェスト、Service Worker、オフライン機能、アプリインストール機能
+- **GitHub issue #10, #11, #30, #31, #35が完了**
 - 残りは自動化機能（LLM連携、自動買い物リスト生成）が主要課題
-- PWA対応と通知機能は将来的な拡張項目
+- Web Push通知機能は将来的な拡張項目
