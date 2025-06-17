@@ -11,6 +11,10 @@ export const Cost: React.FC = () => {
   // 現在の月を管理
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddForm, setShowAddForm] = useState(false);
+  
+  // 期間フィルタと検索の状態管理
+  const [periodFilter, setPeriodFilter] = useState<'weekly' | 'monthly'>('monthly');
+  const [searchQuery, setSearchQuery] = useState('');
 
   // useCostRecordsフックを使用してデータを取得
   const { 
@@ -42,14 +46,36 @@ export const Cost: React.FC = () => {
   // 現在の月間サマリーを取得
   const monthlySummary = getCurrentMonthStats();
 
-  // 現在の月の支出履歴を取得（最新10件）
+  // 支出履歴を期間と検索でフィルタリング
   const costHistory = costRecords
     .filter(record => {
       const recordDate = new Date(record.date);
-      return recordDate.getFullYear() === currentMonth.getFullYear() && 
-             recordDate.getMonth() === currentMonth.getMonth();
+      
+      // 期間フィルタリング
+      if (periodFilter === 'weekly') {
+        // 過去7日間
+        const today = new Date();
+        const sevenDaysAgo = new Date(today);
+        sevenDaysAgo.setDate(today.getDate() - 7);
+        if (recordDate < sevenDaysAgo || recordDate > today) {
+          return false;
+        }
+      } else {
+        // 月間フィルタ
+        if (recordDate.getFullYear() !== currentMonth.getFullYear() || 
+            recordDate.getMonth() !== currentMonth.getMonth()) {
+          return false;
+        }
+      }
+      
+      // 検索フィルタリング
+      if (searchQuery.trim() !== '') {
+        return (record.description || '').toLowerCase().includes(searchQuery.toLowerCase());
+      }
+      
+      return true;
     })
-    .slice(0, 10)
+    .slice(0, 20) // 表示件数を増やす
     .map(record => ({
       ...record,
       date: new Date(record.date).toLocaleDateString('ja-JP', { 
@@ -382,44 +408,81 @@ export const Cost: React.FC = () => {
             支出履歴
           </h3>
           <div className="flex space-x-2">
-            <button className="text-xs bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded">
+            <button 
+              onClick={() => setPeriodFilter('weekly')}
+              className={`text-xs px-2 py-1 rounded ${
+                periodFilter === 'weekly' 
+                  ? 'bg-indigo-100 text-indigo-700' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
               週間
             </button>
-            <button className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded">
+            <button 
+              onClick={() => setPeriodFilter('monthly')}
+              className={`text-xs px-2 py-1 rounded ${
+                periodFilter === 'monthly' 
+                  ? 'bg-indigo-100 text-indigo-700' 
+                  : 'bg-gray-100 hover:bg-gray-200'
+              }`}
+            >
               月間
-            </button>
-            <button className="text-xs text-gray-500 hover:text-gray-700">
-              🔍 検索...
             </button>
           </div>
         </div>
 
+        {/* 検索フィールド */}
+        <div className="mb-3">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="🔍 支出内容を検索..."
+            className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
+          />
+        </div>
+
+        {/* 検索・フィルタ結果の件数表示 */}
+        {(searchQuery.trim() !== '' || periodFilter === 'weekly') && (
+          <div className="text-xs text-gray-500 mb-2">
+            {periodFilter === 'weekly' ? '過去7日間' : '月間'}で
+            {searchQuery.trim() !== '' && `「${searchQuery}」を含む`}
+            {costHistory.length}件の支出が見つかりました
+          </div>
+        )}
+
         <div className="space-y-3">
-          {costHistory.map((record) => (
-            <div key={record.id} className="border-b border-gray-100 pb-3 last:border-b-0">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center mb-1">
-                    <span className="text-sm font-medium text-gray-900">
-                      📅 {record.date}
-                    </span>
+          {costHistory.length === 0 ? (
+            <div className="text-center py-6 text-gray-500">
+              {searchQuery.trim() !== '' ? '検索条件に一致する支出がありません' : '支出データがありません'}
+            </div>
+          ) : (
+            costHistory.map((record) => (
+              <div key={record.id} className="border-b border-gray-100 pb-3 last:border-b-0">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center mb-1">
+                      <span className="text-sm font-medium text-gray-900">
+                        📅 {record.date}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <span className="mr-1">
+                        {record.is_eating_out ? '🍽️' : '🏠'}
+                      </span>
+                      <span className="text-gray-700">{record.description}</span>
+                      <span className="ml-auto font-medium">
+                        ¥{record.amount.toLocaleString()}
+                      </span>
+                    </div>
                   </div>
-                  <div className="flex items-center text-sm">
-                    <span className="mr-1">
-                      {record.is_eating_out ? '🍽️' : '🏠'}
-                    </span>
-                    <span className="text-gray-700">{record.description}</span>
-                    <span className="ml-auto font-medium">
-                      ¥{record.amount.toLocaleString()}
-                    </span>
+                  <div className="ml-3">
+                    <EditButton onClick={() => handleEditCost(record)} />
                   </div>
-                </div>
-                <div className="ml-3">
-                  <EditButton onClick={() => handleEditCost(record)} />
                 </div>
               </div>
-            </div>
-          ))}
+            ))
+          )}
         </div>
       </div>
 
