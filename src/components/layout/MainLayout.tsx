@@ -47,7 +47,7 @@ export const MainLayout: React.FC = () => {
       case 'cost':
         return <Cost /> // コスト管理ページ
       case 'settings':
-        return <Settings onClose={() => setActiveTab('dashboard')} /> // 設定ページ
+        return <Settings /> // 設定ページ
       default:
         return <Dashboard /> // デフォルトはダッシュボードページ
     }
