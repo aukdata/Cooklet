@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { type MealPlan } from '../../hooks';
 import { useDialog } from '../../contexts/DialogContext';
 import { useRecipes } from '../../hooks/useRecipes';
+import { QuantityInput } from '../common/QuantityInput';
 
 // レシピデータ型（食材情報付き）
 interface Recipe {
@@ -353,12 +354,11 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
                     placeholder="食材名"
                     className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
                   />
-                  <input
-                    type="text"
+                  <QuantityInput
                     value={ingredient.quantity}
-                    onChange={(e) => handleIngredientChange(index, 'quantity', e.target.value)}
+                    onChange={(value) => handleIngredientChange(index, 'quantity', value)}
                     placeholder="分量"
-                    className="w-20 border border-gray-300 rounded px-2 py-1 text-sm"
+                    className="w-24"
                   />
                   <button
                     onClick={() => handleRemoveIngredient(index)}
