@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
 import { useMealPlans, type MealPlan } from '../../hooks';
+import { useStockItems } from '../../hooks/useStockItems';
 import { useToast } from '../../hooks/useToast.tsx';
 
 
@@ -63,6 +64,9 @@ export const MealPlans: React.FC = () => {
 
   // 献立データの取得（Supabase連携）
   const { mealPlans, loading, error, saveMealPlan, deleteMealPlan, updateMealPlanStatus, getMealPlansForDate, getMealPlan } = useMealPlans();
+  
+  // 在庫データの操作（作り置き機能用）
+  const { addStockItem } = useStockItems();
 
   // 週の範囲を表示用にフォーマット
   const weekRange = `${weekDates[0].getMonth() + 1}/${weekDates[0].getDate()} - ${weekDates[6].getMonth() + 1}/${weekDates[6].getDate()}`;
@@ -147,8 +151,22 @@ export const MealPlans: React.FC = () => {
     if (!processingMeal?.id) return;
     
     try {
+      // 献立の状態を「作り置き」に更新
       await updateMealPlanStatus(processingMeal.id, 'stored');
-      // TODO: 作り置きとして在庫テーブルに追加
+      
+      // 作り置きとして在庫テーブルに追加
+      const dishName = processingMeal.memo || '作り置き料理';
+      const tomorrow = new Date();
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      await addStockItem({
+        name: dishName,
+        quantity: '1食分',
+        best_before: tomorrow.toISOString().split('T')[0], // 明日まで
+        storage_location: '冷蔵庫',
+        is_homemade: true // 作り置きフラグをtrueに設定
+      });
+      
       setIsConsumedDialogOpen(false);
       setProcessingMeal(null);
     } catch (err) {
