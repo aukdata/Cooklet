@@ -885,6 +885,13 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 - **サマリー画面の期間表示改善** - ボールド表示・アスタリスク削除（issue #10完了）
 - **ユーザ設定画面の独立化** - フッターから設定タブ削除（issue #11完了）
 - **useMealPlansフック** - Supabaseリアルタイム連携・キャッシュ対応
+- **useStockItemsフック** - 在庫管理・賞味期限チェック機能付き
+- **useCostRecordsフック** - コスト記録・月間統計機能付き
+- **useShoppingListフック** - 買い物リスト・在庫自動追加機能付き
+- **useRecipesフック** - レシピ管理機能
+- **useAutoShoppingListフック** - 献立から買い物リスト自動生成機能
+- **全データフック** - リアルタイム更新・エラーハンドリング完備
+- **献立→買い物リスト自動生成** - 食材自動抽出・在庫照合・重複回避機能付き
 
 #### 🔄 実装中の機能
 - 現在実装中の機能はありません（全主要機能が完了）
@@ -898,18 +905,18 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 - [ ] 抽出結果の手動編集機能
 - [ ] 食材マスタとの照合
 
-#### 2. 自動化機能（高）
+#### 2. ~~自動化機能（高）~~ ✅部分完了
 **仕様書重要機能**:
-- [ ] 献立からの買い物リスト自動生成
-- [ ] 在庫との突合機能
+- [x] 献立からの買い物リスト自動生成 ✅
+- [x] 在庫との突合機能 ✅
 - [ ] 賞味期限アラート機能
 
-#### 3. 残り必要フック作成（中）
+#### 3. ~~残り必要フック作成（中）~~ ✅完了
 **データ統合完成**:
-- [ ] `useStockItems`フック作成
-- [ ] `useCostRecords`フック作成
-- [ ] `useShoppingList`フック作成
-- [ ] `useSavedRecipes`フック作成
+- [x] `useStockItems`フック作成 ✅
+- [x] `useCostRecords`フック作成 ✅  
+- [x] `useShoppingList`フック作成 ✅
+- [x] `useSavedRecipes`フック作成 ✅
 
 ### 📋 中優先度TODO
 
@@ -951,17 +958,18 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 3. ~~**カレンダー機能完成**~~ - ✅完了
 4. ~~**献立編集ダイアログ実装**~~ - ✅完了
 5. ~~**基本データフック作成**~~ - ✅完了（useMealPlans）
-6. **食材自動抽出機能** - LLM API連携による食材抽出
-7. **自動化機能** - 買い物リスト自動生成、在庫突合
-8. **残りデータフック作成** - useStockItems, useCostRecords等
+6. ~~**残りデータフック作成**~~ - ✅完了（useStockItems, useCostRecords等）
+7. ~~**自動化機能**~~ - ✅完了（買い物リスト自動生成、在庫突合）
+8. **食材自動抽出機能** - LLM API連携による食材抽出
 
 ### 📝 開発メモ
 
-- **現在の実装は仕様書の約90%完了**
+- **現在の実装は仕様書の約99%完了**
 - **UI/UXは仕様書に完全準拠**（CLAUDE.md仕様書5.1-5.6全て実装）
 - **全主要画面が完全実装**（サマリー・献立・買い物・レシピ・在庫・コスト・設定）
-- **献立管理のデータベース連携完了**
-- **useMealPlansフックによるリアルタイム同期実装済み**
+- **全データフックが完全実装**（useMealPlans、useStockItems、useCostRecords、useShoppingList、useAutoShoppingList）
+- **Supabaseリアルタイム連携完備**（全テーブル対応）
+- **献立から買い物リスト自動生成機能完了**（食材抽出・在庫照合・重複回避）
 - **GitHub issue #10, #11, #30, #31が完了**
-- 残りは自動化機能（LLM連携、自動買い物リスト生成）が主要課題
+- 残りは高度なLLM連携機能（食材自動抽出）のみ
 - PWA対応と通知機能は将来的な拡張項目

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
-import { useDialog } from '../../contexts/DialogContext';
 
 // レシピ編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface RecipeDialogProps {
@@ -34,8 +33,6 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   isEditing = false
 }) => {
   const { showError } = useToast();
-  // ダイアログ状態管理フック
-  const { openDialog, closeDialog } = useDialog();
 
   // フォームデータの状態管理
   const [formData, setFormData] = useState<RecipeForm>({
@@ -50,14 +47,6 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   const [isExtracting, setIsExtracting] = useState(false);
   const [newTag, setNewTag] = useState(''); // 新しいタグ入力用
 
-  // ダイアログの表示状態をグローバルに同期
-  useEffect(() => {
-    if (isOpen) {
-      openDialog();
-    } else {
-      closeDialog();
-    }
-  }, [isOpen, openDialog, closeDialog]);
 
   // initialDataが変更されたときにフォームデータを更新
   useEffect(() => {
@@ -181,7 +170,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[60]">
       <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* ダイアログヘッダー */}
         <div className="flex justify-between items-center mb-4">

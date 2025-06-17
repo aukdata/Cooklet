@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useShoppingList, useMealPlans, useStockItems } from '../../hooks';
-import { generateWeeklyShoppingList, generateShoppingListForNextDays } from '../../services/shoppingListGeneration';
+import { useShoppingList, useMealPlans, useStockItems, useAutoShoppingList } from '../../hooks';
 import { type StockItem } from '../../hooks/useStockItems';
 import { QuantityInput } from '../../components/common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
@@ -25,6 +24,15 @@ export const Shopping: React.FC = () => {
   const { mealPlans } = useMealPlans();
   const { stockItems, addStockItem } = useStockItems();
 
+  // 自動生成フック
+  const {
+    generateShoppingList,
+    previewShoppingList,
+    isGenerating,
+    lastResult,
+    error: autoGenerationError
+  } = useAutoShoppingList();
+
   // 新規追加フォームの状態
   const [newItemName, setNewItemName] = useState('');
   const [newItemQuantity, setNewItemQuantity] = useState('');
@@ -34,13 +42,6 @@ export const Shopping: React.FC = () => {
   
   // 完了アイテムの量編集状態
   const [editingQuantities, setEditingQuantities] = useState<Record<string, string>>({});
-
-  // 自動作成機能の状態
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationResult, setGenerationResult] = useState<{
-    summary: { totalIngredients: number; inStock: number; needToBuy: number };
-    error?: string;
-  } | null>(null);
 
 
   // 全選択状態の管理
@@ -159,69 +160,33 @@ export const Shopping: React.FC = () => {
 
   // 今週の買い物リストを自動作成
   const handleGenerateWeeklyList = async () => {
-    setIsGenerating(true);
-    setGenerationResult(null);
-
     try {
-      const result = await generateWeeklyShoppingList(mealPlans, stockItems, pendingItems);
+      const result = await generateShoppingList(7);
       
-      if (result.success) {
-        // 作成されたアイテムを買い物リストに追加
-        for (const item of result.generatedItems) {
-          await addShoppingItem(item);
-        }
-        
-        setGenerationResult({
-          summary: result.summary
-        });
-        
-        showSuccess(`買い物リストを作成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
+      if (result.itemsAdded > 0) {
+        showSuccess(`買い物リストを作成しました！\n追加されたアイテム: ${result.itemsAdded}件\nスキップされたアイテム: ${result.itemsSkipped}件`);
       } else {
-        setGenerationResult({
-          summary: result.summary,
-          error: result.error
-        });
-        showError(`作成に失敗しました: ${result.error}`);
+        showInfo('追加する必要のある食材はありませんでした');
       }
     } catch (err) {
       console.error('買い物リスト作成に失敗しました:', err);
       showError('作成に失敗しました');
-    } finally {
-      setIsGenerating(false);
     }
   };
 
   // 次の3日分の買い物リストを自動作成
   const handleGenerateNext3Days = async () => {
-    setIsGenerating(true);
-    setGenerationResult(null);
-
     try {
-      const result = await generateShoppingListForNextDays(3, mealPlans, stockItems, pendingItems);
+      const result = await generateShoppingList(3);
       
-      if (result.success) {
-        // 作成されたアイテムを買い物リストに追加
-        for (const item of result.generatedItems) {
-          await addShoppingItem(item);
-        }
-        
-        setGenerationResult({
-          summary: result.summary
-        });
-        
-        showSuccess(`買い物リストを作成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
+      if (result.itemsAdded > 0) {
+        showSuccess(`買い物リストを作成しました！\n追加されたアイテム: ${result.itemsAdded}件\nスキップされたアイテム: ${result.itemsSkipped}件`);
       } else {
-        setGenerationResult({
-          summary: result.summary,
-          error: result.error
-        });
-        showError(`作成に失敗しました: ${result.error}`);
+        showInfo('追加する必要のある食材はありませんでした');
       }
     } catch (err) {
       console.error('買い物リスト作成に失敗しました:', err);
       showError('作成に失敗しました');
-    } finally {
-      setIsGenerating(false);
     }
   };
 

@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { type MealPlan } from '../../hooks';
-import { useDialog } from '../../contexts/DialogContext';
 import { useRecipes } from '../../hooks/useRecipes';
 import { QuantityInput } from '../common/QuantityInput';
 
@@ -33,9 +32,6 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   selectedDate,
   selectedMealType = '夜'
 }) => {
-  // ダイアログ状態管理フック
-  const { openDialog, closeDialog } = useDialog();
-  
   // レシピデータ取得フック
   const { recipes, loading: recipesLoading } = useRecipes();
 
@@ -109,14 +105,6 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
     }
   }, [initialData, selectedMealType, isOpen, recipeList]);
 
-  // ダイアログの表示状態をグローバルに同期
-  useEffect(() => {
-    if (isOpen) {
-      openDialog();
-    } else {
-      closeDialog();
-    }
-  }, [isOpen, openDialog, closeDialog]);
 
   // レシピ選択処理（コンボボックス用）
   const handleRecipeChange = (recipeId: string) => {
@@ -210,7 +198,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
       <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
         {/* ヘッダー */}
         <div className="flex justify-between items-center p-4 border-b border-gray-200">

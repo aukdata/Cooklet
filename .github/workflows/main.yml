@@ -57,7 +57,7 @@ jobs:
 
       # TypeScript型チェック
       - name: Type check
-        run: pnpm run build --mode check
+        run: pnpm run typecheck
 
       # ESLintによる静的解析
       - name: Lint code
