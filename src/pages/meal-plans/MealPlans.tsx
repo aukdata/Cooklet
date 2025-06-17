@@ -330,7 +330,7 @@ export const MealPlans: React.FC = () => {
                       onClick={() => window.open(breakfastPlan.recipe_url, '_blank')}
                       className="text-sm text-blue-600 hover:text-blue-500"
                     >
-                      🌐 レシピを見る
+                      🌐 レシピ
                     </button>
                   )}
                   {breakfastPlan && !isDone && (
@@ -386,7 +386,7 @@ export const MealPlans: React.FC = () => {
                       onClick={() => window.open(lunchPlan.recipe_url, '_blank')}
                       className="text-sm text-blue-600 hover:text-blue-500"
                     >
-                      🌐 レシピを見る
+                      🌐 レシピ
                     </button>
                   )}
                   {lunchPlan && !isDone && (
@@ -442,7 +442,7 @@ export const MealPlans: React.FC = () => {
                       onClick={() => window.open(dinnerPlan.recipe_url, '_blank')}
                       className="text-sm text-blue-600 hover:text-blue-500"
                     >
-                      🌐 レシピを見る
+                      🌐 レシピ
                     </button>
                   )}
                   {dinnerPlan && !isDone && (
