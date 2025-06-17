@@ -345,10 +345,10 @@ export const Dashboard: React.FC = () => {
               <div className="ml-4 space-y-3">
                 {groupExpiredItemsByPeriod().map(([period, items]) => (
                   <div key={period}>
-                    <div className="text-sm font-medium text-gray-800 mb-1">
-                      **{period}**
+                    <div className="text-sm font-bold text-gray-800 mb-1">
+                      {period}
                       {period !== '今日' && (
-                        <span className="text-xs text-gray-500 ml-2">
+                        <span className="text-xs text-gray-500 ml-2 font-normal">
                           ({items[0]?.best_before ? formatDate(items[0].best_before) : ''})
                         </span>
                       )}
