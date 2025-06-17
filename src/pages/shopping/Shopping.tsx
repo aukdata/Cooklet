@@ -3,9 +3,12 @@ import { useShoppingList, useMealPlans, useStockItems } from '../../hooks';
 import { generateWeeklyShoppingList, generateShoppingListForNextDays } from '../../services/shoppingListGeneration';
 import { type StockItem } from '../../hooks/useStockItems';
 import { QuantityInput } from '../../components/common/QuantityInput';
+import { useToast } from '../../hooks/useToast.tsx';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
 export const Shopping: React.FC = () => {
+  const { showError, showSuccess, showInfo } = useToast();
+
   // useShoppingListフックを使用してデータを取得
   const {
     loading,
@@ -70,7 +73,7 @@ export const Shopping: React.FC = () => {
         setNewItemQuantity('');
       } catch (err) {
         console.error('買い物リストアイテムの追加に失敗しました:', err);
-        alert('追加に失敗しました');
+        showError('追加に失敗しました');
       }
     }
   };
@@ -81,7 +84,7 @@ export const Shopping: React.FC = () => {
       await toggleShoppingItem(id);
     } catch (err) {
       console.error('チェック状態の変更に失敗しました:', err);
-      alert('操作に失敗しました');
+      showError('操作に失敗しました');
     }
   };
 
@@ -103,7 +106,7 @@ export const Shopping: React.FC = () => {
       }
     } catch (err) {
       console.error('全選択に失敗しました:', err);
-      alert('操作に失敗しました');
+      showError('操作に失敗しました');
     }
   };
 
@@ -120,7 +123,7 @@ export const Shopping: React.FC = () => {
   const handleAddToStock = async () => {
     const completedItems = getCompletedItems();
     if (completedItems.length === 0) {
-      alert('完了したアイテムがありません');
+      showInfo('完了したアイテムがありません');
       return;
     }
     
@@ -146,10 +149,10 @@ export const Shopping: React.FC = () => {
       // 編集中の量をクリア
       setEditingQuantities({});
       
-      alert(`${completedItems.length}件のアイテムを在庫に追加しました`);
+      showSuccess(`${completedItems.length}件のアイテムを在庫に追加しました`);
     } catch (err) {
       console.error('在庫追加に失敗しました:', err);
-      alert('在庫追加に失敗しました');
+      showError('在庫追加に失敗しました');
     }
   };
 
@@ -172,17 +175,17 @@ export const Shopping: React.FC = () => {
           summary: result.summary
         });
         
-        alert(`買い物リストを作成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
+        showSuccess(`買い物リストを作成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
       } else {
         setGenerationResult({
           summary: result.summary,
           error: result.error
         });
-        alert(`作成に失敗しました: ${result.error}`);
+        showError(`作成に失敗しました: ${result.error}`);
       }
     } catch (err) {
       console.error('買い物リスト作成に失敗しました:', err);
-      alert('作成に失敗しました');
+      showError('作成に失敗しました');
     } finally {
       setIsGenerating(false);
     }
@@ -206,17 +209,17 @@ export const Shopping: React.FC = () => {
           summary: result.summary
         });
         
-        alert(`買い物リストを作成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
+        showSuccess(`買い物リストを作成しました！\n必要な食材: ${result.summary.totalIngredients}件\n在庫あり: ${result.summary.inStock}件\n購入が必要: ${result.summary.needToBuy}件`);
       } else {
         setGenerationResult({
           summary: result.summary,
           error: result.error
         });
-        alert(`作成に失敗しました: ${result.error}`);
+        showError(`作成に失敗しました: ${result.error}`);
       }
     } catch (err) {
       console.error('買い物リスト作成に失敗しました:', err);
-      alert('作成に失敗しました');
+      showError('作成に失敗しました');
     } finally {
       setIsGenerating(false);
     }

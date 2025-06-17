@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
 import { useMealPlans, type MealPlan } from '../../hooks';
+import { useToast } from '../../hooks/useToast.tsx';
 
 
 // カレンダー画面コンポーネント - 週間表示・献立追加機能付き
 export const MealPlans: React.FC = () => {
+  const { showInfo } = useToast();
+
   // 選択された日付（今日がデフォルト）
   const [selectedDate, setSelectedDate] = useState(new Date());
   
@@ -386,13 +389,13 @@ export const MealPlans: React.FC = () => {
           </p>
           <div className="flex gap-2">
             <button 
-              onClick={() => alert('献立の提案機能は今後実装予定です')}
+              onClick={() => showInfo('献立の提案機能は今後実装予定です')}
               className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
             >
               💡 今日の献立を提案
             </button>
             <button 
-              onClick={() => alert('週間提案機能は今後実装予定です')}
+              onClick={() => showInfo('週間提案機能は今後実装予定です')}
               className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
             >
               📅 週間献立を提案

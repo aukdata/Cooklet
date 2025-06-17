@@ -2,9 +2,12 @@ import React, { useState } from 'react';
 import { useCostRecords, type CostRecord } from '../../hooks';
 import { CostDialog } from '../../components/dialogs';
 import { EditButton } from '../../components/ui/Button';
+import { useToast } from '../../hooks/useToast.tsx';
 
 // コスト管理画面コンポーネント - CLAUDE.md仕様書に準拠
 export const Cost: React.FC = () => {
+  const { showError } = useToast();
+
   // 現在の月を管理
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showAddForm, setShowAddForm] = useState(false);
@@ -77,7 +80,7 @@ export const Cost: React.FC = () => {
   // 新規記録を保存する関数
   const handleSaveRecord = async () => {
     if (!newRecord.amount || !newRecord.description.trim()) {
-      alert('金額と内容を入力してください');
+      showError('金額と内容を入力してください');
       return;
     }
 
@@ -99,7 +102,7 @@ export const Cost: React.FC = () => {
       setShowAddForm(false);
     } catch (err) {
       console.error('コスト記録の保存に失敗しました:', err);
-      alert('保存に失敗しました');
+      showError('保存に失敗しました');
     }
   };
 
@@ -123,7 +126,7 @@ export const Cost: React.FC = () => {
       setEditingCost(null);
     } catch (err) {
       console.error('コスト記録の保存に失敗しました:', err);
-      alert('保存に失敗しました');
+      showError('保存に失敗しました');
     }
   };
 
@@ -136,7 +139,7 @@ export const Cost: React.FC = () => {
         setEditingCost(null);
       } catch (err) {
         console.error('コスト記録の削除に失敗しました:', err);
-        alert('削除に失敗しました');
+        showError('削除に失敗しました');
       }
     }
   };

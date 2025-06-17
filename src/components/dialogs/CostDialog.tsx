@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { type CostRecord } from '../../hooks';
+import { useToast } from '../../hooks/useToast.tsx';
 
 // コスト記録ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface CostDialogProps {
@@ -20,6 +21,8 @@ export const CostDialog: React.FC<CostDialogProps> = ({
   initialData,
   isEditing = false
 }) => {
+  const { showError } = useToast();
+
   // フォームデータの状態管理（CostRecord型に合わせて調整）
   const [formData, setFormData] = useState<CostRecord>({
     date: initialData?.date || new Date().toISOString().split('T')[0],
@@ -40,11 +43,11 @@ export const CostDialog: React.FC<CostDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.description?.trim()) {
-      alert('内容を入力してください');
+      showError('内容を入力してください');
       return;
     }
     if (!amountString.trim() || isNaN(Number(amountString))) {
-      alert('正しい金額を入力してください');
+      showError('正しい金額を入力してください');
       return;
     }
     

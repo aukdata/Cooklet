@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import type { StockItem } from '../../hooks/useStockItems';
 import { QuantityInput } from '../common/QuantityInput';
+import { useToast } from '../../hooks/useToast.tsx';
 
 // 在庫編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface StockDialogProps {
@@ -25,6 +26,8 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   initialData,
   isEditing = false
 }) => {
+  const { showError } = useToast();
+
   // フォームデータの状態管理（StockItem型に合わせて調整）
   const [formData, setFormData] = useState<StockItem>({
     name: initialData?.name || '',
@@ -42,11 +45,11 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
-      alert('食材名を入力してください');
+      showError('食材名を入力してください');
       return;
     }
     if (!formData.quantity.trim()) {
-      alert('数量を入力してください');
+      showError('数量を入力してください');
       return;
     }
     onSave(formData);

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { QuantityInput } from '../common/QuantityInput';
 import { analyzeRecipeFromUrl, isValidRecipeUrl } from '../../services/recipeAnalysis';
+import { useToast } from '../../hooks/useToast.tsx';
 
 // 手動献立入力ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface ManualMealDialogProps {
@@ -26,6 +27,8 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
   onSave,
   initialData
 }) => {
+  const { showError, showSuccess } = useToast();
+
   // フォームデータの状態管理
   const [formData, setFormData] = useState<ManualMealForm>({
     dish_name: initialData?.dish_name || '',
@@ -67,7 +70,7 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
   // レシピ解析ハンドラ
   const handleAnalyzeRecipe = async () => {
     if (!isValidRecipeUrl(formData.recipe_url || '')) {
-      alert('HTTPまたはHTTPSから始まる有効なURLを入力してください');
+      showError('HTTPまたはHTTPSから始まる有効なURLを入力してください');
       return;
     }
 
@@ -83,12 +86,12 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
           servings: result.data!.servings,
           ingredients: result.data!.ingredients
         }));
-        alert('レシピを解析しました！');
+        showSuccess('レシピを解析しました！');
       } else {
-        alert(result.error || 'レシピの解析に失敗しました');
+        showError(result.error || 'レシピの解析に失敗しました');
       }
     } catch {
-      alert('解析中にエラーが発生しました');
+      showError('解析中にエラーが発生しました');
     } finally {
       setIsAnalyzing(false);
     }
@@ -98,7 +101,7 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.dish_name.trim()) {
-      alert('料理名を入力してください');
+      showError('料理名を入力してください');
       return;
     }
     onSave(formData);

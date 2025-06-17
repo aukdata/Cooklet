@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { QuantityInput } from '../common/QuantityInput';
+import { useToast } from '../../hooks/useToast.tsx';
 
 // レシピ編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface RecipeDialogProps {
@@ -31,6 +32,8 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   initialData,
   isEditing = false
 }) => {
+  const { showError } = useToast();
+
   // フォームデータの状態管理
   const [formData, setFormData] = useState<RecipeForm>({
     title: initialData?.title || '',
@@ -83,7 +86,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
       }));
     } catch (error) {
       console.error('食材抽出エラー:', error);
-      alert('食材の抽出に失敗しました');
+      showError('食材の抽出に失敗しました');
     } finally {
       setIsExtracting(false);
     }
@@ -119,7 +122,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title.trim()) {
-      alert('レシピ名を入力してください');
+      showError('レシピ名を入力してください');
       return;
     }
     onSave(formData);
