@@ -73,8 +73,8 @@ export const MainLayout: React.FC = () => {
         </div>
       </header>
 
-      {/* メインコンテンツエリア（下部タブナビ分のパディングあり） */}
-      <main className="pb-16">
+      {/* メインコンテンツエリア（下部タブナビ分のパディングあり + PWAセーフエリア対応） */}
+      <main className="pb-16" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
         {renderContent()}
       </main>
 

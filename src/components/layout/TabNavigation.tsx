@@ -19,8 +19,8 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
   ];
 
   return (
-    // 下部固定のナビゲーションバー
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[90]">
+    // 下部固定のナビゲーションバー（iPhone PWA対応で下部セーフエリア追加）
+    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-[90] pb-safe">
       <div className="grid grid-cols-6 gap-1">
         {/* 各タブボタンをレンダリング */}
         {tabs.map((tab) => (
@@ -41,6 +41,8 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
           </button>
         ))}
       </div>
+      {/* iPhone PWA用の下部セーフエリア */}
+      <div className="h-safe-bottom"></div>
     </nav>
   );
 };
