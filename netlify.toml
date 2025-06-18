@@ -1,0 +1,55 @@
+# Netlify設定ファイル - Cooklet PWA
+[build]
+  # ビルドコマンド
+  command = "pnpm run build"
+  # 公開ディレクトリ
+  publish = "dist"
+  # Node.jsバージョンの指定
+  environment = { NODE_VERSION = "18" }
+
+# SPAルーティング対応（React Router用）
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# PWA用のヘッダー設定
+[[headers]]
+  for = "/manifest.json"
+  [headers.values]
+    Content-Type = "application/manifest+json"
+    Cache-Control = "public, max-age=86400"
+
+[[headers]]
+  for = "/sw.js"
+  [headers.values]
+    Content-Type = "application/javascript"
+    Cache-Control = "no-cache"
+
+[[headers]]
+  for = "/icons/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000"
+
+# セキュリティヘッダー
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+
+# 静的アセットのキャッシュ設定
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# 依存関係のキャッシュ設定（ビルド高速化）
+[build.environment]
+  NPM_FLAGS = "--prefer-offline --no-audit"
+
+# プラグイン設定（必要に応じて）
+# [[plugins]]
+#   package = "@netlify/plugin-lighthouse"
