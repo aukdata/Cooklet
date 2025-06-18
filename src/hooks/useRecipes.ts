@@ -147,10 +147,10 @@ export const useRecipes = () => {
 
   // リアルタイム更新の設定
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     const subscription = supabase
-      .channel('saved_recipes_changes')
+      .channel(`saved_recipes_changes_${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -159,9 +159,29 @@ export const useRecipes = () => {
           table: 'saved_recipes',
           filter: `user_id=eq.${user.id}`
         },
-        () => {
+        async () => {
           // データが変更された場合は再取得
-          fetchRecipes();
+          try {
+            setLoading(true);
+            setError(null);
+
+            const { data, error: fetchError } = await supabase
+              .from('saved_recipes')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false });
+
+            if (fetchError) {
+              throw fetchError;
+            }
+
+            setRecipes(data || []);
+          } catch (err) {
+            console.error('レシピデータの取得に失敗しました:', err);
+            setError(err instanceof Error ? err.message : 'レシピデータの取得に失敗しました');
+          } finally {
+            setLoading(false);
+          }
         }
       )
       .subscribe();
@@ -169,7 +189,7 @@ export const useRecipes = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user, fetchRecipes]);
+  }, [user?.id]);
 
   return {
     recipes,

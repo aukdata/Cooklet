@@ -286,10 +286,10 @@ export const useShoppingList = () => {
 
   // リアルタイム更新の設定
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     const subscription = supabase
-      .channel('shopping_list_changes')
+      .channel(`shopping_list_changes_${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -298,9 +298,30 @@ export const useShoppingList = () => {
           table: 'shopping_list',
           filter: `user_id=eq.${user.id}`
         },
-        () => {
-          // データが変更された場合は再取得
-          fetchShoppingList();
+        async () => {
+          // データが変更された場合は再取得（インライン実装で依存を避ける）
+          try {
+            setLoading(true);
+            setError(null);
+
+            const { data, error: fetchError } = await supabase
+              .from('shopping_list')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('checked', { ascending: true })
+              .order('created_at', { ascending: false });
+
+            if (fetchError) {
+              throw fetchError;
+            }
+
+            setShoppingList(data || []);
+          } catch (err) {
+            console.error('買い物リストデータの取得に失敗しました:', err);
+            setError(err instanceof Error ? err.message : '買い物リストデータの取得に失敗しました');
+          } finally {
+            setLoading(false);
+          }
         }
       )
       .subscribe();
@@ -308,7 +329,7 @@ export const useShoppingList = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user, fetchShoppingList]);
+  }, [user?.id]);
 
   return {
     shoppingList,

@@ -213,10 +213,10 @@ export const useCostRecords = () => {
 
   // リアルタイム更新の設定
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     const subscription = supabase
-      .channel('cost_records_changes')
+      .channel(`cost_records_changes_${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -225,9 +225,30 @@ export const useCostRecords = () => {
           table: 'cost_records',
           filter: `user_id=eq.${user.id}`
         },
-        () => {
+        async () => {
           // データが変更された場合は再取得
-          fetchCostRecords();
+          try {
+            setLoading(true);
+            setError(null);
+
+            const { data, error: fetchError } = await supabase
+              .from('cost_records')
+              .select('*')
+              .eq('user_id', user.id)
+              .order('date', { ascending: false })
+              .order('created_at', { ascending: false });
+
+            if (fetchError) {
+              throw fetchError;
+            }
+
+            setCostRecords(data || []);
+          } catch (err) {
+            console.error('コスト記録データの取得に失敗しました:', err);
+            setError(err instanceof Error ? err.message : 'コスト記録データの取得に失敗しました');
+          } finally {
+            setLoading(false);
+          }
         }
       )
       .subscribe();
@@ -235,7 +256,7 @@ export const useCostRecords = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user, fetchCostRecords]);
+  }, [user?.id]);
 
   return {
     costRecords,

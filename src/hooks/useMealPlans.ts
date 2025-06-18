@@ -218,10 +218,10 @@ export const useMealPlans = () => {
 
   // リアルタイム更新の設定（キャッシュ対応）
   useEffect(() => {
-    if (!user) return;
+    if (!user?.id) return;
 
     const subscription = supabase
-      .channel('meal_plans_changes')
+      .channel(`meal_plans_changes_${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -232,8 +232,9 @@ export const useMealPlans = () => {
         },
         () => {
           // データが変更された場合はキャッシュを無効化して再取得
-          invalidateCache();
-          fetchMealPlans();
+          // 関数参照の代わりに直接呼び出し
+          if (invalidateCache) invalidateCache();
+          if (fetchMealPlans) fetchMealPlans();
         }
       )
       .subscribe();
@@ -241,7 +242,7 @@ export const useMealPlans = () => {
     return () => {
       supabase.removeChannel(subscription);
     };
-  }, [user, invalidateCache, fetchMealPlans]);
+  }, [user?.id]);
 
   return {
     mealPlans: mealPlans || [],
