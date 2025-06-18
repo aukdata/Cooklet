@@ -28,9 +28,7 @@ export default defineConfig({
   // Netlify環境での開発サーバー設定
   server: {
     port: 5173,
-    host: true,
-    // SPAルーティング対応
-    historyApiFallback: true
+    host: true
   },
   // プレビューサーバー設定
   preview: {
