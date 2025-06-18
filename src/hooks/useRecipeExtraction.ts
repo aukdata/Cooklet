@@ -62,7 +62,7 @@ export const useRecipeExtraction = (): UseRecipeExtractionReturn => {
         ...prev,
         progress: {
           step: 'extracting',
-          message: 'AIでレシピ情報を抽出中...'
+          message: 'レシピ情報を抽出中...'
         }
       }));
 
@@ -95,7 +95,7 @@ export const useRecipeExtraction = (): UseRecipeExtractionReturn => {
       if (error instanceof WebFetchError) {
         errorMessage = `Webサイトの取得エラー: ${error.message}`;
       } else if (error instanceof RecipeExtractionError) {
-        errorMessage = `AI抽出エラー: ${error.message}`;
+        errorMessage = `抽出エラー: ${error.message}`;
       } else if (error instanceof Error) {
         errorMessage = error.message;
       }

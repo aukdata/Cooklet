@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { QuantityInput } from '../common/QuantityInput';
-import { isValidRecipeUrl } from '../../services/recipeAnalysis';
 import { useToast } from '../../hooks/useToast.tsx';
 import { useRecipeExtraction } from '../../hooks/useRecipeExtraction';
 
@@ -68,7 +67,8 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
 
   // レシピ解析ハンドラ
   const handleAnalyzeRecipe = async () => {
-    if (!isValidRecipeUrl(formData.recipe_url || '')) {
+    const url = formData.recipe_url?.trim();
+    if (!url || (!url.startsWith('http://') && !url.startsWith('https://'))) {
       showError('HTTPまたはHTTPSから始まる有効なURLを入力してください');
       return;
     }
@@ -159,9 +159,9 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
               <button
                 type="button"
                 onClick={handleAnalyzeRecipe}
-                disabled={!isValidRecipeUrl(formData.recipe_url || '') || extractionState.isExtracting}
+                disabled={!formData.recipe_url?.trim() || extractionState.isExtracting}
                 className={`w-full py-2 px-4 text-sm rounded ${
-                  isValidRecipeUrl(formData.recipe_url || '') && !extractionState.isExtracting
+                  formData.recipe_url?.trim() && !extractionState.isExtracting
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}

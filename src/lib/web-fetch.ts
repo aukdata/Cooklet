@@ -136,27 +136,4 @@ export class WebFetcher {
     return null;
   }
 
-  // レシピサイトかどうかを判定
-  static isRecipeUrl(url: string): boolean {
-    const recipeKeywords = [
-      'cookpad', 'recipe', 'レシピ', 'cooking', 'delish',
-      'kurashiru', 'nadia', 'orangepage', 'kyounoryouri',
-      'ajinomoto', 'kikkoman', 'kewpie', 'maruetsu'
-    ];
-    
-    const lowerUrl = url.toLowerCase();
-    return recipeKeywords.some(keyword => lowerUrl.includes(keyword));
-  }
-
-  // 人気レシピサイトの一覧を取得
-  static getPopularRecipeSites(): Array<{name: string; domain: string; description: string}> {
-    return [
-      { name: 'クックパッド', domain: 'cookpad.com', description: '日本最大のレシピサイト' },
-      { name: 'クラシル', domain: 'kurashiru.com', description: '動画レシピサイト' },
-      { name: 'Nadia', domain: 'oceans-nadia.com', description: 'プロの料理家レシピサイト' },
-      { name: 'デリッシュキッチン', domain: 'delishkitchen.tv', description: '簡単レシピ動画サイト' },
-      { name: 'きょうの料理', domain: 'kyounoryouri.jp', description: 'NHKの料理番組サイト' },
-      { name: 'オレンジページnet', domain: 'orangepage.net', description: '料理雑誌のレシピサイト' }
-    ];
-  }
 }

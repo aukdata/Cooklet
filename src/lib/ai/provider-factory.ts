@@ -38,18 +38,9 @@ export class AIProviderFactory {
 
     switch (providerType) {
       case 'gemini':
-        apiKey = import.meta.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
+        apiKey = import.meta.env.GEMINI_API_KEY || '';
         model = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash-lite';
         break;
-      
-      case 'claude':
-      case 'openai':
-      case 'groq':
-        throw new RecipeExtractionError(
-          `${providerType} Providerはまだ実装されていません`,
-          providerType
-        );
-      
       default:
         throw new RecipeExtractionError(
           `サポートされていないAI Provider: ${providerType}`,
