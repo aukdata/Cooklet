@@ -12,7 +12,7 @@ import { ErrorBoundary } from '../ErrorBoundary';
 
 // アプリケーションのメインレイアウトコンポーネント
 export const MainLayout: React.FC = () => {
-  // アクティブタブの状態管理（デフォルトはダッシュボード）
+  // アクティブタブの状態管理（デフォルトはサマリー）
   const [activeTab, setActiveTab] = useState('summary');
   // ダイアログの表示状態を取得
   const { isDialogOpen } = useDialog();
@@ -24,7 +24,7 @@ export const MainLayout: React.FC = () => {
         return (
           <ErrorBoundary fallback={
             <div className="p-4 text-center">
-              <div className="text-red-600">ダッシュボードの読み込みに失敗しました</div>
+              <div className="text-red-600">サマリーの読み込みに失敗しました</div>
               <button 
                 onClick={() => window.location.reload()} 
                 className="mt-2 px-4 py-2 bg-indigo-600 text-white rounded"
@@ -35,7 +35,7 @@ export const MainLayout: React.FC = () => {
           }>
             <Dashboard />
           </ErrorBoundary>
-        ) // ダッシュボードページ
+        ) // サマリーページ
       case 'recipes':
         return <Recipes /> // レシピ管理ページ
       case 'meal-plans':
@@ -49,7 +49,7 @@ export const MainLayout: React.FC = () => {
       case 'settings':
         return <Settings /> // 設定ページ
       default:
-        return <Dashboard /> // デフォルトはダッシュボードページ
+        return <Dashboard /> // デフォルトはサマリーページ
     }
   };
 

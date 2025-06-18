@@ -19,7 +19,7 @@
 - レスポンシブデザイン対応
 
 #### タブ構成（CLAUDE.md仕様書準拠 + issue #3対応）
-- `dashboard`: ダッシュボード 📊
+- `summary`: サマリー 📊
 - `meal-plans`: 献立 📅
 - `shopping`: 買い物 🛒
 - `recipes`: レシピ 🍳
@@ -54,7 +54,7 @@
 - 下部タブナビゲーション分のpadding設定
 
 **タブ管理**
-- デフォルトタブ: 'dashboard'
+- デフォルトタブ: 'summary'
 - 対応ページ: Dashboard, MealPlans, Shopping, Recipes, Stock, Cost
 - 存在しないタブの場合はDashboardを表示
 

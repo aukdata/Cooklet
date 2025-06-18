@@ -4,16 +4,20 @@
       "Bash(echo:*)",
       "Bash(mkdir:*)",
       "Bash(pnpm run:*)",
-      "Bash(pnpx eslint:*)",
+      "Bash(pnpx oxlint:*)",
       "Bash(git add:*)",
       "Bash(git push:*)",
       "Bash(git commit:*)",
+      "Bash(git pull:*)",
+      "Bash(git fetch:*)",
       "Bash(gh issue:*)",
       "Bash(rg:*)",
       "Read(*)",
       "Search(*)",
       "Edit(*)",
-      "Write(*)"
+      "Write(*)",
+      "Bash(convert:*)",
+      "Bash(ls:*)"
     ],
     "deny": [
       "Bash(rm:*)"

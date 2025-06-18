@@ -5,7 +5,7 @@ import { useMealPlans, useStockItems, useCostRecords, type MealPlan, type CostRe
 // import { useToast } from '../../hooks/useToast.tsx'; // 将来的に使用予定
 
 
-// ダッシュボード画面コンポーネント - CLAUDE.md仕様書に準拠
+// サマリー画面コンポーネント - CLAUDE.md仕様書に準拠
 export const Dashboard: React.FC = () => {
   // 現在の日付を取得
   const today = new Date();
