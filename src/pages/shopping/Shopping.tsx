@@ -21,16 +21,16 @@ export const Shopping: React.FC = () => {
   } = useShoppingList();
 
   // 献立と在庫データを取得（自動作成機能用）
-  const { mealPlans } = useMealPlans();
-  const { stockItems, addStockItem } = useStockItems();
+  const { mealPlans: _mealPlans } = useMealPlans();
+  const { stockItems: _stockItems, addStockItem } = useStockItems();
 
   // 自動生成フック
   const {
     generateShoppingList,
-    previewShoppingList,
+    previewShoppingList: _previewShoppingList,
     isGenerating,
-    lastResult,
-    error: autoGenerationError
+    lastResult: generationResult,
+    error: _autoGenerationError
   } = useAutoShoppingList();
 
   // 新規追加フォームの状態
@@ -251,15 +251,10 @@ export const Shopping: React.FC = () => {
               <div className="text-sm">
                 <div className="font-medium mb-1">買い物リストに追加しました！</div>
                 <div className="text-gray-600">
-                  必要な食材: {generationResult.summary.totalIngredients}件 / 
-                  在庫あり: {generationResult.summary.inStock}件 / 
-                  購入が必要: {generationResult.summary.needToBuy}件
+                  全体: {generationResult.totalRequired}件 / 
+                  追加: {generationResult.itemsAdded}件 / 
+                  スキップ: {generationResult.itemsSkipped}件
                 </div>
-                {generationResult.error && (
-                  <div className="text-orange-600 mt-1">
-                    ⚠️ {generationResult.error}
-                  </div>
-                )}
               </div>
             </div>
           )}

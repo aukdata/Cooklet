@@ -172,7 +172,7 @@ export const Stock: React.FC = () => {
             {allLocations.map(location => (
               <button
                 key={location}
-                onClick={() => setSelectedLocation(location)}
+                onClick={() => setSelectedLocation(location || '全て')}
                 className={`text-xs px-2 py-1 rounded ${
                   selectedLocation === location 
                     ? 'bg-indigo-100 text-indigo-700' 

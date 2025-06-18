@@ -96,7 +96,7 @@ async function handleSupabaseRequest(request) {
     }
     
     return response;
-  } catch (error) {
+  } catch {
     console.log('[SW] ネットワークエラー、キャッシュから取得を試行:', url);
     
     // ネットワークエラーの場合、キャッシュから取得
@@ -142,7 +142,7 @@ async function handleStaticRequest(request) {
     }
     
     return response;
-  } catch (error) {
+  } catch {
     console.log('[SW] 静的リソース取得エラー:', request.url);
     
     // HTML リクエストの場合はオフラインページを返す

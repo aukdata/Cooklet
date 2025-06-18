@@ -1,8 +1,8 @@
 // 献立から買い物リスト自動生成のユーティリティ（CLAUDE.md仕様書準拠）
 
-import { MealPlan } from '../hooks/useMealPlans';
-import { StockItem } from '../hooks/useStockItems';
-import { ShoppingListItem } from '../hooks/useShoppingList';
+import { type MealPlan } from '../hooks/useMealPlans';
+import { type StockItem } from '../hooks/useStockItems';
+import { type ShoppingListItem } from '../hooks/useShoppingList';
 
 // 食材名の正規化（類似食材をマッチングするため）
 export const normalizeIngredientName = (name: string): string => {
@@ -32,7 +32,7 @@ export const extractQuantity = (ingredientText: string): { name: string; quantit
 // 在庫と必要量を比較して不足をチェック
 export const checkIngredientStock = (
   ingredientName: string, 
-  requiredQuantity: string, 
+  _requiredQuantity: string, 
   stockItems: StockItem[]
 ): boolean => {
   const normalizedIngredient = normalizeIngredientName(ingredientName);
