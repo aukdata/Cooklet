@@ -970,6 +970,8 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 - **全データフックが完全実装**（useMealPlans、useStockItems、useCostRecords、useShoppingList、useAutoShoppingList）
 - **Supabaseリアルタイム連携完備**（全テーブル対応）
 - **献立から買い物リスト自動生成機能完了**（食材抽出・在庫照合・重複回避）
-- **GitHub issue #10, #11, #30, #31が完了**
+- **ダイアログz-index問題解決** - issue #41完了（ダイアログとグローバルフッター競合修正）
+- **在庫管理画面デザイン統一** - issue #42完了（レシピ一覧と同じデザインに統一・検索機能追加）
+- **GitHub issue #10, #11, #30, #31, #41, #42が完了**
 - 残りは高度なLLM連携機能（食材自動抽出）のみ
 - PWA対応と通知機能は将来的な拡張項目
