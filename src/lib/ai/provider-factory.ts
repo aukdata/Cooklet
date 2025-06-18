@@ -9,17 +9,7 @@ export class AIProviderFactory {
   static createProvider(config: AIProviderConfig): AIProvider {
     switch (config.provider) {
       case 'gemini':
-        return new GeminiProvider(config);
-      
-      case 'claude':
-      case 'openai':
-      case 'groq':
-        // TODO: 他のProviderの実装
-        throw new RecipeExtractionError(
-          `${config.provider} Providerはまだ実装されていません`,
-          config.provider
-        );
-      
+        return new GeminiProvider(config);     
       default:
         throw new RecipeExtractionError(
           `サポートされていないAI Provider: ${config.provider}`,
@@ -38,8 +28,8 @@ export class AIProviderFactory {
 
     switch (providerType) {
       case 'gemini':
-        apiKey = import.meta.env.GEMINI_API_KEY || '';
-        model = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash-lite';
+        apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
+        model = import.meta.env.VITE_GEMINI_MODEL || 'models/gemini-2.5-flash-lite-preview-06-17';
         break;
       default:
         throw new RecipeExtractionError(
@@ -50,7 +40,7 @@ export class AIProviderFactory {
 
     if (!apiKey) {
       throw new RecipeExtractionError(
-        `${providerType.toUpperCase()}_API_KEYが設定されていません`,
+        `${providerType.toUpperCase()} API Keyが設定されていません`,
         providerType
       );
     }
@@ -74,10 +64,7 @@ export class AIProviderFactory {
   // Providerの説明を取得
   static getProviderDescription(provider: string): string {
     const descriptions: Record<string, string> = {
-      gemini: 'Google Gemini (高速・高品質)',
-      claude: 'Anthropic Claude (高精度)',
-      openai: 'OpenAI GPT (安定性重視)',
-      groq: 'Groq (超高速・今後対応予定)'
+      gemini: 'Google Gemini (高速・高品質)'
     };
     
     return descriptions[provider] || 'Unknown Provider';

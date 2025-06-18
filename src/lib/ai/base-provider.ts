@@ -15,30 +15,15 @@ export const RECIPE_EXTRACTION_PROMPT = `
 5. JSON以外の文字列は一切含めないでください
 
 抽出・判定する情報：
-- レシピサイト判定：レシピ情報（料理名、材料、作り方等）が含まれているかを判定
-- レシピ名：HTMLのtitleタグ、h1タグ、またはレシピタイトル要素から
-- 人数：「〇人分」「〇人前」「〇名分」などの記載から数値のみ抽出
+- レシピサイト判定：true/false レシピ情報（料理名、材料、作り方等）が含まれているかを判定
+- レシピ名：HTMLのtitleタグ、h1タグ、またはレシピタイトル要素から。見つからなければ「レシピ」とする
+- 人数：「〇人分」「〇人前」「〇名分」などの記載から数値のみ抽出。見つからなければ1。
 - 材料：材料リスト、ingredients、材料名などの要素から
   - 食材名：「玉ねぎ」「牛ひき肉」など
-  - 数量：「200」「1」「1/2」など数値部分のみ
+  - 数量：「200」「1」「1/2」など数値部分のみ。見つからなければ "適量"。
   - 単位：「g」「ml」「個」「本」「枚」「大さじ」「小さじ」「カップ」など
 - タグ提案：料理の特徴に基づいたタグ（料理ジャンル、調理方法、食材特徴など）
-
-固定JSONスキーマ（このスキーマから一切変更しないでください）：
-{
-  "isRecipeSite": 真偽値（レシピ情報が含まれている場合true、そうでない場合false）,
-  "title": "文字列（HTMLから抽出したレシピ名、見つからない場合は"レシピ"）",
-  "servings": 数値（HTMLから抽出した人数、見つからない場合は2）,
-  "ingredients": [
-    {
-      "name": "文字列（食材名）",
-      "quantity": "文字列（数量部分）",
-      "unit": "文字列（単位部分）"
-    }
-  ],
-  "suggestedTags": ["文字列（提案タグ1）", "文字列（提案タグ2）", ...],
-  "confidence": 数値（0.0から1.0の小数、抽出できた情報の明確性を反映）
-}
+- 信頼度：抽出結果の明確性に応じて0.0から1.0の値を設定
 
 材料の数量・単位分離ルール：
 - 「200g」→ quantity: "200", unit: "g"
@@ -123,56 +108,12 @@ export abstract class BaseAIProvider implements AIProvider {
       // レスポンスをクリーンアップ
       let cleanResponse = response.trim();
       
-      // 1. ```json コードブロック形式
-      let jsonMatch = cleanResponse.match(/```json\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        return JSON.parse(jsonMatch[1].trim());
-      }
-      
-      // 2. ```コードブロック形式（jsonなし）
-      jsonMatch = cleanResponse.match(/```\s*([\s\S]*?)\s*```/);
-      if (jsonMatch) {
-        const candidate = jsonMatch[1].trim();
-        if (candidate.startsWith('{') && candidate.endsWith('}')) {
-          return JSON.parse(candidate);
-        }
-      }
-      
-      // 3. 最初のJSONオブジェクト
-      jsonMatch = cleanResponse.match(/\{[\s\S]*?\}/);
-      if (jsonMatch) {
-        // より厳密なJSONパターンを検索
-        const candidate = jsonMatch[0];
-        let braceCount = 0;
-        let jsonEnd = 0;
-        
-        for (let i = 0; i < candidate.length; i++) {
-          if (candidate[i] === '{') braceCount++;
-          if (candidate[i] === '}') braceCount--;
-          if (braceCount === 0) {
-            jsonEnd = i;
-            break;
-          }
-        }
-        
-        const jsonStr = candidate.substring(0, jsonEnd + 1);
-        return JSON.parse(jsonStr);
-      }
-      
-      // 4. 直接JSON形式
+      // 直接JSON形式
       if (cleanResponse.startsWith('{') && cleanResponse.endsWith('}')) {
         return JSON.parse(cleanResponse);
       }
-      
-      // 5. 最後の手段：完全一致検索で一番長いJSONを探す
-      const jsonMatches = cleanResponse.match(/\{[^{}]*(?:\{[^{}]*\}[^{}]*)*\}/g);
-      if (jsonMatches && jsonMatches.length > 0) {
-        // 一番長いものを選択
-        const longestJson = jsonMatches.reduce((a, b) => a.length > b.length ? a : b);
-        return JSON.parse(longestJson);
-      }
-      
-      throw new Error('有効なJSON形式が見つかりませんでした');
+            
+      throw new Error('有効なJSON形式ではありません。');
       
     } catch (error) {
       console.error('JSON抽出エラー:', { response, error });

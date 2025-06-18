@@ -273,11 +273,6 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                       {extractionState.result.isRecipeSite ? '✅' : '⚠️'} 
                       {extractionState.result.isRecipeSite ? 'レシピサイト' : '非レシピサイト'} - 
                       信頼度: {Math.round(extractionState.result.confidence * 100)}%
-                      {extractionState.result.suggestedTags.length > 0 && (
-                        <span className="text-indigo-600 ml-1">
-                          (タグ{extractionState.result.suggestedTags.length}個提案)
-                        </span>
-                      )}
                       <button
                         type="button"
                         onClick={clearResult}
@@ -286,11 +281,6 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                         ×
                       </button>
                     </div>
-                    {extractionState.result.suggestedTags.length > 0 && (
-                      <div className="mt-1 text-xs text-indigo-600">
-                        提案タグ: {extractionState.result.suggestedTags.join(', ')}
-                      </div>
-                    )}
                   </div>
                 )}
               </div>

@@ -12,6 +12,7 @@
     "build:netlify": "pnpm run lint && pnpm run typecheck && pnpm run build"
   },
   "dependencies": {
+    "@google/genai": "^1.5.1",
     "@supabase/supabase-js": "^2.50.0",
     "@types/node": "^22.15.30",
     "date-fns": "^4.1.0",
