@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast.tsx';
+import { useBuildInfo } from '../../hooks/useBuildInfo';
 
 // ユーザ設定画面コンポーネント - issue #11対応（画面化）
 export const Settings: React.FC = () => {
   const { supabaseUser, signOut } = useAuth();
   const { showSuccess, showError } = useToast();
+  const { buildInfo, formatBuildDate } = useBuildInfo();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -151,10 +153,14 @@ export const Settings: React.FC = () => {
           アプリ情報
         </h3>
         
-        <div className="bg-gray-50 p-3 rounded-md">
+        <div className="bg-gray-50 p-3 rounded-md space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-700">バージョン</span>
-            <span className="text-sm text-gray-900">1.0.0</span>
+            <span className="text-sm text-gray-900">{buildInfo?.version || '1.0.0'}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-700">ビルド日時</span>
+            <span className="text-sm text-gray-900">{formatBuildDate}</span>
           </div>
         </div>
       </div>

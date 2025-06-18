@@ -17,7 +17,8 @@
       "Edit(*)",
       "Write(*)",
       "Bash(convert:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(node:*)"
     ],
     "deny": [
       "Bash(rm:*)"
