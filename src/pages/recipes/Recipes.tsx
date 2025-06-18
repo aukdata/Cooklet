@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useRecipes, type SavedRecipe } from '../../hooks/useRecipes';
 import { useMealPlans } from '../../hooks/useMealPlans';
-import { extractIngredientsFromURL } from '../../services/ingredientExtraction';
 import { RecipeDialog } from '../../components/dialogs/RecipeDialog';
 import { RecipeDetailDialog } from '../../components/dialogs/RecipeDetailDialog';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
@@ -316,10 +315,6 @@ export const Recipes: React.FC = () => {
         onClose={() => setIsEditDialogOpen(false)}
         onSave={handleSaveRecipe}
         onDelete={() => editingRecipe && handleDeleteRecipe(editingRecipe)}
-        onExtractIngredients={async (url: string) => {
-          const result = await extractIngredientsFromURL(url);
-          return result.ingredients;
-        }}
         initialData={editingRecipe ? {
           title: editingRecipe.title,
           url: editingRecipe.url,

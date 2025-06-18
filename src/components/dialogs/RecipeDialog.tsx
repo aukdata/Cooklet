@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
+import { useRecipeExtraction, validateRecipeExtraction } from '../../hooks/useRecipeExtraction';
 
 // レシピ編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface RecipeDialogProps {
@@ -8,7 +9,6 @@ interface RecipeDialogProps {
   onClose: () => void; // ダイアログを閉じる関数
   onSave: (recipeData: RecipeForm) => void; // レシピデータを保存する関数
   onDelete?: () => void; // レシピ削除関数（編集時）
-  onExtractIngredients?: (url: string) => Promise<{ name: string; quantity: string }[]>; // 食材抽出関数
   initialData?: RecipeForm; // 初期データ（編集時）
   isEditing?: boolean; // 編集モードかどうか
 }
@@ -28,11 +28,11 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   onClose,
   onSave,
   onDelete,
-  onExtractIngredients,
   initialData,
   isEditing = false
 }) => {
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
+  const { state: extractionState, extractFromUrl, clearResult, clearError } = useRecipeExtraction();
 
   // フォームデータの状態管理
   const [formData, setFormData] = useState<RecipeForm>({
@@ -43,8 +43,6 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
     tags: []
   });
 
-  // 食材抽出中の状態
-  const [isExtracting, setIsExtracting] = useState(false);
   const [newTag, setNewTag] = useState(''); // 新しいタグ入力用
 
 
@@ -96,22 +94,41 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
     }));
   };
 
-  // 食材抽出ハンドラ
-  const handleExtractIngredients = async () => {
-    if (!formData.url.trim() || !onExtractIngredients) return;
+  // レシピ抽出ハンドラー
+  const handleExtractRecipe = async () => {
+    if (!formData.url.trim()) {
+      showError('URLを入力してください');
+      return;
+    }
 
-    setIsExtracting(true);
-    try {
-      const extractedIngredients = await onExtractIngredients(formData.url);
+    clearError(); // 前回のエラーをクリア
+    
+    const extraction = await extractFromUrl(formData.url);
+    
+    if (extraction) {
+      // 抽出結果を検証
+      const validation = validateRecipeExtraction(extraction);
+      
+      // フォームデータを更新
       setFormData(prev => ({
         ...prev,
-        ingredients: extractedIngredients.length > 0 ? extractedIngredients : prev.ingredients
+        title: extraction.title || prev.title,
+        servings: extraction.servings || prev.servings,
+        ingredients: extraction.ingredients.length > 0 ? 
+          extraction.ingredients.map(ing => ({
+            name: ing.name,
+            quantity: ing.unit ? `${ing.quantity}${ing.unit}` : ing.quantity
+          })) : prev.ingredients
       }));
-    } catch (error) {
-      console.error('食材抽出エラー:', error);
-      showError('食材の抽出に失敗しました');
-    } finally {
-      setIsExtracting(false);
+
+      // 結果をユーザーに通知
+      if (validation.isValid) {
+        showSuccess(`レシピ情報を抽出しました（信頼度: ${Math.round(extraction.confidence * 100)}%）`);
+      } else {
+        showSuccess('レシピ情報を抽出しましたが、内容を確認してください');
+        // 問題があれば詳細をコンソールに出力
+        console.warn('抽出結果の検証:', validation);
+      }
     }
   };
 
@@ -216,17 +233,46 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                 className="flex-1 border border-gray-300 rounded px-3 py-2 min-w-0 overflow-hidden"
                 style={{ wordBreak: 'break-all' }}
               />
-              {onExtractIngredients && (
-                <button
-                  type="button"
-                  onClick={handleExtractIngredients}
-                  disabled={!formData.url.trim() || isExtracting}
-                  className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200 disabled:opacity-50"
-                >
-                  {isExtracting ? '抽出中...' : '食材抽出'}
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={handleExtractRecipe}
+                disabled={!formData.url.trim() || extractionState.isExtracting}
+                className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200 disabled:opacity-50 whitespace-nowrap"
+              >
+                {extractionState.isExtracting ? '抽出中...' : 'レシピ抽出'}
+              </button>
             </div>
+            
+            {/* 抽出進行状況の表示 */}
+            {extractionState.progress.step !== 'idle' && (
+              <div className="mt-2">
+                <div className="text-xs text-gray-600 mb-1">
+                  {extractionState.progress.message}
+                </div>
+                {extractionState.isExtracting && (
+                  <div className="w-full bg-gray-200 rounded-full h-1">
+                    <div className="bg-indigo-600 h-1 rounded-full animate-pulse w-1/2"></div>
+                  </div>
+                )}
+                {extractionState.error && (
+                  <div className="text-xs text-red-600 mt-1">
+                    ⚠️ {extractionState.error}
+                  </div>
+                )}
+                {extractionState.result && extractionState.progress.step === 'completed' && (
+                  <div className="text-xs text-green-600 mt-1 flex items-center">
+                    ✅ 抽出完了 - 信頼度: {Math.round(extractionState.result.confidence * 100)}%
+                    <button
+                      type="button"
+                      onClick={clearResult}
+                      className="ml-2 text-gray-400 hover:text-gray-600"
+                    >
+                      ×
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* 人数入力 */}
