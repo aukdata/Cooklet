@@ -46,7 +46,7 @@ export const useBuildInfo = () => {
     loadBuildInfo();
   }, []);
 
-  // 日時フォーマット関数
+  // 日時フォーマット関数（JST表示）
   const formatBuildDate = (dateString: string): string => {
     try {
       const date = new Date(dateString);
@@ -56,7 +56,8 @@ export const useBuildInfo = () => {
         day: '2-digit',
         hour: '2-digit',
         minute: '2-digit',
-        second: '2-digit'
+        second: '2-digit',
+        timeZone: 'Asia/Tokyo'
       });
     } catch {
       return '不明';
