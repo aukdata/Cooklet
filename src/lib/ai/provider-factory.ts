@@ -3,8 +3,6 @@
 import type { AIProvider, AIProviderConfig } from './types';
 import { RecipeExtractionError } from './types';
 import { GeminiProvider } from './providers/gemini-provider';
-import { ClaudeProvider } from './providers/claude-provider';
-import { OpenAIProvider } from './providers/openai-provider';
 
 export class AIProviderFactory {
   // 設定に基づいてAI Providerを作成
@@ -14,16 +12,12 @@ export class AIProviderFactory {
         return new GeminiProvider(config);
       
       case 'claude':
-        return new ClaudeProvider(config);
-      
       case 'openai':
-        return new OpenAIProvider(config);
-      
       case 'groq':
-        // TODO: Groq Providerの実装
+        // TODO: 他のProviderの実装
         throw new RecipeExtractionError(
-          'Groq Providerはまだ実装されていません',
-          'groq'
+          `${config.provider} Providerはまだ実装されていません`,
+          config.provider
         );
       
       default:
@@ -44,19 +38,17 @@ export class AIProviderFactory {
 
     switch (providerType) {
       case 'gemini':
-        apiKey = import.meta.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY;
+        apiKey = import.meta.env.GEMINI_API_KEY || import.meta.env.VITE_GEMINI_API_KEY || '';
         model = import.meta.env.VITE_GEMINI_MODEL || 'gemini-2.5-flash-lite';
         break;
       
       case 'claude':
-        apiKey = import.meta.env.CLAUDE_API_KEY || import.meta.env.VITE_CLAUDE_API_KEY;
-        model = import.meta.env.VITE_CLAUDE_MODEL || 'claude-3-5-sonnet-20241022';
-        break;
-      
       case 'openai':
-        apiKey = import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
-        model = import.meta.env.VITE_OPENAI_MODEL || 'gpt-4o-mini';
-        break;
+      case 'groq':
+        throw new RecipeExtractionError(
+          `${providerType} Providerはまだ実装されていません`,
+          providerType
+        );
       
       default:
         throw new RecipeExtractionError(
@@ -85,7 +77,7 @@ export class AIProviderFactory {
 
   // 利用可能なProviderの一覧を取得
   static getAvailableProviders(): string[] {
-    return ['gemini', 'claude', 'openai'];
+    return ['gemini'];
   }
 
   // Providerの説明を取得

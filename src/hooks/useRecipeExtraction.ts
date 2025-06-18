@@ -157,6 +157,12 @@ export const validateRecipeExtraction = (extraction: RecipeExtraction): {
   const issues: string[] = [];
   const suggestions: string[] = [];
 
+  // レシピサイト判定の検証
+  if (!extraction.isRecipeSite) {
+    issues.push('レシピサイトではない可能性があります');
+    suggestions.push('URLを確認するか、手動でレシピ情報を入力してください');
+  }
+
   // タイトルの検証
   if (!extraction.title || extraction.title.trim().length < 2) {
     issues.push('レシピ名が短すぎます');
@@ -194,6 +200,11 @@ export const validateRecipeExtraction = (extraction: RecipeExtraction): {
   if (extraction.confidence < 0.5) {
     issues.push('抽出結果の信頼度が低いです');
     suggestions.push('内容を確認して必要に応じて手動で修正してください');
+  }
+
+  // タグの検証
+  if (extraction.isRecipeSite && extraction.suggestedTags.length === 0) {
+    suggestions.push('適切なタグを手動で追加することをお勧めします');
   }
 
   return {

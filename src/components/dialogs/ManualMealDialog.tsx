@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { QuantityInput } from '../common/QuantityInput';
-import { analyzeRecipeFromUrl, isValidRecipeUrl } from '../../services/recipeAnalysis';
+import { isValidRecipeUrl } from '../../services/recipeAnalysis';
 import { useToast } from '../../hooks/useToast.tsx';
+import { useRecipeExtraction } from '../../hooks/useRecipeExtraction';
 
 // 手動献立入力ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface ManualMealDialogProps {
@@ -28,6 +29,7 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
   initialData
 }) => {
   const { showError, showSuccess } = useToast();
+  const { state: extractionState, extractFromUrl } = useRecipeExtraction();
 
   // フォームデータの状態管理
   const [formData, setFormData] = useState<ManualMealForm>({
@@ -37,9 +39,6 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
     ingredients: initialData?.ingredients || [{ name: '', quantity: '' }],
     memo: initialData?.memo || ''
   });
-
-  // レシピ解析の状態管理
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   // 食材を追加する関数
   const addIngredient = () => {
@@ -74,26 +73,26 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
       return;
     }
 
-    setIsAnalyzing(true);
-    try {
-      const result = await analyzeRecipeFromUrl(formData.recipe_url!);
-      
-      if (result.success && result.data) {
-        // 解析結果をフォームに反映
-        setFormData(prev => ({
-          ...prev,
-          dish_name: result.data!.recipeName,
-          servings: result.data!.servings,
-          ingredients: result.data!.ingredients
-        }));
-        showSuccess('レシピを解析しました！');
+    const extraction = await extractFromUrl(formData.recipe_url!);
+    
+    if (extraction) {
+      // 解析結果をフォームに反映
+      setFormData(prev => ({
+        ...prev,
+        dish_name: extraction.title || prev.dish_name,
+        servings: extraction.servings || prev.servings,
+        ingredients: extraction.ingredients.length > 0 ? 
+          extraction.ingredients.map(ing => ({
+            name: ing.name,
+            quantity: ing.unit ? `${ing.quantity}${ing.unit}` : ing.quantity
+          })) : prev.ingredients
+      }));
+
+      if (extraction.isRecipeSite) {
+        showSuccess(`レシピを解析しました！（信頼度: ${Math.round(extraction.confidence * 100)}%）`);
       } else {
-        showError(result.error || 'レシピの解析に失敗しました');
+        showError('レシピサイトではない可能性があります。内容を確認してください。');
       }
-    } catch {
-      showError('解析中にエラーが発生しました');
-    } finally {
-      setIsAnalyzing(false);
     }
   };
 
@@ -160,14 +159,14 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
               <button
                 type="button"
                 onClick={handleAnalyzeRecipe}
-                disabled={!isValidRecipeUrl(formData.recipe_url || '') || isAnalyzing}
+                disabled={!isValidRecipeUrl(formData.recipe_url || '') || extractionState.isExtracting}
                 className={`w-full py-2 px-4 text-sm rounded ${
-                  isValidRecipeUrl(formData.recipe_url || '') && !isAnalyzing
+                  isValidRecipeUrl(formData.recipe_url || '') && !extractionState.isExtracting
                     ? 'bg-green-600 hover:bg-green-700 text-white'
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {isAnalyzing ? '🔍 解析中...' : '🔍 解析'}
+                {extractionState.isExtracting ? '🔍 解析中...' : '🔍 レシピ抽出'}
               </button>
             </div>
           </div>

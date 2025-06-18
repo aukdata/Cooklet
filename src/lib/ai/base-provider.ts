@@ -3,9 +3,9 @@
 import type { AIProvider, AIProviderConfig, RecipeExtraction } from './types';
 import { RecipeExtractionError } from './types';
 
-// レシピ抽出用の統一プロンプト - 単位抽出対応・固定JSONスキーマ・ハルシネーション防止強化版
+// レシピ抽出用の統一プロンプト - レシピサイト判定とタグ提案機能付き
 export const RECIPE_EXTRACTION_PROMPT = `
-あなたはレシピサイトからレシピ情報を正確に抽出する専門AIです。
+あなたはWebサイトからレシピ情報を正確に抽出し、レシピサイトかどうかを判定し、適切なタグを提案する専門AIです。
 
 【重要】絶対に守るべき制約：
 1. HTMLに明確に記載されている情報のみを抽出してください
@@ -14,16 +14,19 @@ export const RECIPE_EXTRACTION_PROMPT = `
 4. 必ず指定されたJSON形式のみで回答してください
 5. JSON以外の文字列は一切含めないでください
 
-抽出する情報：
+抽出・判定する情報：
+- レシピサイト判定：レシピ情報（料理名、材料、作り方等）が含まれているかを判定
 - レシピ名：HTMLのtitleタグ、h1タグ、またはレシピタイトル要素から
 - 人数：「〇人分」「〇人前」「〇名分」などの記載から数値のみ抽出
 - 材料：材料リスト、ingredients、材料名などの要素から
   - 食材名：「玉ねぎ」「牛ひき肉」など
   - 数量：「200」「1」「1/2」など数値部分のみ
   - 単位：「g」「ml」「個」「本」「枚」「大さじ」「小さじ」「カップ」など
+- タグ提案：料理の特徴に基づいたタグ（料理ジャンル、調理方法、食材特徴など）
 
 固定JSONスキーマ（このスキーマから一切変更しないでください）：
 {
+  "isRecipeSite": 真偽値（レシピ情報が含まれている場合true、そうでない場合false）,
   "title": "文字列（HTMLから抽出したレシピ名、見つからない場合は"レシピ"）",
   "servings": 数値（HTMLから抽出した人数、見つからない場合は2）,
   "ingredients": [
@@ -33,6 +36,7 @@ export const RECIPE_EXTRACTION_PROMPT = `
       "unit": "文字列（単位部分）"
     }
   ],
+  "suggestedTags": ["文字列（提案タグ1）", "文字列（提案タグ2）", ...],
   "confidence": 数値（0.0から1.0の小数、抽出できた情報の明確性を反映）
 }
 
@@ -44,12 +48,26 @@ export const RECIPE_EXTRACTION_PROMPT = `
 - 「少々」→ quantity: "少々", unit: ""
 - 単位が不明な場合は unit: "" を設定
 
+タグ提案ルール：
+- 料理ジャンル：「和食」「洋食」「中華」「エスニック」「イタリアン」「フレンチ」など
+- 調理方法：「炒め物」「煮物」「焼き物」「揚げ物」「蒸し物」「サラダ」「デザート」など
+- 食材特徴：「肉料理」「魚料理」「野菜料理」「卵料理」「麺類」「丼物」「パスタ」など
+- 特徴：「時短」「簡単」「ヘルシー」「作り置き」「お弁当」「おもてなし」など
+- 最大5個まで、レシピ内容に最も適したタグを選択
+- レシピサイトでない場合は空配列 [] を返す
+
+レシピサイト判定基準：
+- 料理名、材料リスト、作り方・手順のいずれかが明確に記載されている場合：true
+- ブログやニュース記事で料理に言及しているが詳細な情報がない場合：false
+- ECサイト、企業サイト、一般的なWebページ：false
+
 注意事項：
 - ingredientsは配列で、各要素は必ずname、quantity、unitを持つオブジェクト
 - 材料が見つからない場合は空配列 [] を返す
 - 数量が不明な場合は quantity: "適量", unit: "" を設定
+- suggestedTagsは配列で、レシピサイトの場合のみ適切なタグを最大5個提案
 - confidenceは抽出情報の明確性に応じて設定（明確:0.8-1.0、やや明確:0.5-0.7、不明確:0.2-0.4）
-- HTMLに情報がない場合は低いconfidenceを設定
+- レシピサイトでない場合は低いconfidenceを設定
 
 HTMLコンテンツ:
 `;
@@ -178,6 +196,7 @@ export abstract class BaseAIProvider implements AIProvider {
     }
 
     // 必須フィールドの検証
+    const isRecipeSite = typeof data.isRecipeSite === 'boolean' ? data.isRecipeSite : false;
     const title = data.title || 'レシピ';
     const servings = typeof data.servings === 'number' ? data.servings : 2;
     const confidence = typeof data.confidence === 'number' ? 
@@ -195,12 +214,23 @@ export abstract class BaseAIProvider implements AIProvider {
         }));
     }
 
+    // タグリストの検証
+    let suggestedTags: string[] = [];
+    if (Array.isArray(data.suggestedTags)) {
+      suggestedTags = data.suggestedTags
+        .filter((tag: any) => typeof tag === 'string' && tag.trim())
+        .map((tag: any) => String(tag).trim())
+        .slice(0, 5); // 最大5個まで
+    }
+
     return {
       title,
       servings,
       ingredients,
       extractedFrom: url,
-      confidence
+      confidence,
+      isRecipeSite,
+      suggestedTags
     };
   }
 }

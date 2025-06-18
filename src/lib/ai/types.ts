@@ -11,6 +11,8 @@ export interface RecipeExtraction {
   }>;
   extractedFrom: string; // 抽出元URL
   confidence: number; // 抽出結果の信頼度（0-1）
+  isRecipeSite: boolean; // レシピサイトかどうかの判定
+  suggestedTags: string[]; // 提案されたタグ
 }
 
 // AI Provider設定

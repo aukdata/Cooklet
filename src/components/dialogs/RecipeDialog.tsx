@@ -118,14 +118,22 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
           extraction.ingredients.map(ing => ({
             name: ing.name,
             quantity: ing.unit ? `${ing.quantity}${ing.unit}` : ing.quantity
-          })) : prev.ingredients
+          })) : prev.ingredients,
+        tags: extraction.isRecipeSite && extraction.suggestedTags.length > 0 ?
+          [...new Set([...prev.tags, ...extraction.suggestedTags])] : prev.tags
       }));
 
       // 結果をユーザーに通知
       if (validation.isValid) {
-        showSuccess(`レシピ情報を抽出しました（信頼度: ${Math.round(extraction.confidence * 100)}%）`);
+        const tagMessage = extraction.suggestedTags.length > 0 ? 
+          ` (タグ${extraction.suggestedTags.length}個を提案)` : '';
+        showSuccess(`レシピ情報を抽出しました（信頼度: ${Math.round(extraction.confidence * 100)}%）${tagMessage}`);
       } else {
-        showSuccess('レシピ情報を抽出しましたが、内容を確認してください');
+        if (!extraction.isRecipeSite) {
+          showError('レシピサイトではない可能性があります。内容を確認してください。');
+        } else {
+          showSuccess('レシピ情報を抽出しましたが、内容を確認してください');
+        }
         // 問題があれば詳細をコンソールに出力
         console.warn('抽出結果の検証:', validation);
       }
@@ -260,15 +268,29 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                   </div>
                 )}
                 {extractionState.result && extractionState.progress.step === 'completed' && (
-                  <div className="text-xs text-green-600 mt-1 flex items-center">
-                    ✅ 抽出完了 - 信頼度: {Math.round(extractionState.result.confidence * 100)}%
-                    <button
-                      type="button"
-                      onClick={clearResult}
-                      className="ml-2 text-gray-400 hover:text-gray-600"
-                    >
-                      ×
-                    </button>
+                  <div className="text-xs mt-1">
+                    <div className={`flex items-center ${extractionState.result.isRecipeSite ? 'text-green-600' : 'text-orange-600'}`}>
+                      {extractionState.result.isRecipeSite ? '✅' : '⚠️'} 
+                      {extractionState.result.isRecipeSite ? 'レシピサイト' : '非レシピサイト'} - 
+                      信頼度: {Math.round(extractionState.result.confidence * 100)}%
+                      {extractionState.result.suggestedTags.length > 0 && (
+                        <span className="text-indigo-600 ml-1">
+                          (タグ{extractionState.result.suggestedTags.length}個提案)
+                        </span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={clearResult}
+                        className="ml-2 text-gray-400 hover:text-gray-600"
+                      >
+                        ×
+                      </button>
+                    </div>
+                    {extractionState.result.suggestedTags.length > 0 && (
+                      <div className="mt-1 text-xs text-indigo-600">
+                        提案タグ: {extractionState.result.suggestedTags.join(', ')}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -22,23 +22,7 @@ const isValidURL = (url: string): boolean => {
   }
 };
 
-// レシピサイトの判定
-const isSupportedRecipeSite = (url: string): boolean => {
-  const supportedDomains = [
-    'cookpad.com',
-    'recipe.rakuten.co.jp',
-    'delishkitchen.tv',
-    'kurashiru.com',
-    'kyounoryouri.jp'
-  ];
-  
-  try {
-    const domain = new URL(url).hostname.replace('www.', '');
-    return supportedDomains.some(supported => domain.includes(supported));
-  } catch {
-    return false;
-  }
-};
+// レシピサイトの判定機能はLLMに移管
 
 // モックのLLM API呼び出し（実際のAPI実装時に置き換え）
 const mockLLMExtraction = async (url: string): Promise<ExtractedIngredient[]> => {
@@ -135,8 +119,7 @@ export const extractIngredientsFromURL = async (url: string): Promise<Ingredient
       };
     }
     
-    // レシピサイト判定（警告のみ、処理は続行）
-    const isSupported = isSupportedRecipeSite(url);
+    // レシピサイト判定はLLMに移管
     
     // 食材抽出の実行
     let extractedIngredients: ExtractedIngredient[];
@@ -173,8 +156,7 @@ export const extractIngredientsFromURL = async (url: string): Promise<Ingredient
     
     return {
       success: true,
-      ingredients: normalizedIngredients,
-      error: !isSupported ? '非対応サイトの可能性があります。抽出結果を確認してください。' : undefined
+      ingredients: normalizedIngredients
     };
     
   } catch (error) {
