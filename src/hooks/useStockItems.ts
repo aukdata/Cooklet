@@ -199,6 +199,7 @@ export const useStockItems = () => {
     if (!user?.id) return;
 
     let subscriptionRef: any = null;
+    let isSubscribed = false;
 
     const setupSubscription = async () => {
       try {
@@ -215,10 +216,12 @@ export const useStockItems = () => {
               table: 'stock_items',
               filter: `user_id=eq.${user.id}`
             },
-            async () => {
+            async (payload) => {
               // データが変更された場合は再取得
+              console.log('在庫データが変更されました:', payload);
+              
+              // リアルタイム更新の際はローディングを表示しない
               try {
-                setLoading(true);
                 setError(null);
 
                 const { data, error: fetchError } = await supabase
@@ -236,30 +239,46 @@ export const useStockItems = () => {
               } catch (err) {
                 console.error('在庫データの取得に失敗しました:', err);
                 setError(err instanceof Error ? err.message : '在庫データの取得に失敗しました');
-              } finally {
-                setLoading(false);
               }
             }
-          );
+          )
+          .subscribe((status: string) => {
+            console.log('在庫データのサブスクリプション状態:', status);
+            
+            if (status === 'SUBSCRIBED') {
+              isSubscribed = true;
+              console.log('在庫データのリアルタイム更新が開始されました');
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('在庫データのサブスクリプションエラー');
+              setError('リアルタイム更新に失敗しました');
+            } else if (status === 'TIMED_OUT') {
+              console.warn('在庫データのサブスクリプションタイムアウト');
+              // タイムアウトした場合は再試行
+              setTimeout(() => {
+                if (!isSubscribed) {
+                  setupSubscription();
+                }
+              }, 5000);
+            } else if (status === 'CLOSED') {
+              console.log('在庫データのサブスクリプションが閉じられました');
+              isSubscribed = false;
+            }
+          });
 
-        // サブスクリプションを開始
-        const subscribeResult = await subscriptionRef.subscribe();
-        if (subscribeResult === 'SUBSCRIBED') {
-          console.log('在庫データのリアルタイム更新が開始されました');
-        } else {
-          console.warn('在庫データのサブスクリプションに失敗しました:', subscribeResult);
-        }
       } catch (error) {
         console.error('在庫データのサブスクリプション設定に失敗しました:', error);
+        setError('リアルタイム更新の設定に失敗しました');
       }
     };
 
     setupSubscription();
 
     return () => {
+      isSubscribed = false;
       if (subscriptionRef) {
         try {
           supabase.removeChannel(subscriptionRef);
+          console.log('在庫データのサブスクリプションをクリーンアップしました');
         } catch (error) {
           console.error('在庫データのサブスクリプションクリーンアップに失敗しました:', error);
         }

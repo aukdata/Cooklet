@@ -221,6 +221,7 @@ export const useMealPlans = () => {
     if (!user?.id) return;
 
     let subscription: any = null;
+    let isSubscribed = false;
 
     const setupSubscription = async () => {
       try {
@@ -241,8 +242,24 @@ export const useMealPlans = () => {
             }
           )
           .subscribe((status: string) => {
+            console.log('献立データのサブスクリプション状態:', status);
+            
             if (status === 'SUBSCRIBED') {
-              console.log('Meal plans subscription ready');
+              isSubscribed = true;
+              console.log('献立データのリアルタイム更新が開始されました');
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('献立データのサブスクリプションエラー');
+            } else if (status === 'TIMED_OUT') {
+              console.warn('献立データのサブスクリプションタイムアウト');
+              // タイムアウトした場合は再試行
+              setTimeout(() => {
+                if (!isSubscribed) {
+                  setupSubscription();
+                }
+              }, 5000);
+            } else if (status === 'CLOSED') {
+              console.log('献立データのサブスクリプションが閉じられました');
+              isSubscribed = false;
             }
           });
       } catch (error) {
@@ -253,11 +270,13 @@ export const useMealPlans = () => {
     setupSubscription();
 
     return () => {
+      isSubscribed = false;
       if (subscription) {
         try {
           supabase.removeChannel(subscription);
+          console.log('献立データのサブスクリプションをクリーンアップしました');
         } catch (error) {
-          console.warn('Error removing subscription:', error);
+          console.error('献立データのサブスクリプションクリーンアップに失敗しました:', error);
         }
       }
     };

@@ -216,6 +216,7 @@ export const useCostRecords = () => {
     if (!user?.id) return;
 
     let subscriptionRef: any = null;
+    let isSubscribed = false;
 
     const setupSubscription = async () => {
       try {
@@ -232,10 +233,12 @@ export const useCostRecords = () => {
               table: 'cost_records',
               filter: `user_id=eq.${user.id}`
             },
-            async () => {
+            async (payload) => {
               // データが変更された場合は再取得
+              console.log('コスト記録データが変更されました:', payload);
+              
+              // リアルタイム更新の際はローディングを表示しない
               try {
-                setLoading(true);
                 setError(null);
 
                 const { data, error: fetchError } = await supabase
@@ -253,30 +256,46 @@ export const useCostRecords = () => {
               } catch (err) {
                 console.error('コスト記録データの取得に失敗しました:', err);
                 setError(err instanceof Error ? err.message : 'コスト記録データの取得に失敗しました');
-              } finally {
-                setLoading(false);
               }
             }
-          );
+          )
+          .subscribe((status: string) => {
+            console.log('コスト記録データのサブスクリプション状態:', status);
+            
+            if (status === 'SUBSCRIBED') {
+              isSubscribed = true;
+              console.log('コスト記録データのリアルタイム更新が開始されました');
+            } else if (status === 'CHANNEL_ERROR') {
+              console.error('コスト記録データのサブスクリプションエラー');
+              setError('リアルタイム更新に失敗しました');
+            } else if (status === 'TIMED_OUT') {
+              console.warn('コスト記録データのサブスクリプションタイムアウト');
+              // タイムアウトした場合は再試行
+              setTimeout(() => {
+                if (!isSubscribed) {
+                  setupSubscription();
+                }
+              }, 5000);
+            } else if (status === 'CLOSED') {
+              console.log('コスト記録データのサブスクリプションが閉じられました');
+              isSubscribed = false;
+            }
+          });
 
-        // サブスクリプションを開始
-        const subscribeResult = await subscriptionRef.subscribe();
-        if (subscribeResult === 'SUBSCRIBED') {
-          console.log('コスト記録データのリアルタイム更新が開始されました');
-        } else {
-          console.warn('コスト記録データのサブスクリプションに失敗しました:', subscribeResult);
-        }
       } catch (error) {
         console.error('コスト記録データのサブスクリプション設定に失敗しました:', error);
+        setError('リアルタイム更新の設定に失敗しました');
       }
     };
 
     setupSubscription();
 
     return () => {
+      isSubscribed = false;
       if (subscriptionRef) {
         try {
           supabase.removeChannel(subscriptionRef);
+          console.log('コスト記録データのサブスクリプションをクリーンアップしました');
         } catch (error) {
           console.error('コスト記録データのサブスクリプションクリーンアップに失敗しました:', error);
         }
