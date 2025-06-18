@@ -23,8 +23,8 @@ const buildInfo = {
   buildTimestamp: Date.now()
 };
 
-// public/build-info.jsonに出力
-const outputPath = path.join(__dirname, '..', 'public', 'build-info.json');
+// dist/build-info.jsonに出力
+const outputPath = path.join(__dirname, '..', 'dist', 'build-info.json');
 fs.writeFileSync(outputPath, JSON.stringify(buildInfo, null, 2));
 
 console.log('✅ ビルド情報を生成しました:', buildInfo);

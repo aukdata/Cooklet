@@ -19,7 +19,7 @@ export const useBuildInfo = () => {
         setIsLoading(true);
         setError(null);
 
-        // public/build-info.jsonを取得
+        // dist/build-info.jsonを取得
         const response = await fetch('/build-info.json');
         
         if (!response.ok) {
