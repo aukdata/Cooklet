@@ -220,29 +220,48 @@ export const useMealPlans = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const subscription = supabase
-      .channel(`meal_plans_changes_${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'meal_plans',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          // データが変更された場合はキャッシュを無効化して再取得
-          // 関数参照の代わりに直接呼び出し
-          if (invalidateCache) invalidateCache();
-          if (fetchMealPlans) fetchMealPlans();
-        }
-      )
-      .subscribe();
+    let subscription: any = null;
+
+    const setupSubscription = async () => {
+      try {
+        subscription = supabase
+          .channel(`meal_plans_${user.id}_${Date.now()}`) // ユニークなチャンネル名
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'meal_plans',
+              filter: `user_id=eq.${user.id}`
+            },
+            () => {
+              // データが変更された場合はキャッシュを無効化して再取得
+              invalidateCache();
+              fetchMealPlans();
+            }
+          )
+          .subscribe((status: string) => {
+            if (status === 'SUBSCRIBED') {
+              console.log('Meal plans subscription ready');
+            }
+          });
+      } catch (error) {
+        console.warn('Meal plans subscription failed, will work without realtime:', error);
+      }
+    };
+
+    setupSubscription();
 
     return () => {
-      supabase.removeChannel(subscription);
+      if (subscription) {
+        try {
+          supabase.removeChannel(subscription);
+        } catch (error) {
+          console.warn('Error removing subscription:', error);
+        }
+      }
     };
-  }, [user?.id]);
+  }, [user?.id, invalidateCache, fetchMealPlans]);
 
   return {
     mealPlans: mealPlans || [],

@@ -149,45 +149,71 @@ export const useRecipes = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const subscription = supabase
-      .channel(`saved_recipes_changes_${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'saved_recipes',
-          filter: `user_id=eq.${user.id}`
-        },
-        async () => {
-          // データが変更された場合は再取得
-          try {
-            setLoading(true);
-            setError(null);
+    let subscriptionRef: any = null;
 
-            const { data, error: fetchError } = await supabase
-              .from('saved_recipes')
-              .select('*')
-              .eq('user_id', user.id)
-              .order('created_at', { ascending: false });
+    const setupSubscription = async () => {
+      try {
+        // ユニークなチャンネル名を生成（タイムスタンプ付き）
+        const channelName = `saved_recipes_${user.id}_${Date.now()}`;
+        
+        subscriptionRef = supabase
+          .channel(channelName)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'saved_recipes',
+              filter: `user_id=eq.${user.id}`
+            },
+            async () => {
+              // データが変更された場合は再取得
+              try {
+                setLoading(true);
+                setError(null);
 
-            if (fetchError) {
-              throw fetchError;
+                const { data, error: fetchError } = await supabase
+                  .from('saved_recipes')
+                  .select('*')
+                  .eq('user_id', user.id)
+                  .order('created_at', { ascending: false });
+
+                if (fetchError) {
+                  throw fetchError;
+                }
+
+                setRecipes(data || []);
+              } catch (err) {
+                console.error('レシピデータの取得に失敗しました:', err);
+                setError(err instanceof Error ? err.message : 'レシピデータの取得に失敗しました');
+              } finally {
+                setLoading(false);
+              }
             }
+          );
 
-            setRecipes(data || []);
-          } catch (err) {
-            console.error('レシピデータの取得に失敗しました:', err);
-            setError(err instanceof Error ? err.message : 'レシピデータの取得に失敗しました');
-          } finally {
-            setLoading(false);
-          }
+        // サブスクリプションを開始
+        const subscribeResult = await subscriptionRef.subscribe();
+        if (subscribeResult === 'SUBSCRIBED') {
+          console.log('レシピデータのリアルタイム更新が開始されました');
+        } else {
+          console.warn('レシピデータのサブスクリプションに失敗しました:', subscribeResult);
         }
-      )
-      .subscribe();
+      } catch (error) {
+        console.error('レシピデータのサブスクリプション設定に失敗しました:', error);
+      }
+    };
+
+    setupSubscription();
 
     return () => {
-      supabase.removeChannel(subscription);
+      if (subscriptionRef) {
+        try {
+          supabase.removeChannel(subscriptionRef);
+        } catch (error) {
+          console.error('レシピデータのサブスクリプションクリーンアップに失敗しました:', error);
+        }
+      }
     };
   }, [user?.id]);
 

@@ -215,46 +215,72 @@ export const useCostRecords = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const subscription = supabase
-      .channel(`cost_records_changes_${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'cost_records',
-          filter: `user_id=eq.${user.id}`
-        },
-        async () => {
-          // データが変更された場合は再取得
-          try {
-            setLoading(true);
-            setError(null);
+    let subscriptionRef: any = null;
 
-            const { data, error: fetchError } = await supabase
-              .from('cost_records')
-              .select('*')
-              .eq('user_id', user.id)
-              .order('date', { ascending: false })
-              .order('created_at', { ascending: false });
+    const setupSubscription = async () => {
+      try {
+        // ユニークなチャンネル名を生成（タイムスタンプ付き）
+        const channelName = `cost_records_${user.id}_${Date.now()}`;
+        
+        subscriptionRef = supabase
+          .channel(channelName)
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'cost_records',
+              filter: `user_id=eq.${user.id}`
+            },
+            async () => {
+              // データが変更された場合は再取得
+              try {
+                setLoading(true);
+                setError(null);
 
-            if (fetchError) {
-              throw fetchError;
+                const { data, error: fetchError } = await supabase
+                  .from('cost_records')
+                  .select('*')
+                  .eq('user_id', user.id)
+                  .order('date', { ascending: false })
+                  .order('created_at', { ascending: false });
+
+                if (fetchError) {
+                  throw fetchError;
+                }
+
+                setCostRecords(data || []);
+              } catch (err) {
+                console.error('コスト記録データの取得に失敗しました:', err);
+                setError(err instanceof Error ? err.message : 'コスト記録データの取得に失敗しました');
+              } finally {
+                setLoading(false);
+              }
             }
+          );
 
-            setCostRecords(data || []);
-          } catch (err) {
-            console.error('コスト記録データの取得に失敗しました:', err);
-            setError(err instanceof Error ? err.message : 'コスト記録データの取得に失敗しました');
-          } finally {
-            setLoading(false);
-          }
+        // サブスクリプションを開始
+        const subscribeResult = await subscriptionRef.subscribe();
+        if (subscribeResult === 'SUBSCRIBED') {
+          console.log('コスト記録データのリアルタイム更新が開始されました');
+        } else {
+          console.warn('コスト記録データのサブスクリプションに失敗しました:', subscribeResult);
         }
-      )
-      .subscribe();
+      } catch (error) {
+        console.error('コスト記録データのサブスクリプション設定に失敗しました:', error);
+      }
+    };
+
+    setupSubscription();
 
     return () => {
-      supabase.removeChannel(subscription);
+      if (subscriptionRef) {
+        try {
+          supabase.removeChannel(subscriptionRef);
+        } catch (error) {
+          console.error('コスト記録データのサブスクリプションクリーンアップに失敗しました:', error);
+        }
+      }
     };
   }, [user?.id]);
 

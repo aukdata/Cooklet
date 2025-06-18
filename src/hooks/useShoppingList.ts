@@ -288,48 +288,47 @@ export const useShoppingList = () => {
   useEffect(() => {
     if (!user?.id) return;
 
-    const subscription = supabase
-      .channel(`shopping_list_changes_${user.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'shopping_list',
-          filter: `user_id=eq.${user.id}`
-        },
-        async () => {
-          // データが変更された場合は再取得（インライン実装で依存を避ける）
-          try {
-            setLoading(true);
-            setError(null);
+    let subscription: any = null;
 
-            const { data, error: fetchError } = await supabase
-              .from('shopping_list')
-              .select('*')
-              .eq('user_id', user.id)
-              .order('checked', { ascending: true })
-              .order('created_at', { ascending: false });
-
-            if (fetchError) {
-              throw fetchError;
+    const setupSubscription = async () => {
+      try {
+        subscription = supabase
+          .channel(`shopping_list_${user.id}_${Date.now()}`) // ユニークなチャンネル名
+          .on(
+            'postgres_changes',
+            {
+              event: '*',
+              schema: 'public',
+              table: 'shopping_list',
+              filter: `user_id=eq.${user.id}`
+            },
+            async () => {
+              // データが変更された場合は再取得
+              fetchShoppingList();
             }
+          )
+          .subscribe((status: string) => {
+            if (status === 'SUBSCRIBED') {
+              console.log('Shopping list subscription ready');
+            }
+          });
+      } catch (error) {
+        console.warn('Shopping list subscription failed, will work without realtime:', error);
+      }
+    };
 
-            setShoppingList(data || []);
-          } catch (err) {
-            console.error('買い物リストデータの取得に失敗しました:', err);
-            setError(err instanceof Error ? err.message : '買い物リストデータの取得に失敗しました');
-          } finally {
-            setLoading(false);
-          }
-        }
-      )
-      .subscribe();
+    setupSubscription();
 
     return () => {
-      supabase.removeChannel(subscription);
+      if (subscription) {
+        try {
+          supabase.removeChannel(subscription);
+        } catch (error) {
+          console.warn('Error removing subscription:', error);
+        }
+      }
     };
-  }, [user?.id]);
+  }, [user?.id, fetchShoppingList]);
 
   return {
     shoppingList,

@@ -1,5 +1,7 @@
 # Cooklet - 献立管理アプリ
 
+[![Netlify Status](https://api.netlify.com/api/v1/badges/db36edf2-03ed-4b35-a7ee-9c515a59333b/deploy-status)](https://app.netlify.com/projects/cooklet/deploys)
+
 一人暮らしユーザーのための献立・在庫・買い物・コストを一元管理できるスマートな献立管理Webアプリです。
 
 ## 🎯 プロジェクト概要
