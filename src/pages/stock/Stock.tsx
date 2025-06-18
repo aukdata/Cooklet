@@ -14,6 +14,10 @@ export const Stock: React.FC = () => {
   // 削除確認ダイアログの状態
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [deletingStock, setDeletingStock] = useState<StockItem | undefined>();
+  
+  // 検索・フィルターの状態
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('全て');
 
   // 在庫データの取得と操作
   const { 
@@ -101,6 +105,16 @@ export const Stock: React.FC = () => {
     setDeletingStock(undefined);
   };
 
+  // 検索フィルタリング
+  const filteredStockItems = stockItems.filter(item => {
+    const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLocation = selectedLocation === '全て' || item.storage_location === selectedLocation;
+    return matchesSearch && matchesLocation;
+  });
+
+  // 全保存場所を取得
+  const allLocations = ['全て', ...Array.from(new Set(stockItems.map(item => item.storage_location).filter(Boolean)))];
+
   // ローディング状態の表示
   if (loading) {
     return (
@@ -128,33 +142,69 @@ export const Stock: React.FC = () => {
             <span className="mr-2">📦</span>
             在庫管理
           </h2>
-          <p className="text-sm text-gray-600 mt-1">
+          <div className="text-sm text-gray-600 mt-1">
             在庫: {stockItems.length}件
-          </p>
+            {loading && <span className="ml-2">読み込み中...</span>}
+            {error && <span className="ml-2 text-red-500">エラー: {error}</span>}
+          </div>
         </div>
         <AddButton onClick={handleAddStock}>
           + 在庫追加
         </AddButton>
       </div>
 
+      {/* 検索・フィルター */}
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
+        <div className="space-y-3">
+          <div className="flex items-center space-x-2">
+            <span className="text-sm">🔍</span>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="検索..."
+              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+            />
+            <button className="text-sm bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded">絞込</button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <span className="text-sm text-gray-600">🏠 保存場所:</span>
+            {allLocations.map(location => (
+              <button
+                key={location}
+                onClick={() => setSelectedLocation(location)}
+                className={`text-xs px-2 py-1 rounded ${
+                  selectedLocation === location 
+                    ? 'bg-indigo-100 text-indigo-700' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {location}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
       {/* 在庫一覧 */}
-      <div className="space-y-3">
-        {stockItems.length === 0 ? (
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200">
+        {filteredStockItems.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
-            在庫がありません。在庫を追加してください。
+            {stockItems.length === 0 ? '在庫がありません。在庫を追加してください。' : '検索結果がありません'}
           </div>
         ) : (
-          stockItems.map((item) => (
-            <div
-              key={item.id}
-              className={`bg-white p-4 rounded-lg border shadow-sm ${
-                item.best_before && isExpired(item.best_before)
-                  ? 'border-red-300 bg-red-50'
-                  : item.best_before && isExpiringSoon(item.best_before)
-                  ? 'border-yellow-300 bg-yellow-50'
-                  : 'border-gray-200'
-              }`}
-            >
+          <div className="space-y-3">
+            {filteredStockItems.map((item) => (
+              <div
+                key={item.id}
+                className={`border-b border-gray-100 last:border-b-0 pb-3 last:pb-0 ${
+                  item.best_before && isExpired(item.best_before)
+                    ? 'bg-red-50'
+                    : item.best_before && isExpiringSoon(item.best_before)
+                    ? 'bg-yellow-50'
+                    : ''
+                }`}
+              >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   {/* 食材名 */}
@@ -204,8 +254,9 @@ export const Stock: React.FC = () => {
                   <EditButton onClick={() => handleEditStock(item)} />
                 </div>
               </div>
-            </div>
-          ))
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
