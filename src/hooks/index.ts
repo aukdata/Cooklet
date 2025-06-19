@@ -17,3 +17,6 @@ export { useShoppingList, type ShoppingListItem } from './useShoppingList';
 
 // 自動買い物リスト生成フック
 export { useAutoShoppingList, type AutoGenerationResult } from './useAutoShoppingList';
+
+// タブ切り替え時の更新チェック機能
+export { useTabRefresh } from './useTabRefresh';

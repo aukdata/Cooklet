@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTabRefresh } from './useTabRefresh';
 import type { SavedRecipe, CreateRecipeData, UpdateRecipeData, RecipeIngredient } from '../types/recipe';
 
 // 再エクスポート（後方互換性のため）
@@ -113,6 +114,7 @@ export const useRecipes = () => {
 
       // ローカル状態を更新（新しいレシピを先頭に追加）
       setRecipes(prev => [data, ...prev]);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       return data;
     } catch (err) {
       console.error('レシピの追加に失敗しました:', err);
@@ -149,6 +151,7 @@ export const useRecipes = () => {
       setRecipes(prev => 
         prev.map(recipe => recipe.id === id ? data : recipe)
       );
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       return data;
     } catch (err) {
       console.error('レシピの更新に失敗しました:', err);
@@ -176,6 +179,7 @@ export const useRecipes = () => {
 
       // ローカル状態を更新
       setRecipes(prev => prev.filter(recipe => recipe.id !== id));
+      markAsUpdated(); // データ変更後に更新時刻をマーク
     } catch (err) {
       console.error('レシピの削除に失敗しました:', err);
       setError(err instanceof Error ? err.message : 'レシピの削除に失敗しました');
@@ -188,96 +192,8 @@ export const useRecipes = () => {
     fetchRecipes();
   }, [fetchRecipes]);
 
-  // リアルタイム更新の設定
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let subscriptionRef: any = null;
-    let isSubscribed = false;
-
-    const setupSubscription = async () => {
-      try {
-        // ユニークなチャンネル名を生成（タイムスタンプ付き）
-        const channelName = `saved_recipes_${user.id}_${Date.now()}`;
-        
-        subscriptionRef = supabase
-          .channel(channelName)
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'saved_recipes',
-              filter: `user_id=eq.${user.id}`
-            },
-            async (payload) => {
-              // データが変更された場合は再取得
-              console.log('レシピデータが変更されました:', payload);
-              
-              // リアルタイム更新の際はローディングを表示しない
-              try {
-                setError(null);
-
-                const { data, error: fetchError } = await supabase
-                  .from('saved_recipes')
-                  .select('*')
-                  .eq('user_id', user.id)
-                  .order('created_at', { ascending: false });
-
-                if (fetchError) {
-                  throw fetchError;
-                }
-
-                setRecipes(data || []);
-              } catch (err) {
-                console.error('レシピデータの取得に失敗しました:', err);
-                setError(err instanceof Error ? err.message : 'レシピデータの取得に失敗しました');
-              }
-            }
-          )
-          .subscribe((status: string) => {
-            console.log('レシピデータのサブスクリプション状態:', status);
-            
-            if (status === 'SUBSCRIBED') {
-              isSubscribed = true;
-              console.log('レシピデータのリアルタイム更新が開始されました');
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('レシピデータのサブスクリプションエラー');
-              setError('リアルタイム更新に失敗しました');
-            } else if (status === 'TIMED_OUT') {
-              console.warn('レシピデータのサブスクリプションタイムアウト');
-              // タイムアウトした場合は再試行
-              setTimeout(() => {
-                if (!isSubscribed) {
-                  setupSubscription();
-                }
-              }, 5000);
-            } else if (status === 'CLOSED') {
-              console.log('レシピデータのサブスクリプションが閉じられました');
-              isSubscribed = false;
-            }
-          });
-
-      } catch (error) {
-        console.error('レシピデータのサブスクリプション設定に失敗しました:', error);
-        setError('リアルタイム更新の設定に失敗しました');
-      }
-    };
-
-    setupSubscription();
-
-    return () => {
-      isSubscribed = false;
-      if (subscriptionRef) {
-        try {
-          supabase.removeChannel(subscriptionRef);
-          console.log('レシピデータのサブスクリプションをクリーンアップしました');
-        } catch (error) {
-          console.error('レシピデータのサブスクリプションクリーンアップに失敗しました:', error);
-        }
-      }
-    };
-  }, [user?.id]);
+  // タブ切り替え時の更新チェック機能（5分間隔）
+  const { markAsUpdated } = useTabRefresh(fetchRecipes, 5);
 
   return {
     recipes,

@@ -76,9 +76,22 @@ interface SavedRecipe {
 - エラーハンドリングの統一
 - 日本語エラーメッセージ
 - loading状態の適切な管理
-- ユーザー認証との連携（useInventory, useRecipes, useIngredients）
+- ユーザー認証との連携（全hooks対応）
 - Supabaseクライアントの直接利用
 - RLSポリシーによるデータセキュリティ
+- **タブ切り替え時の更新チェック機能**（全hooks統一）
+- **データ変更時の更新時刻マーク**（markAsUpdated）
+
+## データ更新戦略
+### リアルタイム更新から移行
+- **旧方式**: Supabaseのリアルタイム機能（複雑、接続管理が必要）
+- **新方式**: タブ切り替え時の更新チェック（シンプル、軽量）
+
+### useTabRefresh機能
+- **更新間隔**: 5分（全hooks統一）
+- **タブアクティブ時**: Page Visibility APIで自動更新チェック
+- **フォーカス時**: windowのfocusイベントでも更新チェック
+- **markAsUpdated**: データ変更操作後に更新時刻をマーク
 
 ## 注意点
 - 現在のテーブル名が仕様書と一部異なる（inventory vs stock_items等）

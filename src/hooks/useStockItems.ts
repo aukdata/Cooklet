@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTabRefresh } from './useTabRefresh';
 
 // 在庫データの型定義（CLAUDE.md仕様書準拠）
 export interface StockItem {
@@ -78,6 +79,7 @@ export const useStockItems = () => {
 
       // ローカル状態を更新
       setStockItems(prev => [...prev, data]);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       return data;
     } catch (err) {
       console.error('在庫の追加に失敗しました:', err);
@@ -112,6 +114,7 @@ export const useStockItems = () => {
       setStockItems(prev => 
         prev.map(item => item.id === id ? data : item)
       );
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       return data;
     } catch (err) {
       console.error('在庫の更新に失敗しました:', err);
@@ -139,6 +142,7 @@ export const useStockItems = () => {
 
       // ローカル状態を更新
       setStockItems(prev => prev.filter(item => item.id !== id));
+      markAsUpdated(); // データ変更後に更新時刻をマーク
     } catch (err) {
       console.error('在庫の削除に失敗しました:', err);
       setError(err instanceof Error ? err.message : '在庫の削除に失敗しました');
@@ -194,97 +198,8 @@ export const useStockItems = () => {
     fetchStockItems();
   }, [fetchStockItems]);
 
-  // リアルタイム更新の設定
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let subscriptionRef: any = null;
-    let isSubscribed = false;
-
-    const setupSubscription = async () => {
-      try {
-        // ユニークなチャンネル名を生成（タイムスタンプ付き）
-        const channelName = `stock_items_${user.id}_${Date.now()}`;
-        
-        subscriptionRef = supabase
-          .channel(channelName)
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'stock_items',
-              filter: `user_id=eq.${user.id}`
-            },
-            async (payload) => {
-              // データが変更された場合は再取得
-              console.log('在庫データが変更されました:', payload);
-              
-              // リアルタイム更新の際はローディングを表示しない
-              try {
-                setError(null);
-
-                const { data, error: fetchError } = await supabase
-                  .from('stock_items')
-                  .select('*')
-                  .eq('user_id', user.id)
-                  .order('best_before', { ascending: true })
-                  .order('created_at', { ascending: false });
-
-                if (fetchError) {
-                  throw fetchError;
-                }
-
-                setStockItems(data || []);
-              } catch (err) {
-                console.error('在庫データの取得に失敗しました:', err);
-                setError(err instanceof Error ? err.message : '在庫データの取得に失敗しました');
-              }
-            }
-          )
-          .subscribe((status: string) => {
-            console.log('在庫データのサブスクリプション状態:', status);
-            
-            if (status === 'SUBSCRIBED') {
-              isSubscribed = true;
-              console.log('在庫データのリアルタイム更新が開始されました');
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('在庫データのサブスクリプションエラー');
-              setError('リアルタイム更新に失敗しました');
-            } else if (status === 'TIMED_OUT') {
-              console.warn('在庫データのサブスクリプションタイムアウト');
-              // タイムアウトした場合は再試行
-              setTimeout(() => {
-                if (!isSubscribed) {
-                  setupSubscription();
-                }
-              }, 5000);
-            } else if (status === 'CLOSED') {
-              console.log('在庫データのサブスクリプションが閉じられました');
-              isSubscribed = false;
-            }
-          });
-
-      } catch (error) {
-        console.error('在庫データのサブスクリプション設定に失敗しました:', error);
-        setError('リアルタイム更新の設定に失敗しました');
-      }
-    };
-
-    setupSubscription();
-
-    return () => {
-      isSubscribed = false;
-      if (subscriptionRef) {
-        try {
-          supabase.removeChannel(subscriptionRef);
-          console.log('在庫データのサブスクリプションをクリーンアップしました');
-        } catch (error) {
-          console.error('在庫データのサブスクリプションクリーンアップに失敗しました:', error);
-        }
-      }
-    };
-  }, [user?.id]);
+  // タブ切り替え時の更新チェック機能（5分間隔）
+  const { markAsUpdated } = useTabRefresh(fetchStockItems, 5);
 
   return {
     stockItems,

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTabRefresh } from './useTabRefresh';
 
 // コスト記録データの型定義（CLAUDE.md仕様書準拠）
 export interface CostRecord {
@@ -75,6 +76,7 @@ export const useCostRecords = () => {
 
       // ローカル状態を更新
       setCostRecords(prev => [data, ...prev]);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       return data;
     } catch (err) {
       console.error('コスト記録の追加に失敗しました:', err);
@@ -106,6 +108,7 @@ export const useCostRecords = () => {
       setCostRecords(prev => 
         prev.map(record => record.id === id ? data : record)
       );
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       return data;
     } catch (err) {
       console.error('コスト記録の更新に失敗しました:', err);
@@ -133,6 +136,7 @@ export const useCostRecords = () => {
 
       // ローカル状態を更新
       setCostRecords(prev => prev.filter(record => record.id !== id));
+      markAsUpdated(); // データ変更後に更新時刻をマーク
     } catch (err) {
       console.error('コスト記録の削除に失敗しました:', err);
       setError(err instanceof Error ? err.message : 'コスト記録の削除に失敗しました');
@@ -211,97 +215,8 @@ export const useCostRecords = () => {
     fetchCostRecords();
   }, [fetchCostRecords]);
 
-  // リアルタイム更新の設定
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let subscriptionRef: any = null;
-    let isSubscribed = false;
-
-    const setupSubscription = async () => {
-      try {
-        // ユニークなチャンネル名を生成（タイムスタンプ付き）
-        const channelName = `cost_records_${user.id}_${Date.now()}`;
-        
-        subscriptionRef = supabase
-          .channel(channelName)
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'cost_records',
-              filter: `user_id=eq.${user.id}`
-            },
-            async (payload) => {
-              // データが変更された場合は再取得
-              console.log('コスト記録データが変更されました:', payload);
-              
-              // リアルタイム更新の際はローディングを表示しない
-              try {
-                setError(null);
-
-                const { data, error: fetchError } = await supabase
-                  .from('cost_records')
-                  .select('*')
-                  .eq('user_id', user.id)
-                  .order('date', { ascending: false })
-                  .order('created_at', { ascending: false });
-
-                if (fetchError) {
-                  throw fetchError;
-                }
-
-                setCostRecords(data || []);
-              } catch (err) {
-                console.error('コスト記録データの取得に失敗しました:', err);
-                setError(err instanceof Error ? err.message : 'コスト記録データの取得に失敗しました');
-              }
-            }
-          )
-          .subscribe((status: string) => {
-            console.log('コスト記録データのサブスクリプション状態:', status);
-            
-            if (status === 'SUBSCRIBED') {
-              isSubscribed = true;
-              console.log('コスト記録データのリアルタイム更新が開始されました');
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('コスト記録データのサブスクリプションエラー');
-              setError('リアルタイム更新に失敗しました');
-            } else if (status === 'TIMED_OUT') {
-              console.warn('コスト記録データのサブスクリプションタイムアウト');
-              // タイムアウトした場合は再試行
-              setTimeout(() => {
-                if (!isSubscribed) {
-                  setupSubscription();
-                }
-              }, 5000);
-            } else if (status === 'CLOSED') {
-              console.log('コスト記録データのサブスクリプションが閉じられました');
-              isSubscribed = false;
-            }
-          });
-
-      } catch (error) {
-        console.error('コスト記録データのサブスクリプション設定に失敗しました:', error);
-        setError('リアルタイム更新の設定に失敗しました');
-      }
-    };
-
-    setupSubscription();
-
-    return () => {
-      isSubscribed = false;
-      if (subscriptionRef) {
-        try {
-          supabase.removeChannel(subscriptionRef);
-          console.log('コスト記録データのサブスクリプションをクリーンアップしました');
-        } catch (error) {
-          console.error('コスト記録データのサブスクリプションクリーンアップに失敗しました:', error);
-        }
-      }
-    };
-  }, [user?.id]);
+  // タブ切り替え時の更新チェック機能（5分間隔）
+  const { markAsUpdated } = useTabRefresh(fetchCostRecords, 5);
 
   return {
     costRecords,

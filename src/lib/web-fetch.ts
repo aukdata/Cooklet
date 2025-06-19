@@ -40,7 +40,7 @@ export class WebFetcher {
       // URLの正規化
       const normalizedUrl = this.normalizeUrl(url);
       
-      console.log(`Netlify Functionsプロキシを使用してリクエスト: ${normalizedUrl}`);
+      console.log(`リクエスト: ${normalizedUrl}`);
       
       // Netlify Functions経由でfetch
       const response = await this.fetchWithProxy(normalizedUrl);

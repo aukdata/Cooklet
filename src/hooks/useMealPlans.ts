@@ -2,6 +2,7 @@ import { useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useCache, CacheConfig } from './useCache';
+import { useTabRefresh } from './useTabRefresh';
 
 // 献立消費状態の型定義
 export type MealPlanConsumedStatus = 'pending' | 'completed' | 'stored';
@@ -89,6 +90,7 @@ export const useMealPlans = () => {
       const currentPlans = mealPlans || [];
       const updatedPlans = [...currentPlans, data];
       setCache(updatedPlans);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       
       return data;
     } catch (err) {
@@ -121,6 +123,7 @@ export const useMealPlans = () => {
       const currentPlans = mealPlans || [];
       const updatedPlans = currentPlans.map(plan => plan.id === id ? data : plan);
       setCache(updatedPlans);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       
       return data;
     } catch (err) {
@@ -148,6 +151,7 @@ export const useMealPlans = () => {
       const currentPlans = mealPlans || [];
       const updatedPlans = currentPlans.filter(plan => plan.id !== id);
       setCache(updatedPlans);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
     } catch (err) {
       console.error('献立の削除に失敗しました:', err);
       throw err;
@@ -178,6 +182,7 @@ export const useMealPlans = () => {
       const currentPlans = mealPlans || [];
       const updatedPlans = currentPlans.map(plan => plan.id === id ? data : plan);
       setCache(updatedPlans);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       
       return data;
     } catch (err) {
@@ -216,71 +221,11 @@ export const useMealPlans = () => {
     return plansWithRecipe.length > 0 ? plansWithRecipe[0].date : null;
   };
 
-  // リアルタイム更新の設定（キャッシュ対応）
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let subscription: any = null;
-    let isSubscribed = false;
-
-    const setupSubscription = async () => {
-      try {
-        subscription = supabase
-          .channel(`meal_plans_${user.id}_${Date.now()}`) // ユニークなチャンネル名
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'meal_plans',
-              filter: `user_id=eq.${user.id}`
-            },
-            () => {
-              // データが変更された場合はキャッシュを無効化して再取得
-              invalidateCache();
-              fetchMealPlans();
-            }
-          )
-          .subscribe((status: string) => {
-            console.log('献立データのサブスクリプション状態:', status);
-            
-            if (status === 'SUBSCRIBED') {
-              isSubscribed = true;
-              console.log('献立データのリアルタイム更新が開始されました');
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('献立データのサブスクリプションエラー');
-            } else if (status === 'TIMED_OUT') {
-              console.warn('献立データのサブスクリプションタイムアウト');
-              // タイムアウトした場合は再試行
-              setTimeout(() => {
-                if (!isSubscribed) {
-                  setupSubscription();
-                }
-              }, 5000);
-            } else if (status === 'CLOSED') {
-              console.log('献立データのサブスクリプションが閉じられました');
-              isSubscribed = false;
-            }
-          });
-      } catch (error) {
-        console.warn('Meal plans subscription failed, will work without realtime:', error);
-      }
-    };
-
-    setupSubscription();
-
-    return () => {
-      isSubscribed = false;
-      if (subscription) {
-        try {
-          supabase.removeChannel(subscription);
-          console.log('献立データのサブスクリプションをクリーンアップしました');
-        } catch (error) {
-          console.error('献立データのサブスクリプションクリーンアップに失敗しました:', error);
-        }
-      }
-    };
-  }, [user?.id, invalidateCache, fetchMealPlans]);
+  // タブ切り替え時の更新チェック機能（5分間隔）
+  const { markAsUpdated } = useTabRefresh(() => {
+    invalidateCache();
+    fetchMealPlans();
+  }, 5);
 
   return {
     mealPlans: mealPlans || [],

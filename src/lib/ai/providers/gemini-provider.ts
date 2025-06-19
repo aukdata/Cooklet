@@ -47,6 +47,8 @@ export class GeminiProvider extends BaseAIProvider {
   private async callGeminiAPI(cleanText: string): Promise<string> {
     const prompt = RECIPE_EXTRACTION_PROMPT + cleanText;
     
+    console.log('Gemini API Prompt:', prompt);
+
     try {
       const response = await this.genAI.models.generateContent({
         model: this.model,

@@ -57,6 +57,8 @@ export const useRecipeExtraction = (): UseRecipeExtractionReturn => {
       const webFetcher = new WebFetcher();
       const fetchedWebsite = await webFetcher.fetchWebsite(url);
 
+      console.log('取得したWebサイト:', fetchedWebsite);
+
       // 進行状況を更新
       setState(prev => ({
         ...prev,
@@ -96,7 +98,7 @@ export const useRecipeExtraction = (): UseRecipeExtractionReturn => {
       if (error instanceof WebFetchError) {
         if (error.status === 503) {
           errorMessage = 'サーバーが一時的に利用できません';
-          detailedMessage = 'しばらく時間をおいてから再度お試しください。複数のプロキシサーバーを試行しましたが、すべて失敗しました。';
+          detailedMessage = 'しばらく時間をおいてから再度お試しください。';
         } else if (error.status === 429) {
           errorMessage = 'アクセス制限に達しました';
           detailedMessage = '時間をおいてから再度お試しください。';

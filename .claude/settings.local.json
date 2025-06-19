@@ -18,7 +18,8 @@
       "Write(*)",
       "Bash(convert:*)",
       "Bash(ls:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Bash(grep:*)"
     ],
     "deny": [
       "Bash(rm:*)"

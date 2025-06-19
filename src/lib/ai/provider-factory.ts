@@ -60,13 +60,4 @@ export class AIProviderFactory {
   static getAvailableProviders(): string[] {
     return ['gemini'];
   }
-
-  // Providerの説明を取得
-  static getProviderDescription(provider: string): string {
-    const descriptions: Record<string, string> = {
-      gemini: 'Google Gemini (高速・高品質)'
-    };
-    
-    return descriptions[provider] || 'Unknown Provider';
-  }
 }

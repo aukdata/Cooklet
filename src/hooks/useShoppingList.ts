@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTabRefresh } from './useTabRefresh';
 
 // 買い物リストデータの型定義（CLAUDE.md仕様書準拠）
 export interface ShoppingListItem {
@@ -75,6 +76,7 @@ export const useShoppingList = () => {
 
       // ローカル状態を更新
       setShoppingList(prev => [data, ...prev]);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       return data;
     } catch (err) {
       console.error('買い物リストアイテムの追加に失敗しました:', err);
@@ -106,6 +108,7 @@ export const useShoppingList = () => {
       setShoppingList(prev => 
         prev.map(item => item.id === id ? data : item)
       );
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       return data;
     } catch (err) {
       console.error('買い物リストアイテムの更新に失敗しました:', err);
@@ -133,6 +136,7 @@ export const useShoppingList = () => {
 
       // ローカル状態を更新
       setShoppingList(prev => prev.filter(item => item.id !== id));
+      markAsUpdated(); // データ変更後に更新時刻をマーク
     } catch (err) {
       console.error('買い物リストアイテムの削除に失敗しました:', err);
       setError(err instanceof Error ? err.message : '買い物リストアイテムの削除に失敗しました');
@@ -187,6 +191,7 @@ export const useShoppingList = () => {
 
       // ローカル状態を更新
       setShoppingList(prev => prev.filter(item => !item.checked));
+      markAsUpdated(); // データ変更後に更新時刻をマーク
     } catch (err) {
       console.error('完了済みアイテムの削除に失敗しました:', err);
       setError(err instanceof Error ? err.message : '完了済みアイテムの削除に失敗しました');
@@ -215,6 +220,7 @@ export const useShoppingList = () => {
       setShoppingList(prev => 
         prev.map(item => ({ ...item, checked: true }))
       );
+      markAsUpdated(); // データ変更後に更新時刻をマーク
     } catch (err) {
       console.error('全選択に失敗しました:', err);
       setError(err instanceof Error ? err.message : '全選択に失敗しました');
@@ -284,73 +290,8 @@ export const useShoppingList = () => {
     fetchShoppingList();
   }, [fetchShoppingList]);
 
-  // リアルタイム更新の設定
-  useEffect(() => {
-    if (!user?.id) return;
-
-    let subscription: any = null;
-    let isSubscribed = false;
-
-    const setupSubscription = async () => {
-      try {
-        subscription = supabase
-          .channel(`shopping_list_${user.id}_${Date.now()}`) // ユニークなチャンネル名
-          .on(
-            'postgres_changes',
-            {
-              event: '*',
-              schema: 'public',
-              table: 'shopping_list',
-              filter: `user_id=eq.${user.id}`
-            },
-            async (payload) => {
-              // データが変更された場合は再取得
-              console.log('買い物リストデータが変更されました:', payload);
-              fetchShoppingList();
-            }
-          )
-          .subscribe((status: string) => {
-            console.log('買い物リストのサブスクリプション状態:', status);
-            
-            if (status === 'SUBSCRIBED') {
-              isSubscribed = true;
-              console.log('買い物リストのリアルタイム更新が開始されました');
-            } else if (status === 'CHANNEL_ERROR') {
-              console.error('買い物リストのサブスクリプションエラー');
-              setError('リアルタイム更新に失敗しました');
-            } else if (status === 'TIMED_OUT') {
-              console.warn('買い物リストのサブスクリプションタイムアウト');
-              // タイムアウトした場合は再試行
-              setTimeout(() => {
-                if (!isSubscribed) {
-                  setupSubscription();
-                }
-              }, 5000);
-            } else if (status === 'CLOSED') {
-              console.log('買い物リストのサブスクリプションが閉じられました');
-              isSubscribed = false;
-            }
-          });
-      } catch (error) {
-        console.error('買い物リストのサブスクリプション設定に失敗しました:', error);
-        setError('リアルタイム更新の設定に失敗しました');
-      }
-    };
-
-    setupSubscription();
-
-    return () => {
-      isSubscribed = false;
-      if (subscription) {
-        try {
-          supabase.removeChannel(subscription);
-          console.log('買い物リストのサブスクリプションをクリーンアップしました');
-        } catch (error) {
-          console.error('買い物リストのサブスクリプションクリーンアップに失敗しました:', error);
-        }
-      }
-    };
-  }, [user?.id, fetchShoppingList]);
+  // タブ切り替え時の更新チェック機能（5分間隔）
+  const { markAsUpdated } = useTabRefresh(fetchShoppingList, 5);
 
   return {
     shoppingList,

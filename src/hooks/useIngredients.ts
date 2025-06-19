@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useTabRefresh } from './useTabRefresh';
 import { type Ingredient } from '../types';
 
 // 食材マスタ管理機能を提供するカスタムフック（ユーザー認証対応）
@@ -42,6 +43,9 @@ export const useIngredients = () => {
     fetchIngredients();
   }, [fetchIngredients]);
 
+  // タブ切り替え時の更新チェック機能（5分間隔）
+  const { markAsUpdated } = useTabRefresh(fetchIngredients, 5);
+
   // 新しい食材をマスタに追加する関数
   const addIngredient = async (ingredient: Omit<Ingredient, 'id' | 'user_id' | 'created_at'>) => {
     if (!user) throw new Error('ユーザーが認証されていません');
@@ -62,6 +66,7 @@ export const useIngredients = () => {
       if (error) throw error;
       // ローカル状態を更新（新しい食材を末尾に追加）
       setIngredients(prev => [...prev, data]);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
       return data;
     } catch (err) {
       console.error('食材の追加に失敗しました:', err);
