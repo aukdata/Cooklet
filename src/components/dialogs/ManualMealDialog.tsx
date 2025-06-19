@@ -166,7 +166,7 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
                     : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                 }`}
               >
-                {extractionState.isExtracting ? '🔍 解析中...' : '🔍 レシピ抽出'}
+                {extractionState.isExtracting ? '🔍 解析中...' : '🔍 抽出'}
               </button>
             </div>
           </div>

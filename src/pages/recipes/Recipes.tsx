@@ -27,6 +27,15 @@ export const Recipes: React.FC = () => {
   // 献立追加ダイアログの状態管理
   const [isAddToMealPlanDialogOpen, setIsAddToMealPlanDialogOpen] = useState(false);
   const [addingToMealPlanRecipe, setAddingToMealPlanRecipe] = useState<SavedRecipe | undefined>();
+  
+  // 献立置き換え確認ダイアログの状態管理
+  const [isReplaceConfirmDialogOpen, setIsReplaceConfirmDialogOpen] = useState(false);
+  const [replacementData, setReplacementData] = useState<{
+    recipe: SavedRecipe;
+    date: string;
+    mealType: '朝' | '昼' | '夜' | '間食';
+    existingMealPlan: any;
+  } | null>(null);
 
   // レシピ追加ボタンのハンドラー
   const handleAddNewRecipe = () => {
@@ -119,13 +128,15 @@ export const Recipes: React.FC = () => {
       const existingMealPlan = getMealPlan(new Date(date), mealType);
       
       if (existingMealPlan) {
-        const confirmReplace = window.confirm(
-          `${date}の${mealType}食には既に「${existingMealPlan.memo || '献立'}」が設定されています。\n置き換えますか？`
-        );
-        
-        if (!confirmReplace) {
-          return;
-        }
+        // 置き換え確認ダイアログを表示
+        setReplacementData({
+          recipe: addingToMealPlanRecipe,
+          date,
+          mealType,
+          existingMealPlan
+        });
+        setIsReplaceConfirmDialogOpen(true);
+        return;
       }
 
       // 献立を追加
@@ -142,6 +153,37 @@ export const Recipes: React.FC = () => {
       console.error('献立への追加に失敗しました:', err);
       showError('献立への追加に失敗しました');
     }
+  };
+
+  // 献立置き換え確認ハンドラー
+  const handleConfirmReplace = async () => {
+    if (!replacementData) return;
+
+    try {
+      // 献立を追加（既存を置き換え）
+      await addMealPlan({
+        date: replacementData.date,
+        meal_type: replacementData.mealType,
+        recipe_url: replacementData.recipe.url,
+        ingredients: [], // TODO: レシピから食材を取得する機能実装時に対応
+        memo: replacementData.recipe.title
+      });
+
+      showSuccess('献立を置き換えました');
+      handleCloseAddToMealPlanDialog();
+    } catch (err) {
+      console.error('献立の置き換えに失敗しました:', err);
+      showError('献立の置き換えに失敗しました');
+    } finally {
+      setIsReplaceConfirmDialogOpen(false);
+      setReplacementData(null);
+    }
+  };
+
+  // 献立置き換えキャンセルハンドラー
+  const handleCancelReplace = () => {
+    setIsReplaceConfirmDialogOpen(false);
+    setReplacementData(null);
   };
 
   // 検索フィルタリング
@@ -341,6 +383,18 @@ export const Recipes: React.FC = () => {
         recipe={addingToMealPlanRecipe || null}
         onClose={handleCloseAddToMealPlanDialog}
         onAdd={handleAddMealPlan}
+      />
+
+      {/* 献立置き換え確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={isReplaceConfirmDialogOpen}
+        title="確認"
+        message={`${replacementData?.date}の${replacementData?.mealType}食には既に「${replacementData?.existingMealPlan?.memo || '献立'}」が設定されています。\n置き換えますか？`}
+        onConfirm={handleConfirmReplace}
+        onCancel={handleCancelReplace}
+        confirmText="置き換える"
+        cancelText="キャンセル"
+        isDestructive={false}
       />
     </div>
   );

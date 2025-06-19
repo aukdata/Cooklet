@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useRecipes } from '../../hooks/useRecipes';
+import { ConfirmDialog } from './ConfirmDialog';
 
 // 献立編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface MealPlanDialogProps {
@@ -65,6 +66,9 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
     memo: initialData?.memo || ''
   });
 
+  // 削除確認ダイアログの状態管理
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
   // フォーム送信ハンドラ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,10 +122,19 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
 
   // 削除確認ハンドラ
   const handleDelete = () => {
-    if (window.confirm('この献立を削除しますか？')) {
-      onDelete?.();
-      onClose();
-    }
+    setIsConfirmDialogOpen(true);
+  };
+
+  // 削除実行ハンドラ
+  const handleConfirmDelete = () => {
+    onDelete?.();
+    onClose();
+    setIsConfirmDialogOpen(false);
+  };
+
+  // 削除キャンセルハンドラ
+  const handleCancelDelete = () => {
+    setIsConfirmDialogOpen(false);
   };
 
   // ダイアログが閉じている場合は何も表示しない
@@ -306,6 +319,18 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
           </div>
         </form>
       </div>
+
+      {/* 削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={isConfirmDialogOpen}
+        title="確認"
+        message="この献立を削除しますか？"
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="削除"
+        cancelText="キャンセル"
+        isDestructive={true}
+      />
     </div>
   );
 };

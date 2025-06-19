@@ -247,7 +247,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
                 disabled={!formData.url.trim() || extractionState.isExtracting}
                 className="px-3 py-2 bg-indigo-100 text-indigo-700 rounded text-sm hover:bg-indigo-200 disabled:opacity-50 whitespace-nowrap"
               >
-                {extractionState.isExtracting ? '抽出中...' : 'レシピ抽出'}
+                {extractionState.isExtracting ? '抽出中...' : '抽出'}
               </button>
             </div>
             

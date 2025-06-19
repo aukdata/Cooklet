@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { type MealPlan } from '../../hooks';
 import { useRecipes } from '../../hooks/useRecipes';
 import { QuantityInput } from '../common/QuantityInput';
+import { ConfirmDialog } from './ConfirmDialog';
 
 // レシピデータ型（食材情報付き）
 interface Recipe {
@@ -45,6 +46,9 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   const [servings, setServings] = useState(2);
   const [ingredients, setIngredients] = useState<{ name: string; quantity: string }[]>([]);
   const [memo, setMemo] = useState('');
+
+  // 削除確認ダイアログの状態管理
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
   // DBからレシピデータを取得（食材情報は献立計画時に入力）
   const recipeList: Recipe[] = useMemo(() => {
@@ -179,11 +183,24 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
 
   // 削除確認ハンドラ
   const handleDelete = () => {
-    const mealDescription = manualRecipeName || memo || `${mealType}食`;
-    if (window.confirm(`「${mealDescription}」の献立を削除しますか？`)) {
-      onDelete?.();
-      onClose();
-    }
+    setIsConfirmDialogOpen(true);
+  };
+
+  // 削除実行ハンドラ
+  const handleConfirmDelete = () => {
+    onDelete?.();
+    onClose();
+    setIsConfirmDialogOpen(false);
+  };
+
+  // 削除キャンセルハンドラ
+  const handleCancelDelete = () => {
+    setIsConfirmDialogOpen(false);
+  };
+
+  // 削除対象の説明文を生成
+  const getMealDescription = () => {
+    return manualRecipeName || memo || `${mealType}食`;
   };
 
   // ダイアログが閉じている場合は何も表示しない
@@ -406,6 +423,19 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
           </button>
         </div>
       </div>
+
+      {/* 削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={isConfirmDialogOpen}
+        title="確認"
+        message="の献立を削除しますか？"
+        itemName={getMealDescription()}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="削除"
+        cancelText="キャンセル"
+        isDestructive={true}
+      />
     </div>
   );
 };

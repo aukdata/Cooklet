@@ -3,43 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 
-// PWA Service Worker登録
-const registerServiceWorker = async (): Promise<void> => {
-  if ('serviceWorker' in navigator) {
-    try {
-      const registration = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
-      });
-      
-      console.log('[PWA] Service Worker登録成功:', registration.scope);
-      
-      // Service Workerの更新チェック
-      registration.addEventListener('updatefound', () => {
-        const newWorker = registration.installing;
-        if (newWorker) {
-          newWorker.addEventListener('statechange', () => {
-            if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // 新しいService Workerが利用可能になった場合
-              console.log('[PWA] 新しいバージョンが利用可能です');
-              
-              // ユーザーに更新を通知（必要に応じて）
-              const shouldUpdate = confirm('アプリの新しいバージョンが利用可能です。更新しますか？');
-              if (shouldUpdate) {
-                newWorker.postMessage({ type: 'SKIP_WAITING' });
-                window.location.reload();
-              }
-            }
-          });
-        }
-      });
-      
-    } catch (error) {
-      console.error('[PWA] Service Worker登録失敗:', error);
-    }
-  } else {
-    console.log('[PWA] Service Workerはサポートされていません');
-  }
-};
+// PWA関連の処理はApp.tsxに移動
 
 // PWAインストール促進
 const handleBeforeInstallPrompt = (): void => {
@@ -59,21 +23,11 @@ const handleBeforeInstallPrompt = (): void => {
   });
 };
 
-// PWA関連機能の初期化
-const initializePWA = (): void => {
-  registerServiceWorker();
-  handleBeforeInstallPrompt();
-  
-  // PWA表示モード検出
-  if (window.matchMedia('(display-mode: standalone)').matches) {
-    console.log('[PWA] スタンドアロンモードで実行中');
-    document.body.classList.add('pwa-standalone');
-  }
-};
-
-// アプリ起動時にPWA機能を初期化
-if (typeof window !== 'undefined') {
-  initializePWA();
+// PWA初期化機能はApp.tsxに移動
+// PWA表示モード検出のみここで実行
+if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
+  console.log('[PWA] スタンドアロンモードで実行中');
+  document.body.classList.add('pwa-standalone');
 }
 
 createRoot(document.getElementById('root')!).render(

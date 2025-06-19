@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { StockItem } from '../../hooks/useStockItems';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
+import { ConfirmDialog } from './ConfirmDialog';
 
 // 在庫編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface StockDialogProps {
@@ -36,6 +37,9 @@ export const StockDialog: React.FC<StockDialogProps> = ({
     storage_location: '冷蔵庫',
     is_homemade: false
   });
+
+  // 削除確認ダイアログの状態管理
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
   // 今日の日付を取得
   const today = new Date().toISOString().split('T')[0];
@@ -81,10 +85,19 @@ export const StockDialog: React.FC<StockDialogProps> = ({
 
   // 削除確認ハンドラ
   const handleDelete = () => {
-    if (window.confirm(`「${formData.name}」を在庫から削除しますか？`)) {
-      onDelete?.();
-      onClose();
-    }
+    setIsConfirmDialogOpen(true);
+  };
+
+  // 削除実行ハンドラ
+  const handleConfirmDelete = () => {
+    onDelete?.();
+    onClose();
+    setIsConfirmDialogOpen(false);
+  };
+
+  // 削除キャンセルハンドラ
+  const handleCancelDelete = () => {
+    setIsConfirmDialogOpen(false);
   };
 
   // 日付クイック設定ハンドラ
@@ -236,6 +249,19 @@ export const StockDialog: React.FC<StockDialogProps> = ({
           </div>
         </form>
       </div>
+
+      {/* 削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={isConfirmDialogOpen}
+        title="確認"
+        message="削除しますか？"
+        itemName={formData.name}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="削除"
+        cancelText="キャンセル"
+        isDestructive={true}
+      />
     </div>
   );
 };

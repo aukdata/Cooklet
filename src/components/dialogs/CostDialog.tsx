@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { type CostRecord } from '../../hooks';
 import { useToast } from '../../hooks/useToast.tsx';
+import { ConfirmDialog } from './ConfirmDialog';
 
 // コスト記録ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface CostDialogProps {
@@ -36,6 +37,9 @@ export const CostDialog: React.FC<CostDialogProps> = ({
     initialData?.amount ? initialData.amount.toString() : ''
   );
 
+  // 削除確認ダイアログの状態管理
+  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
+
   // 今日の日付を取得
   const today = new Date().toISOString().split('T')[0];
 
@@ -64,10 +68,19 @@ export const CostDialog: React.FC<CostDialogProps> = ({
 
   // 削除確認ハンドラ
   const handleDelete = () => {
-    if (window.confirm(`「${formData.description}」の支出記録を削除しますか？`)) {
-      onDelete?.();
-      onClose();
-    }
+    setIsConfirmDialogOpen(true);
+  };
+
+  // 削除実行ハンドラ
+  const handleConfirmDelete = () => {
+    onDelete?.();
+    onClose();
+    setIsConfirmDialogOpen(false);
+  };
+
+  // 削除キャンセルハンドラ
+  const handleCancelDelete = () => {
+    setIsConfirmDialogOpen(false);
   };
 
   // 今日の日付を設定
@@ -229,6 +242,19 @@ export const CostDialog: React.FC<CostDialogProps> = ({
           </div>
         </form>
       </div>
+
+      {/* 削除確認ダイアログ */}
+      <ConfirmDialog
+        isOpen={isConfirmDialogOpen}
+        title="確認"
+        message="の支出記録を削除しますか？"
+        itemName={formData.description}
+        onConfirm={handleConfirmDelete}
+        onCancel={handleCancelDelete}
+        confirmText="削除"
+        cancelText="キャンセル"
+        isDestructive={true}
+      />
     </div>
   );
 };

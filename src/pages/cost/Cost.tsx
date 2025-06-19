@@ -384,16 +384,16 @@ export const Cost: React.FC = () => {
 
             <div className="flex gap-2">
               <button
+                onClick={() => setShowAddForm(false)}
+                className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
+              >
+                キャンセル
+              </button>
+              <button
                 onClick={handleSaveRecord}
                 className="flex-1 bg-indigo-600 text-white px-3 py-2 rounded text-sm hover:bg-indigo-700"
               >
                 保存
-              </button>
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
-              >
-                キャンセル
               </button>
             </div>
           </div>

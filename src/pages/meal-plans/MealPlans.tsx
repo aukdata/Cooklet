@@ -198,6 +198,33 @@ export const MealPlans: React.FC = () => {
     return date.toDateString() === today.toDateString();
   };
 
+  // ステータス変更ハンドラ
+  const handleStatusClick = async (mealPlan: MealPlan) => {
+    if (!mealPlan?.id) return;
+
+    try {
+      // 現在のステータスを取得
+      const currentStatus = mealPlan.consumed_status || 'pending';
+      
+      // 次のステータスを決定
+      let nextStatus: 'pending' | 'completed' | 'stored';
+      if (currentStatus === 'completed') {
+        nextStatus = 'stored'; // 完食 → 作り置き
+      } else if (currentStatus === 'stored') {
+        nextStatus = 'pending'; // 作り置き → 未完了
+      } else {
+        nextStatus = 'completed'; // 未完了 → 完食
+      }
+
+      // ステータスを更新
+      await updateMealPlanStatus(mealPlan.id, nextStatus);
+      showSuccess(`ステータスを${nextStatus === 'completed' ? '完食' : nextStatus === 'stored' ? '作り置き' : '未完了'}に変更しました`);
+    } catch (err) {
+      console.error('ステータス変更に失敗しました:', err);
+      showError('ステータス変更に失敗しました');
+    }
+  };
+
   return (
     <div className="p-4">
       {/* ヘッダー */}
@@ -312,10 +339,14 @@ export const MealPlans: React.FC = () => {
                     <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
                       {breakfastPlan ? (breakfastPlan.memo || '朝食メニュー') : '［未設定］'}
                     </span>
-                    {isDone && (
-                      <span className="ml-2">
+                    {isDone && breakfastPlan && (
+                      <button 
+                        onClick={() => handleStatusClick(breakfastPlan)}
+                        className="ml-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 px-1 py-0.5 rounded cursor-pointer"
+                        title="ステータスを変更"
+                      >
                         ✅ {isCompleted ? '完食' : '作り置き'}
-                      </span>
+                      </button>
                     )}
                   </div>
                   {breakfastPlan && (
@@ -338,7 +369,7 @@ export const MealPlans: React.FC = () => {
                       onClick={() => handleCookedClick(breakfastPlan)}
                       className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded"
                     >
-                      🍽️ 作った
+                      🍽️ 食べた
                     </button>
                   )}
                   <button 
@@ -368,10 +399,14 @@ export const MealPlans: React.FC = () => {
                     <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
                       {lunchPlan ? (lunchPlan.memo || '昼食メニュー') : '［未設定］'}
                     </span>
-                    {isDone && (
-                      <span className="ml-2">
+                    {isDone && lunchPlan && (
+                      <button 
+                        onClick={() => handleStatusClick(lunchPlan)}
+                        className="ml-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 px-1 py-0.5 rounded cursor-pointer"
+                        title="ステータスを変更"
+                      >
                         ✅ {isCompleted ? '完食' : '作り置き'}
-                      </span>
+                      </button>
                     )}
                   </div>
                   {lunchPlan && (
@@ -394,7 +429,7 @@ export const MealPlans: React.FC = () => {
                       onClick={() => handleCookedClick(lunchPlan)}
                       className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded"
                     >
-                      🍽️ 作った
+                      🍽️ 食べた
                     </button>
                   )}
                   <button 
@@ -424,10 +459,14 @@ export const MealPlans: React.FC = () => {
                     <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
                       {dinnerPlan ? (dinnerPlan.memo || '夕食メニュー') : '［未設定］'}
                     </span>
-                    {isDone && (
-                      <span className="ml-2">
+                    {isDone && dinnerPlan && (
+                      <button 
+                        onClick={() => handleStatusClick(dinnerPlan)}
+                        className="ml-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 px-1 py-0.5 rounded cursor-pointer"
+                        title="ステータスを変更"
+                      >
                         ✅ {isCompleted ? '完食' : '作り置き'}
-                      </span>
+                      </button>
                     )}
                   </div>
                   {dinnerPlan && (
@@ -450,7 +489,7 @@ export const MealPlans: React.FC = () => {
                       onClick={() => handleCookedClick(dinnerPlan)}
                       className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded"
                     >
-                      🍽️ 作った
+                      🍽️ 食べた
                     </button>
                   )}
                   <button 
