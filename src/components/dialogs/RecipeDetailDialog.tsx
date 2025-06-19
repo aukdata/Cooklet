@@ -102,15 +102,25 @@ export const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
             </div>
           )}
 
-          {/* 食材情報（将来的に実装予定） */}
+          {/* 食材情報 */}
           <div className="bg-gray-50 rounded-lg p-3">
             <div className="flex items-center mb-2">
               <span className="mr-2">📋</span>
               <span className="text-sm font-medium text-gray-700">食材情報</span>
             </div>
-            <p className="text-sm text-gray-500 pl-6">
-              レシピURLから食材を確認してください
-            </p>
+            {recipe.ingredients && recipe.ingredients.length > 0 ? (
+              <div className="pl-6 space-y-1">
+                {recipe.ingredients.map((ingredient, index) => (
+                  <p key={index} className="text-sm text-gray-700">
+                    • {ingredient.name} {ingredient.quantity}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 pl-6">
+                レシピURLから食材を確認してください
+              </p>
+            )}
           </div>
 
           {/* メモ欄（将来的に実装予定） */}

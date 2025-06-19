@@ -27,19 +27,33 @@ Reactカスタムフックを集約したディレクトリ。データベース
 レシピ管理機能を提供するカスタムフック。
 
 #### 提供する機能
-- `recipes`: レシピ配列
+- `recipes`: レシピ配列（材料情報を含む）
 - `loading`: 読み込み状態
 - `error`: エラーメッセージ
-- `addRecipe`: レシピ追加関数
-- `addRecipeIngredients`: レシピ食材追加関数
-- `updateRecipe`: レシピ更新関数
+- `addRecipe`: レシピ追加関数（材料情報を含む）
+- `updateRecipe`: レシピ更新関数（材料情報を含む）
 - `deleteRecipe`: レシピ削除関数
 - `refetch`: レシピ再取得関数
 
 #### 特徴
-- recipe_ingredientsテーブルとingredientsテーブルとの複合JOIN
-- レシピ食材の一括追加機能
-- レシピ削除時の関連データの自動削除
+- レシピ材料情報をJSONB形式で保存・取得
+- AI抽出結果をそのまま保存可能
+- リアルタイム更新対応
+- 材料情報の型安全な管理
+
+#### データ構造
+```typescript
+interface SavedRecipe {
+  id: string;
+  user_id: string;
+  title: string;
+  url: string;
+  servings: number;
+  tags: string[];
+  ingredients: { name: string; quantity: string }[]; // 材料情報
+  created_at: string;
+}
+```
 
 ### useIngredients.ts
 食材マスタ管理機能を提供するカスタムフック（ユーザー認証対応）。

@@ -1,17 +1,10 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import type { SavedRecipe, CreateRecipeData, UpdateRecipeData, RecipeIngredient } from '../types/recipe';
 
-// レシピデータの型定義（CLAUDE.md仕様書準拠）
-export interface SavedRecipe {
-  id: string;
-  user_id: string;
-  title: string;
-  url: string;
-  servings: number;
-  tags: string[];
-  created_at: string;
-}
+// 再エクスポート（後方互換性のため）
+export type { SavedRecipe } from '../types/recipe';
 
 // レシピ管理機能を提供するカスタムフック
 export const useRecipes = () => {
@@ -48,8 +41,47 @@ export const useRecipes = () => {
     }
   }, [user]);
 
+  // 材料をingredientsマスタテーブルに追加する補助関数
+  const addIngredientsToMaster = async (ingredients: RecipeIngredient[]) => {
+    if (!user || !ingredients.length) return;
+
+    try {
+      // 既存の材料を取得
+      const { data: existingIngredients } = await supabase
+        .from('ingredients')
+        .select('name')
+        .eq('user_id', user.id);
+
+      const existingNames = new Set(existingIngredients?.map(ing => ing.name.toLowerCase()) || []);
+
+      // 新しい材料のみを抽出
+      const newIngredients = ingredients
+        .filter(ing => ing.name.trim() && !existingNames.has(ing.name.toLowerCase().trim()))
+        .map(ing => ({
+          user_id: user.id,
+          name: ing.name.trim(),
+          category: '自動追加', // AI抽出材料のデフォルトカテゴリ
+          default_unit: ing.quantity.match(/[a-zA-Zぁ-んァ-ヶー]/g)?.join('') || '個', // 数量から単位を抽出
+        }));
+
+      if (newIngredients.length > 0) {
+        const { error } = await supabase
+          .from('ingredients')
+          .insert(newIngredients);
+
+        if (error) {
+          console.warn('材料マスタへの追加に失敗しました:', error);
+        } else {
+          console.log(`${newIngredients.length}個の新しい材料をマスタに追加しました`);
+        }
+      }
+    } catch (err) {
+      console.warn('材料マスタへの追加処理でエラーが発生しました:', err);
+    }
+  };
+
   // 新しいレシピを追加する関数
-  const addRecipe = async (recipe: Omit<SavedRecipe, 'id' | 'user_id' | 'created_at'>) => {
+  const addRecipe = async (recipe: CreateRecipeData) => {
     if (!user) throw new Error('ユーザーが認証されていません');
 
     try {
@@ -63,7 +95,8 @@ export const useRecipes = () => {
             title: recipe.title,
             url: recipe.url,
             servings: recipe.servings,
-            tags: recipe.tags
+            tags: recipe.tags,
+            ingredients: recipe.ingredients || [] // 材料情報を保存
           }
         ])
         .select()
@@ -71,6 +104,11 @@ export const useRecipes = () => {
 
       if (insertError) {
         throw insertError;
+      }
+
+      // 材料をingredientsマスタテーブルに追加（非同期、エラーは無視）
+      if (recipe.ingredients && recipe.ingredients.length > 0) {
+        addIngredientsToMaster(recipe.ingredients);
       }
 
       // ローカル状態を更新（新しいレシピを先頭に追加）
@@ -84,7 +122,7 @@ export const useRecipes = () => {
   };
 
   // レシピを更新する関数
-  const updateRecipe = async (id: string, updates: Partial<Omit<SavedRecipe, 'id' | 'user_id' | 'created_at'>>) => {
+  const updateRecipe = async (id: string, updates: UpdateRecipeData) => {
     if (!user) throw new Error('ユーザーが認証されていません');
 
     try {
@@ -100,6 +138,11 @@ export const useRecipes = () => {
 
       if (updateError) {
         throw updateError;
+      }
+
+      // 材料が更新された場合、ingredientsマスタテーブルにも追加
+      if (updates.ingredients && updates.ingredients.length > 0) {
+        addIngredientsToMaster(updates.ingredients);
       }
 
       // ローカル状態を更新

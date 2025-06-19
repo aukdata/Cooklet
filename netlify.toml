@@ -7,11 +7,28 @@
   # Node.jsバージョンの指定
   environment = { NODE_VERSION = "18", NPM_FLAGS = "--prefer-offline --no-audit" }
 
+# Netlify Functions設定
+[functions]
+  directory = "netlify/functions"
+
+# 開発環境設定
+[dev]
+  command = "pnpm run dev"
+  port = 5173
+
 # SPAルーティング対応（React Router用）
 [[redirects]]
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Netlify Functions用のCORS設定（本番環境用）
+[[headers]]
+  for = "/.netlify/functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "https://cooklet.netlify.app"
+    Access-Control-Allow-Headers = "Content-Type, Accept, Origin, X-Requested-With"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
 
 # PWA用のヘッダー設定
 [[headers]]

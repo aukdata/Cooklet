@@ -27,11 +27,11 @@ export class WebFetchError extends Error {
 }
 
 export class WebFetcher {
-  private readonly corsProxy: string;
+  private readonly proxyEndpoint: string;
   
   constructor() {
-    // CORS対応のプロキシサーバー（複数の選択肢）
-    this.corsProxy = import.meta.env.VITE_CORS_PROXY || 'https://api.allorigins.win/get?url=';
+    // Netlify Functionsのプロキシエンドポイントのみ使用
+    this.proxyEndpoint = '/.netlify/functions/proxy?url=';
   }
 
   // URLからWebサイトのコンテンツを取得
@@ -40,20 +40,31 @@ export class WebFetcher {
       // URLの正規化
       const normalizedUrl = this.normalizeUrl(url);
       
-      // プロキシ経由でfetch
+      console.log(`Netlify Functionsプロキシを使用してリクエスト: ${normalizedUrl}`);
+      
+      // Netlify Functions経由でfetch
       const response = await this.fetchWithProxy(normalizedUrl);
       
       if (!response.ok) {
+        // Netlify Functionsからのエラーレスポンスを詳細に処理
+        let errorData: any;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { error: 'Unknown Error', message: `HTTP ${response.status} ${response.statusText}` };
+        }
+
         throw new WebFetchError(
-          `HTTP Error: ${response.status} ${response.statusText}`,
+          errorData.message || `HTTP Error: ${response.status} ${response.statusText}`,
           normalizedUrl,
           response.status
         );
       }
 
-      // レスポンスの解析
+      // レスポンスの解析（Netlify FunctionsのJSONレスポンス）
       const data = await response.json();
-      const html = data.contents || data.html || '';
+      const html = data.html || '';
+      const title = data.title || 'レシピ';
       
       if (!html) {
         throw new WebFetchError(
@@ -62,9 +73,7 @@ export class WebFetcher {
         );
       }
 
-      // タイトルを抽出
-      const title = this.extractTitle(html) || 'レシピ';
-
+      console.log(`プロキシで成功しました: ${title}`);
       return {
         url: normalizedUrl,
         title,
@@ -106,34 +115,21 @@ export class WebFetcher {
     }
   }
 
-  // プロキシ経由でfetch
+  // Netlify Functions経由でfetch
   private async fetchWithProxy(url: string): Promise<Response> {
-    const proxiedUrl = `${this.corsProxy}${encodeURIComponent(url)}`;
+    const proxiedUrl = `${this.proxyEndpoint}${encodeURIComponent(url)}`;
     
     return fetch(proxiedUrl, {
       method: 'GET',
       headers: {
         'Accept': 'application/json',
-        'User-Agent': 'Cooklet/1.0 (Recipe Manager)'
-      }
+        'Content-Type': 'application/json',
+        'User-Agent': 'Cooklet/1.0 (Recipe Manager via Netlify Functions)'
+      },
+      // タイムアウト設定（Netlify Functionsの制限を考慮して30秒）
+      signal: AbortSignal.timeout(30000)
     });
   }
 
-  // HTMLからタイトルを抽出
-  private extractTitle(html: string): string | null {
-    const titleMatch = html.match(/<title[^>]*>(.*?)<\/title>/i);
-    if (titleMatch && titleMatch[1]) {
-      // HTMLエンティティをデコード
-      return titleMatch[1]
-        .replace(/&amp;/g, '&')
-        .replace(/&lt;/g, '<')
-        .replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"')
-        .replace(/&#39;/g, "'")
-        .replace(/&nbsp;/g, ' ')
-        .trim();
-    }
-    return null;
-  }
 
 }

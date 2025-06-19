@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useIngredients } from '../../hooks/useIngredients';
+import type { CreateRecipeData } from '../../types/recipe';
 
 interface AddRecipeModalProps {
   onClose: () => void;
@@ -40,11 +41,12 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onClose, onSucce
     setLoading(true);
 
     try {
-      const recipe = {
+      const recipe: CreateRecipeData = {
         title: formData.name,
         url: formData.external_url || '',
         servings: formData.servings,
-        tags: []
+        tags: [],
+        ingredients: [] // 空の材料配列を追加
       };
 
       await addRecipe(recipe);

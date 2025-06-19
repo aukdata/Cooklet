@@ -2,24 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
 import { useRecipeExtraction, validateRecipeExtraction } from '../../hooks/useRecipeExtraction';
+import type { RecipeFormData } from '../../types/recipe';
 
 // レシピ編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface RecipeDialogProps {
   isOpen: boolean; // ダイアログの表示状態
   onClose: () => void; // ダイアログを閉じる関数
-  onSave: (recipeData: RecipeForm) => void; // レシピデータを保存する関数
+  onSave: (recipeData: RecipeFormData) => void; // レシピデータを保存する関数
   onDelete?: () => void; // レシピ削除関数（編集時）
-  initialData?: RecipeForm; // 初期データ（編集時）
+  initialData?: RecipeFormData; // 初期データ（編集時）
   isEditing?: boolean; // 編集モードかどうか
-}
-
-// レシピフォームの型定義
-interface RecipeForm {
-  title: string; // レシピ名
-  url: string; // レシピURL
-  servings: number; // 人数
-  ingredients: { name: string; quantity: string }[]; // 食材リスト
-  tags: string[]; // タグ
 }
 
 // レシピ編集ダイアログコンポーネント - CLAUDE.md仕様書 5.6.4に準拠
@@ -35,7 +27,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   const { state: extractionState, extractFromUrl, clearResult, clearError } = useRecipeExtraction();
 
   // フォームデータの状態管理
-  const [formData, setFormData] = useState<RecipeForm>({
+  const [formData, setFormData] = useState<RecipeFormData>({
     title: '',
     url: '',
     servings: 2,

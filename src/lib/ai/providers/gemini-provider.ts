@@ -21,7 +21,7 @@ export class GeminiProvider extends BaseAIProvider {
       // HTMLをクリーニング
       const cleanText = this.cleanHtml(html);
       
-      // Gemini APIにリクエスト
+      // Gemini APpIにリクエスト
       const response = await this.callGeminiAPI(cleanText);
       
       // JSONを抽出

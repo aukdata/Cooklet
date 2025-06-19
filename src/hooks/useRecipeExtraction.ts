@@ -91,26 +91,59 @@ export const useRecipeExtraction = (): UseRecipeExtractionReturn => {
 
     } catch (error) {
       let errorMessage = 'レシピの抽出に失敗しました';
+      let detailedMessage = '';
       
       if (error instanceof WebFetchError) {
-        errorMessage = `Webサイトの取得エラー: ${error.message}`;
+        if (error.status === 503) {
+          errorMessage = 'サーバーが一時的に利用できません';
+          detailedMessage = 'しばらく時間をおいてから再度お試しください。複数のプロキシサーバーを試行しましたが、すべて失敗しました。';
+        } else if (error.status === 429) {
+          errorMessage = 'アクセス制限に達しました';
+          detailedMessage = '時間をおいてから再度お試しください。';
+        } else if (error.status === 403) {
+          errorMessage = 'アクセスが拒否されました';
+          detailedMessage = 'このサイトはレシピ抽出に対応していない可能性があります。手動でレシピ情報を入力してください。';
+        } else if (error.status === 404) {
+          errorMessage = 'ページが見つかりません';
+          detailedMessage = 'URLが正しいか確認してください。';
+        } else {
+          errorMessage = `Webサイトの取得エラー: ${error.message}`;
+          detailedMessage = 'ネットワーク接続を確認するか、しばらく時間をおいてから再度お試しください。';
+        }
       } else if (error instanceof RecipeExtractionError) {
         errorMessage = `抽出エラー: ${error.message}`;
+        detailedMessage = 'このサイトからレシピ情報を自動抽出できませんでした。手動でレシピ情報を入力してください。';
       } else if (error instanceof Error) {
-        errorMessage = error.message;
+        if (error.name === 'AbortError') {
+          errorMessage = 'リクエストがタイムアウトしました';
+          detailedMessage = 'ネットワーク接続が遅いか、サーバーの応答が遅い可能性があります。';
+        } else {
+          errorMessage = error.message;
+          detailedMessage = '予期しないエラーが発生しました。';
+        }
       }
+
+      const fullErrorMessage = detailedMessage ? `${errorMessage}\n${detailedMessage}` : errorMessage;
 
       setState(prev => ({
         ...prev,
         isLoading: false,
         isExtracting: false,
-        error: errorMessage,
+        error: fullErrorMessage,
         result: null,
         progress: {
           step: 'error',
-          message: errorMessage
+          message: fullErrorMessage
         }
       }));
+
+      // コンソールに詳細なエラー情報を出力（開発用）
+      console.error('レシピ抽出エラー:', {
+        url,
+        error,
+        message: errorMessage,
+        details: detailedMessage
+      });
 
       return null;
     }

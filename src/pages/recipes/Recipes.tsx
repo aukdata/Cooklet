@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useRecipes, type SavedRecipe } from '../../hooks/useRecipes';
+import { useRecipes } from '../../hooks/useRecipes';
 import { useMealPlans } from '../../hooks/useMealPlans';
 import { RecipeDialog } from '../../components/dialogs/RecipeDialog';
 import { RecipeDetailDialog } from '../../components/dialogs/RecipeDetailDialog';
@@ -7,6 +7,7 @@ import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 import { AddToMealPlanDialog } from '../../components/dialogs/AddToMealPlanDialog';
 import { EditButton } from '../../components/ui/Button';
 import { useToast } from '../../hooks/useToast.tsx';
+import type { SavedRecipe, RecipeFormData } from '../../types/recipe';
 
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
 export const Recipes: React.FC = () => {
@@ -44,7 +45,7 @@ export const Recipes: React.FC = () => {
   };
 
   // レシピ保存ハンドラー（新規追加と編集を統合）
-  const handleSaveRecipe = async (recipeData: { title: string; url: string; servings: number; tags: string[] }) => {
+  const handleSaveRecipe = async (recipeData: RecipeFormData) => {
     try {
       if (editingRecipe) {
         // 編集の場合
@@ -311,6 +312,20 @@ export const Recipes: React.FC = () => {
                       ) : null;
                     })()}
                     
+                    {/* 材料情報の表示 */}
+                    {recipe.ingredients && recipe.ingredients.length > 0 && (
+                      <div className="mb-2">
+                        <div className="flex items-center">
+                          <span className="text-xs text-gray-600 mr-1">📋</span>
+                          <span className="text-xs text-gray-600">材料:</span>
+                        </div>
+                        <div className="text-xs text-gray-500 ml-4">
+                          {recipe.ingredients.slice(0, 3).map(ing => ing.name).join(', ')}
+                          {recipe.ingredients.length > 3 && '...'}
+                        </div>
+                      </div>
+                    )}
+                    
                     {recipe.tags.length > 0 && (
                       <div className="flex items-center gap-1">
                         <span className="text-xs text-gray-600">🏷️</span>
@@ -361,7 +376,7 @@ export const Recipes: React.FC = () => {
           title: editingRecipe.title,
           url: editingRecipe.url,
           servings: editingRecipe.servings,
-          ingredients: [], // レシピ仕様では食材は直接保存しないためデフォルト値
+          ingredients: editingRecipe.ingredients || [], // 保存された材料情報を表示
           tags: editingRecipe.tags
         } : undefined}
         isEditing={!!editingRecipe}

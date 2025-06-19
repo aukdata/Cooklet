@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useRecipes } from '../../hooks/useRecipes';
 import { ConfirmDialog } from './ConfirmDialog';
+import type { CreateRecipeData } from '../../types/recipe';
 
 // 献立編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface MealPlanDialogProps {
@@ -83,18 +84,21 @@ export const MealPlanDialog: React.FC<MealPlanDialogProps> = ({
         
         if (!existingRecipe) {
           // 新しいレシピを保存
-          const newRecipe = await addRecipe({
+          const newRecipe: CreateRecipeData = {
             title: formData.recipe_name.trim(),
             url: formData.recipe_url?.trim() || '',
             servings: formData.servings,
-            tags: [] // デフォルトでは空のタグ配列
-          });
+            tags: [], // デフォルトでは空のタグ配列
+            ingredients: [] // 空の材料配列を追加
+          };
+          
+          const savedRecipe = await addRecipe(newRecipe);
           
           // 保存されたレシピのIDを献立データに設定
           const updatedFormData = {
             ...formData,
-            recipe_id: newRecipe.id,
-            recipe_name: newRecipe.title
+            recipe_id: savedRecipe.id,
+            recipe_name: savedRecipe.title
           };
           
           onSave(updatedFormData);
