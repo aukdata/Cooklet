@@ -1,12 +1,10 @@
 // Cooklet Service Worker
 // 基本的なキャッシュ機能とオフライン対応を提供
 
-const CACHE_NAME = 'cooklet-v1.0.0';
+const CACHE_NAME = 'cooklet-v1.0.1';
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',
-  '/static/js/bundle.js',
-  '/static/css/bundle.css',
   '/manifest.json',
   '/icons/icon-192x192.png',
   '/icons/icon-512x512.png'
@@ -60,6 +58,11 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const { request } = event;
   const url = new URL(request.url);
+  
+  // Chrome拡張機能のリクエストはスキップ
+  if (url.protocol === 'chrome-extension:') {
+    return;
+  }
   
   // Supabase APIリクエストの場合
   if (url.hostname.includes('supabase')) {
@@ -125,11 +128,20 @@ async function handleSupabaseRequest(request) {
 // 静的リソースの処理
 async function handleStaticRequest(request) {
   try {
-    // キャッシュ優先戦略
+    // キャッシュ優先戦略（高速化のため）
     const cache = await caches.open(CACHE_NAME);
     const cachedResponse = await cache.match(request);
     
     if (cachedResponse) {
+      // バックグラウンドで最新版を取得してキャッシュを更新
+      fetch(request).then(response => {
+        if (response.ok) {
+          cache.put(request, response.clone());
+        }
+      }).catch(() => {
+        // ネットワークエラーは無視（既にキャッシュから返答済み）
+      });
+      
       return cachedResponse;
     }
     
@@ -143,6 +155,16 @@ async function handleStaticRequest(request) {
     
     return response;
   } catch {
+    console.log('[SW] ネットワークエラー、キャッシュから取得を試行:', request.url);
+    
+    // ネットワークエラーの場合はキャッシュから取得
+    const cache = await caches.open(CACHE_NAME);
+    const cachedResponse = await cache.match(request);
+    
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+    
     console.log('[SW] 静的リソース取得エラー:', request.url);
     
     // HTML リクエストの場合はオフラインページを返す
