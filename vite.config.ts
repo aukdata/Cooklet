@@ -2,11 +2,28 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
 import { execSync } from 'child_process'
 
+// ビルド時にビルド情報ファイルを更新するプラグイン
+const buildInfoPlugin = () => {
+  return {
+    name: 'build-info-plugin',
+    buildEnd() {
+      // ビルド開始時にビルド情報バージョンを更新
+      console.log('🔄 ビルド情報バージョン更新中...')
+      try {
+        execSync('node scripts/generate-sw-version.js', { stdio: 'inherit' })
+        console.log('✅ ビルド情報バージョン更新完了')
+      } catch (error) {
+        console.error('❌ ビルド情報バージョン更新エラー:', error)
+      }
+    }
+  }
+}
+
 // ビルド時にService Workerバージョンを更新するプラグイン
 const swVersionPlugin = () => {
   return {
     name: 'sw-version-plugin',
-    buildStart() {
+    buildEnd() {
       // ビルド開始時にService Workerバージョンを更新
       console.log('🔄 Service Workerバージョン更新中...')
       try {
@@ -21,7 +38,7 @@ const swVersionPlugin = () => {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), swVersionPlugin()],
+  plugins: [react(), buildInfoPlugin(), swVersionPlugin()],
   // Netlify用の設定
   base: '/',
   build: {
