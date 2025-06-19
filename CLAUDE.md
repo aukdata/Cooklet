@@ -863,7 +863,7 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 ## 12. 開発進捗とTODO
 
-### 現在の実装状況（2025年6月17日時点）
+### 現在の実装状況（2025年6月19日時点）
 
 #### ✅ 完了した機能
 - 基本的なプロジェクト構造
@@ -896,19 +896,23 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 - **PWA対応** - マニフェスト、Service Worker、アイコン、メタタグ完全実装（issue #35完了）
 - **iPhone PWA対応** - セーフエリア対応、グローバルフッター下部マージン追加
 - **LLM抽出機能の強化** - レシピサイト判定とタグ提案機能（古いレシピサイト判定削除、タグ自動追加）
+- **食材自動抽出機能の完全実装** - Google Gemini AI連携による食材自動抽出機能（useRecipeExtractionフック実装）
+- **Google Gemini AIプロバイダー** - LLM連携のためのGeminiプロバイダー実装・環境構築完了
+- **Web fetch機能** - レシピサイトからのHTMLコンテンツ取得機能実装
+- **レシピ抽出の完全自動化** - URL入力→HTML取得→LLM抽出→食材リスト生成の完全な流れ
 - **環境変数設定テンプレート** - .env.example作成・Supabase接続設定手順完備（issue #45解決に寄与）
 
 #### 🔄 実装中の機能
 - 現在実装中の機能はありません（全主要機能が完了）
 
-### 🎯 高優先度TODO（次のフェーズ）
+### 🎯 ~~高優先度TODO（次のフェーズ）~~ ✅全て完了
 
-#### 1. 食材自動抽出機能（高）
+#### 1. ~~食材自動抽出機能（高）~~ ✅完了
 **仕様書核心機能**:
-- [ ] レシピURLからの食材自動抽出
-- [ ] LLM連携API実装
-- [ ] 抽出結果の手動編集機能
-- [ ] 食材マスタとの照合
+- [x] レシピURLからの食材自動抽出 ✅
+- [x] LLM連携API実装 ✅（Google Gemini AI）
+- [x] 抽出結果の手動編集機能 ✅
+- [x] 食材マスタとの照合 ✅
 
 #### 2. ~~自動化機能（高）~~ ✅部分完了
 **仕様書重要機能**:
@@ -951,10 +955,10 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 
 ### 🚫 ブロッカー・課題
 
-#### 1. 技術的制約
-- LLM API連携の未実装（食材自動抽出機能）
-- Supabase Functions未活用
-- より高度な自動化機能の実装
+#### 1. ~~技術的制約~~ ✅解決済み
+- ~~LLM API連携の未実装（食材自動抽出機能）~~ ✅完了（Google Gemini AI実装）
+- Supabase Functions未活用（現在は不要、将来的な拡張オプション）
+- ~~より高度な自動化機能の実装~~ ✅完了（食材自動抽出・買い物リスト自動生成）
 
 ### 🎯 次の作業ステップ（優先順位順）
 
@@ -965,16 +969,17 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 5. ~~**基本データフック作成**~~ - ✅完了（useMealPlans）
 6. ~~**残りデータフック作成**~~ - ✅完了（useStockItems, useCostRecords等）
 7. ~~**自動化機能**~~ - ✅完了（買い物リスト自動生成、在庫突合）
-8. **食材自動抽出機能** - LLM API連携による食材抽出
+8. ~~**食材自動抽出機能**~~ - ✅完了（Google Gemini AI連携による食材抽出）
 
 ### 📝 開発メモ
 
-- **現在の実装は仕様書の約99%完了**
+- **現在の実装は仕様書の100%完了**
 - **UI/UXは仕様書に完全準拠**（CLAUDE.md仕様書5.1-5.6全て実装）
 - **全主要画面が完全実装**（サマリー・献立・買い物・レシピ・在庫・コスト・設定）
-- **全データフックが完全実装**（useMealPlans、useStockItems、useCostRecords、useShoppingList、useAutoShoppingList）
+- **全データフックが完全実装**（useMealPlans、useStockItems、useCostRecords、useShoppingList、useAutoShoppingList、useRecipeExtraction）
 - **Supabaseリアルタイム連携完備**（全テーブル対応）
 - **献立から買い物リスト自動生成機能完了**（食材抽出・在庫照合・重複回避）
+- **LLM食材自動抽出機能完了** - Google Gemini AI連携によるレシピURL→食材リスト自動抽出
 - **PWA完全対応完了** - マニフェスト、Service Worker、オフライン機能、アプリインストール機能
 - **ダイアログz-index問題解決** - issue #41完了（ダイアログとグローバルフッター競合修正）
 - **在庫管理画面デザイン統一** - issue #42完了（レシピ一覧と同じデザインに統一・検索機能追加）
@@ -983,5 +988,5 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 - **UI統一性の完全実現** - issue #48完了（Cost.tsx ボタン配置修正・全画面統一）
 - **UX改善による操作性向上** - issue #44完了（「作った」→「食べた」文言変更・完食タップ機能実装）
 - **GitHub issue #10, #11, #30, #31, #35, #41, #42, #44, #45, #47, #48が完了**
-- 残りは高度なLLM連携機能（食材自動抽出）のみ
-- Web Push通知機能は将来的な拡張項目
+- **仕様書で定義された全主要機能の実装完了**
+- Web Push通知機能は将来的な拡張項目として残存
