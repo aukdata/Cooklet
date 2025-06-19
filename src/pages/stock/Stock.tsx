@@ -195,16 +195,6 @@ export const Stock: React.FC = () => {
         ) : (
           <div className="space-y-3">
             {filteredStockItems.map((item) => (
-              <div
-                key={item.id}
-                className={`border-b border-gray-100 last:border-b-0 pb-3 last:pb-0 ${
-                  item.best_before && isExpired(item.best_before)
-                    ? 'bg-red-50'
-                    : item.best_before && isExpiringSoon(item.best_before)
-                    ? 'bg-yellow-50'
-                    : ''
-                }`}
-              >
               <div className="flex justify-between items-start">
                 <div className="flex-1">
                   {/* 食材名 */}
@@ -253,7 +243,6 @@ export const Stock: React.FC = () => {
                 <div className="flex space-x-2">
                   <EditButton onClick={() => handleEditStock(item)} />
                 </div>
-              </div>
               </div>
             ))}
           </div>
