@@ -25,19 +25,30 @@ const AppContent: React.FC = () => {
           
           console.log('[PWA] Service Worker登録成功:', registration.scope);
           
-          // Service Workerの更新チェック
+          // Service Workerの更新チェック - updatefoundイベント
           registration.addEventListener('updatefound', () => {
+            console.log('[PWA] 新しいService Workerが見つかりました');
             const newWorker = registration.installing;
+            
             if (newWorker) {
+              // 新しいService Workerの状態変化を監視
               newWorker.addEventListener('statechange', () => {
+                console.log('[PWA] Service Worker状態変化:', newWorker.state);
+                
                 if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                  // 新しいService Workerが利用可能になった場合
-                  console.log('[PWA] 新しいバージョンが利用可能です');
+                  // 新しいバージョンがインストール済みで、現在もService Workerが動作中の場合
+                  console.log('[PWA] アプリの新しいバージョンが利用可能です');
                   setNewServiceWorker(newWorker);
                   setIsPWAUpdateDialogOpen(true);
                 }
               });
             }
+          });
+          
+          // 既存のService Workerがアクティブになった場合の処理
+          registration.addEventListener('controllerchange', () => {
+            console.log('[PWA] Service Workerが更新されました - リロードします');
+            window.location.reload();
           });
           
         } catch (error) {
@@ -52,8 +63,13 @@ const AppContent: React.FC = () => {
   // PWA更新確認ハンドラー
   const handleConfirmPWAUpdate = () => {
     if (newServiceWorker) {
+      console.log('[PWA] ユーザーが更新を承認 - skipWaitingを実行');
+      
+      // 新しいService WorkerにskipWaitingメッセージを送信
       newServiceWorker.postMessage({ type: 'SKIP_WAITING' });
-      window.location.reload();
+      
+      // controllerchangeイベントでリロードされるため、ここでのリロードは削除
+      // window.location.reload(); は不要
     }
     setIsPWAUpdateDialogOpen(false);
     setNewServiceWorker(null);
@@ -61,6 +77,7 @@ const AppContent: React.FC = () => {
 
   // PWA更新キャンセルハンドラー
   const handleCancelPWAUpdate = () => {
+    console.log('[PWA] ユーザーが更新をキャンセル - 次回まで延期');
     setIsPWAUpdateDialogOpen(false);
     setNewServiceWorker(null);
   };
@@ -84,12 +101,12 @@ const AppContent: React.FC = () => {
       {/* PWA更新確認ダイアログ */}
       <ConfirmDialog
         isOpen={isPWAUpdateDialogOpen}
-        title="アプリ更新"
-        message="アプリの新しいバージョンが利用可能です。更新しますか？"
+        title="🔄 アプリ更新"
+        message="新しいバージョンが利用可能です。アプリを更新して最新機能をお使いください。"
         onConfirm={handleConfirmPWAUpdate}
         onCancel={handleCancelPWAUpdate}
-        confirmText="更新"
-        cancelText="後で"
+        confirmText="今すぐ更新"
+        cancelText="後で更新"
         isDestructive={false}
       />
     </>

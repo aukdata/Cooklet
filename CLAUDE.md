@@ -855,3 +855,73 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 ### 11.2 技術的な拡張性
 - **モバイルアプリ**化（React Native）
 - **外部API連携**（栄養価データベース等）
+
+## 12. PWA・サービスワーカー機能
+
+### 12.1 サービスワーカー更新機能
+
+アプリの新しいバージョンが利用可能になった場合の自動更新システムを実装。
+
+#### 12.1.1 更新検知フロー
+1. **updatefound**イベントでサービスワーカーの更新を検知
+2. 新しいサービスワーカーが**installed**状態になったらユーザーに通知
+3. ユーザーが承認すると**skipWaiting()**で即座に更新
+4. **controllerchange**イベントでページリロード
+
+#### 12.1.2 実装ファイル
+- `/public/sw.js`: サービスワーカー本体
+- `/src/App.tsx`: 更新通知UI
+
+#### 12.1.3 サービスワーカー機能
+```javascript
+// メッセージ処理
+self.addEventListener('message', event => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting(); // 新しいバージョンに更新
+  }
+});
+
+// バージョン情報取得
+if (event.data && event.data.type === 'GET_VERSION') {
+  const version = CACHE_NAME.split('-')[1];
+  event.ports[0].postMessage({ type: 'VERSION_INFO', version });
+}
+```
+
+#### 12.1.4 アプリ側実装
+```typescript
+// 更新検知
+registration.addEventListener('updatefound', () => {
+  const newWorker = registration.installing;
+  newWorker.addEventListener('statechange', () => {
+    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+      // ユーザー確認ダイアログ表示
+      setNewServiceWorker(newWorker);
+      setIsPWAUpdateDialogOpen(true);
+    }
+  });
+});
+
+// 更新実行
+const handleConfirmPWAUpdate = () => {
+  newServiceWorker.postMessage({ type: 'SKIP_WAITING' });
+  // controllerchangeイベントで自動リロード
+};
+```
+
+#### 12.1.5 ユーザー体験
+- **非破壊的更新**: ユーザーの承認なしには更新しない
+- **明確な通知**: 「🔄 アプリ更新」ダイアログで新機能を案内
+- **選択可能**: 「今すぐ更新」「後で更新」のオプション提供
+- **自動リロード**: skipWaiting後は自動でページリロード
+
+#### 12.1.6 技術的特徴
+- **installイベント**: 自動skipWaitingは無効化（ユーザー制御）
+- **エラーハンドリング**: 更新失敗時のログ出力
+- **状態管理**: React useState でダイアログ状態管理
+- **メッセージ通信**: ServiceWorkerとメインスレッド間の双方向通信
+
+### 12.2 PWA基本機能
+- **オフライン対応**: キャッシュ戦略による基本機能提供
+- **プッシュ通知**: 賞味期限アラート（将来実装）
+- **アプリライク体験**: インストール可能なWebアプリ

@@ -27,7 +27,7 @@ self.addEventListener('install', event => {
       })
       .then(() => {
         console.log('[SW] インストール完了');
-        return self.skipWaiting(); // 新しいSWを即座にアクティブ化
+        // ユーザーの承認後にskipWaitingを実行するため、ここでは自動実行しない
       })
   );
 });
@@ -258,9 +258,21 @@ async function doBackgroundSync() {
   console.log('[SW] バックグラウンド同期完了');
 }
 
-// Service Worker の更新通知
+// Service Worker の更新通知とメッセージ処理
 self.addEventListener('message', event => {
+  console.log('[SW] メッセージ受信:', event.data);
+  
   if (event.data && event.data.type === 'SKIP_WAITING') {
+    console.log('[SW] 新しいバージョンに更新中...');
     self.skipWaiting();
+  }
+  
+  // クライアントに更新状況を通知
+  if (event.data && event.data.type === 'GET_VERSION') {
+    const version = CACHE_NAME.split('-')[1]; // 'cooklet-v1.0.0' から 'v1.0.0' を抽出
+    event.ports[0].postMessage({
+      type: 'VERSION_INFO',
+      version: version
+    });
   }
 });
