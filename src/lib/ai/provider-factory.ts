@@ -49,8 +49,8 @@ export class AIProviderFactory {
       provider: providerType,
       apiKey,
       model,
-      maxTokens: parseInt(import.meta.env.VITE_AI_MAX_TOKENS || '1000'),
-      temperature: parseFloat(import.meta.env.VITE_AI_TEMPERATURE || '0.1')
+      maxTokens: 1000,
+      temperature: 0.1,
     };
 
     return this.createProvider(config);
