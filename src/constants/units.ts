@@ -31,14 +31,14 @@ export const FOOD_UNITS = [
   // その他
   '適量',
   'お好み',
-  '',  // 単位なし
+  '-',  // 単位なし
 ] as const;
 
 export type FoodUnit = typeof FOOD_UNITS[number];
 
 // 数値と単位を分離する関数
 export const parseQuantity = (quantity: string): { amount: string; unit: FoodUnit } => {
-  if (!quantity) return { amount: '', unit: '' };
+  if (!quantity) return { amount: '', unit: '-' };
   
   // 数値部分と単位部分を分離
   const match = quantity.match(/^(\d*\.?\d*)\s*(.*)$/);
