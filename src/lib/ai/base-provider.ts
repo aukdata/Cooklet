@@ -16,7 +16,7 @@ export const RECIPE_EXTRACTION_PROMPT = `
 
 抽出・判定する情報：
 - レシピサイト判定：true/false レシピ情報（料理名、材料、作り方等）が含まれているかを判定
-- レシピ名：HTMLのtitleタグ、h1タグ、またはレシピタイトル要素から。見つからなければ「レシピ」とする
+- レシピ名：HTMLのtitleタグ、h1タグ、またはレシピタイトル要素から。「の作り方」や「のレシピ」は不要。見つからなければ「レシピ」とする
 - 人数：「〇人分」「〇人前」「〇名分」などの記載から数値のみ抽出。見つからなければ1。
 - 材料：材料リスト、ingredients、材料名などの要素から
   - 食材名：「玉ねぎ」「牛ひき肉」など
@@ -29,8 +29,12 @@ export const RECIPE_EXTRACTION_PROMPT = `
 - 「200g」→ quantity: "200", unit: "g"
 - 「玉ねぎ1個」→ quantity: "1", unit: "個"
 - 「大さじ2」→ quantity: "2", unit: "大さじ"
+- 「サラダ油大さじ1/2」→ quantity: "1/2", unit: "大さじ"
+- 「にんにく1かけ」→ quantity: "1", unit: "片"
 - 「適量」→ quantity: "適量", unit: ""
 - 「少々」→ quantity: "少々", unit: ""
+- 「鶏肉100gほど」→ quantity: "100", unit: "g"
+- 「鶏肉約100g」→ quantity: "100", unit: "g"
 - 単位が不明な場合は unit: "" を設定
 
 タグ提案ルール：

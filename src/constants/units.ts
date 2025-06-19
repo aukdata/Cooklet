@@ -7,9 +7,9 @@ export const FOOD_UNITS = [
   
   // 容量系
   'mL',
-
   'L',
   'cc',
+  '合',
   
   // 個数系
   '個',
@@ -19,7 +19,9 @@ export const FOOD_UNITS = [
   '缶',
   'パック',
   '箱',
-  
+  '束',
+  '片',
+ 
   // 料理系
   '人前',
   'カップ',
@@ -29,7 +31,7 @@ export const FOOD_UNITS = [
   // その他
   '適量',
   'お好み',
-  ''  // 単位なし
+  '',  // 単位なし
 ] as const;
 
 export type FoodUnit = typeof FOOD_UNITS[number];

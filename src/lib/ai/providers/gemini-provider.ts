@@ -4,6 +4,7 @@ import { GoogleGenAI, Type } from '@google/genai';
 import { BaseAIProvider, RECIPE_EXTRACTION_PROMPT } from '../base-provider';
 import type { AIProviderConfig, RecipeExtraction } from '../types';
 import { RecipeExtractionError } from '../types';
+import { FOOD_UNITS } from '../../../constants/units';
 
 export class GeminiProvider extends BaseAIProvider {
   private readonly genAI: GoogleGenAI;
@@ -80,6 +81,7 @@ export class GeminiProvider extends BaseAIProvider {
                     },
                     unit: {
                       type: Type.STRING,
+                      enum: FOOD_UNITS,
                     },
                   },
                   propertyOrdering: ["name", "quantity", "unit"],
