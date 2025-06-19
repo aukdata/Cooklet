@@ -195,7 +195,7 @@ export const Stock: React.FC = () => {
         ) : (
           <div className="space-y-3">
             {filteredStockItems.map((item) => (
-              <div className="flex justify-between items-start">
+              <div key={item.id} className="flex justify-between items-start">
                 <div className="flex-1">
                   {/* 食材名 */}
                   <div className="flex items-center mb-2">

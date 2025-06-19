@@ -6,7 +6,7 @@ import { execSync } from 'child_process'
 const buildInfoPlugin = () => {
   return {
     name: 'build-info-plugin',
-    buildEnd() {
+    async closeBundle() {
       // ビルド開始時にビルド情報バージョンを更新
       console.log('🔄 ビルド情報バージョン更新中...')
       try {
@@ -23,7 +23,7 @@ const buildInfoPlugin = () => {
 const swVersionPlugin = () => {
   return {
     name: 'sw-version-plugin',
-    buildEnd() {
+    async closeBundle() {
       // ビルド開始時にService Workerバージョンを更新
       console.log('🔄 Service Workerバージョン更新中...')
       try {
