@@ -541,6 +541,7 @@ meal_plans (
   recipe_url: TEXT,
   ingredients: JSONB,            -- [{ name, quantity }]
   memo: TEXT,
+  consumed_status: TEXT DEFAULT 'pending' CHECK (consumed_status IN ('pending', 'completed', 'stored')),  -- 消費状態（未完了・完食・作り置き）
   created_at: TIMESTAMP DEFAULT NOW(),
   updated_at: TIMESTAMP DEFAULT NOW()
 )
@@ -608,6 +609,7 @@ saved_recipes (
 ```sql
 -- パフォーマンス向上のためのインデックス
 CREATE INDEX idx_meal_plans_user_date ON meal_plans(user_id, date);
+CREATE INDEX idx_meal_plans_consumed_status ON meal_plans(user_id, consumed_status);  -- 消費状態検索用
 CREATE INDEX idx_stock_items_user_best_before ON stock_items(user_id, best_before);
 CREATE INDEX idx_shopping_list_user_checked ON shopping_list(user_id, checked);
 CREATE INDEX idx_cost_records_user_date ON cost_records(user_id, date);
@@ -633,6 +635,7 @@ interface MealPlan {
   recipe_url?: string;
   ingredients: { name: string; quantity: string }[];
   memo?: string;
+  consumed_status?: 'pending' | 'completed' | 'stored';  // 消費状態（未完了・完食・作り置き）
   created_at: string;
   updated_at: string;
 }

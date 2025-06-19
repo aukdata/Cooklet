@@ -42,19 +42,19 @@ if (netlifyBuildId) {
 }
 
 // Service Workerファイルのパス
-const swPath = path.join(projectRoot, 'public', 'sw.js')
+const swPath = path.join(projectRoot, 'dist', 'sw.js')
 
 // Service Workerファイルを読み込み
 let swContent = fs.readFileSync(swPath, 'utf8')
 
 // CACHE_NAMEを動的バージョンに置換
-const originalCacheName = /const CACHE_NAME = '[^']*'/
-const newCacheName = `const CACHE_NAME = 'cooklet-${uniqueVersion}'`
+const originalCacheName = '<REPLACE_WITH_CHACHE_NAME_ON_BUILD>'
+const newCacheName = `cooklet-${uniqueVersion}`
 swContent = swContent.replace(originalCacheName, newCacheName)
 
 // API_CACHE_NAMEも同様に更新
-const originalApiCacheName = /const API_CACHE_NAME = '[^']*'/
-const newApiCacheName = `const API_CACHE_NAME = 'cooklet-api-${uniqueVersion}'`
+const originalApiCacheName = '<REPLACE_WITH_API_CHACHE_NAME_ON_BUILD>'
+const newApiCacheName = `cooklet-api-${uniqueVersion}`
 swContent = swContent.replace(originalApiCacheName, newApiCacheName)
 
 // Service Workerファイルに書き戻し

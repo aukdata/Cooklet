@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "node scripts/generate-sw-version.js",
-    "build": "tsc -b && vite build && node scripts/generate-build-info.js",
+    "build": "tsc -b && vite build",
     "typecheck": "tsc -b",
     "lint": "oxlint src",
     "preview": "vite preview",
-    "build:netlify": "pnpm run prebuild && pnpm run lint && pnpm run build"
+    "postbuild": "node scripts/generate-sw-version.js && node scripts/generate-build-info.js",
+    "build:netlify": "pnpm run lint && pnpm run build && pnpm run postbuild"
   },
   "dependencies": {
     "@google/genai": "^1.5.1",
