@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
-import { useRecipeExtraction, validateRecipeExtraction } from '../../hooks/useRecipeExtraction';
+import { useRecipeExtraction } from '../../hooks/useRecipeExtraction';
 import type { RecipeFormData } from '../../types/recipe';
 
 // レシピ編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
@@ -98,9 +98,6 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
     const extraction = await extractFromUrl(formData.url);
     
     if (extraction) {
-      // 抽出結果を検証
-      const validation = validateRecipeExtraction(extraction);
-      
       // フォームデータを更新
       setFormData(prev => ({
         ...prev,
@@ -115,20 +112,8 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
           [...new Set([...prev.tags, ...extraction.suggestedTags])] : prev.tags
       }));
 
-      // 結果をユーザーに通知
-      if (validation.isValid) {
-        const tagMessage = extraction.suggestedTags.length > 0 ? 
-          ` (タグ${extraction.suggestedTags.length}個を提案)` : '';
-        showSuccess(`レシピ情報を抽出しました（信頼度: ${Math.round(extraction.confidence * 100)}%）${tagMessage}`);
-      } else {
-        if (!extraction.isRecipeSite) {
-          showError('レシピサイトではない可能性があります。内容を確認してください。');
-        } else {
-          showSuccess('レシピ情報を抽出しましたが、内容を確認してください');
-        }
-        // 問題があれば詳細をコンソールに出力
-        console.warn('抽出結果の検証:', validation);
-      }
+      // 簡潔な通知のみ（詳細は下部の進行状況表示で確認可能）
+      showSuccess('レシピ情報を抽出しました');
     }
   };
 

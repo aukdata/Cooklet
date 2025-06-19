@@ -44,11 +44,11 @@ export interface Recipe {
   notes?: string; // メモ（任意）
   created_at: string; // 作成日時
   updated_at: string; // 更新日時
-  recipe_ingredients?: RecipeIngredient[]; // レシピ食材リスト（JOIN結果）
+  recipe_ingredients?: DatabaseRecipeIngredient[]; // レシピ食材リスト（JOIN結果）
 }
 
-// レシピで使用する食材情報を表すインターフェース
-export interface RecipeIngredient {
+// データベース用のレシピ食材情報を表すインターフェース
+export interface DatabaseRecipeIngredient {
   id: number; // レシピ食材ID
   recipe_id: number; // レシピID
   ingredient_id: number; // 食材ID
@@ -93,13 +93,3 @@ export interface CostRecord {
   created_at: string; // 作成日時
 }
 
-// 保存レシピ情報を表すインターフェース（CLAUDE.md仕様書で追加）
-export interface SavedRecipe {
-  id: string; // レシピID（UUID）
-  user_id: string; // ユーザーID
-  title: string; // レシピタイトル
-  url: string; // レシピURL
-  servings: number; // 人前
-  tags: string[]; // タグ配列
-  created_at: string; // 作成日時
-}

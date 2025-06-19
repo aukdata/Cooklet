@@ -1,5 +1,99 @@
 # UI共通コンポーネント
 
+## 概要
+アプリ全体で使用する共通UIコンポーネントライブラリ。統一されたデザインシステムと再利用性を提供。
+
+## BaseDialog.tsx
+
+### 概要
+全ダイアログで共通のUI構造を提供する基盤コンポーネント。
+
+### 主要機能
+- モーダルオーバーレイ
+- 統一されたヘッダー（タイトル + 閉じるボタン）
+- 3段階ボタン配置（削除・キャンセル・保存）
+- サイズバリエーション（sm/md/lg）
+- カスタムアクションエリア対応
+
+### Props
+- `isOpen: boolean` - ダイアログの表示状態
+- `onClose: () => void` - ダイアログを閉じるコールバック
+- `title: string` - ダイアログのタイトル
+- `icon: string` - タイトル前の絵文字アイコン
+- `children: ReactNode` - ダイアログ内のコンテンツ
+- `size?: 'sm' | 'md' | 'lg'` - ダイアログのサイズ
+- `showDelete?: boolean` - 削除ボタンの表示フラグ
+- `onSave?: () => void` - 保存処理
+- `onDelete?: () => void` - 削除処理
+
+## FormField.tsx
+
+### 概要
+統一されたラベル付きフィールドコンポーネント。
+
+### 主要機能
+- ラベル（絵文字 + テキスト + 必須マーク）
+- エラーメッセージ表示
+- アクセシビリティ対応
+
+### 付属コンポーネント
+- `TextInput` - テキスト入力フィールド
+- `TextArea` - テキストエリアフィールド
+- `NumberInput` - 数値入力フィールド
+
+### Props
+- `label: string` - フィールドのラベル
+- `icon?: string` - ラベル前の絵文字アイコン
+- `children: ReactNode` - フィールドのコンテンツ
+- `required?: boolean` - 必須項目フラグ
+- `error?: string` - エラーメッセージ
+
+## DateInput.tsx
+
+### 概要
+クイック設定ボタン付きの統一日付入力コンポーネント。
+
+### 主要機能
+- 日付入力フィールド
+- クイック設定ボタン（今日・1週間・1ヶ月）
+- 日本語日付表示
+- キーボードアクセシビリティ対応
+
+### ユーティリティ関数
+- `getTodayString()` - 今日の日付取得
+- `getDateAfterDays(days)` - 指定日数後の日付取得
+- `getDaysDifference(date1, date2)` - 日付差分計算
+
+### Props
+- `value: string` - 日付の値（YYYY-MM-DD形式）
+- `onChange: (value: string) => void` - 日付変更時のコールバック
+- `showQuickButtons?: boolean` - クイック設定ボタンの表示
+- `disabled?: boolean` - 無効化状態
+
+## IngredientsEditor.tsx
+
+### 概要
+食材リストの追加・編集・削除機能を統一したコンポーネント。
+
+### 主要機能
+- 食材の追加・削除・編集
+- QuantityInputコンポーネントとの統合
+- キーボードナビゲーション（Enterキーでの項目移動）
+- バリデーション機能
+- 最大項目数制限
+
+### ユーティリティ関数
+- `validateIngredients(ingredients)` - 食材リストのバリデーション
+- `cleanIngredients(ingredients)` - 空の項目を除去
+- `normalizeIngredients(ingredients)` - 食材リストの正規化
+
+### Props
+- `ingredients: Ingredient[]` - 食材リスト
+- `onChange: (ingredients: Ingredient[]) => void` - 食材リスト変更コールバック
+- `disabled?: boolean` - 無効化状態
+- `maxItems?: number` - 最大食材数
+- `addButtonText?: string` - 食材追加ボタンのテキスト
+
 ## Button.tsx
 
 ### 概要

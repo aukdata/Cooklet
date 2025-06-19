@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useMealPlans } from './useMealPlans';
 import { useStockItems } from './useStockItems';
 import { useShoppingList } from './useShoppingList';
-import { generateShoppingListFromMealPlans } from '../utils/autoShoppingList';
+import { generateShoppingListForNextDays } from '../services/shoppingListGeneration';
 
 // 自動生成の結果型
 export interface AutoGenerationResult {
@@ -35,20 +35,24 @@ export const useAutoShoppingList = () => {
       setIsGenerating(true);
       setError(null);
 
-      // 買い物リストアイテムを生成
-      const itemsToAdd = generateShoppingListFromMealPlans(
+      // 買い物リストアイテムを生成（新しいAPI使用）
+      const result = await generateShoppingListForNextDays(
+        daysAhead,
         mealPlans,
         stockItems,
-        shoppingList,
-        daysAhead
+        shoppingList
       );
+
+      if (!result.success) {
+        throw new Error(result.error || '自動生成に失敗しました');
+      }
 
       let itemsAdded = 0;
       let itemsSkipped = 0;
       const details: AutoGenerationResult['details'] = [];
 
       // 各アイテムを買い物リストに追加
-      for (const item of itemsToAdd) {
+      for (const item of result.generatedItems) {
         try {
           await addShoppingItem(item);
           itemsAdded++;
@@ -70,15 +74,15 @@ export const useAutoShoppingList = () => {
         }
       }
 
-      const result: AutoGenerationResult = {
+      const autoResult: AutoGenerationResult = {
         itemsAdded,
         itemsSkipped,
-        totalRequired: itemsToAdd.length,
+        totalRequired: result.generatedItems.length,
         details
       };
 
-      setLastResult(result);
-      return result;
+      setLastResult(autoResult);
+      return autoResult;
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '自動生成に失敗しました';
@@ -90,26 +94,38 @@ export const useAutoShoppingList = () => {
   };
 
   // 指定期間の献立プレビュー（実際に生成する前の確認用）
-  const previewShoppingList = (daysAhead: number = 7) => {
+  const previewShoppingList = async (daysAhead: number = 7) => {
     try {
-      const itemsToAdd = generateShoppingListFromMealPlans(
+      const result = await generateShoppingListForNextDays(
+        daysAhead,
         mealPlans,
         stockItems,
-        shoppingList,
-        daysAhead
+        shoppingList
       );
 
-      return {
-        items: itemsToAdd,
-        count: itemsToAdd.length,
-        period: `今日から${daysAhead}日間`
-      };
+      if (result.success) {
+        return {
+          items: result.generatedItems,
+          count: result.generatedItems.length,
+          period: `今日から${daysAhead}日間`,
+          summary: result.summary
+        };
+      } else {
+        console.error('プレビューの生成に失敗:', result.error);
+        return {
+          items: [],
+          count: 0,
+          period: `今日から${daysAhead}日間`,
+          summary: { totalIngredients: 0, inStock: 0, needToBuy: 0 }
+        };
+      }
     } catch (err) {
       console.error('プレビューの生成に失敗:', err);
       return {
         items: [],
         count: 0,
-        period: `今日から${daysAhead}日間`
+        period: `今日から${daysAhead}日間`,
+        summary: { totalIngredients: 0, inStock: 0, needToBuy: 0 }
       };
     }
   };

@@ -27,6 +27,7 @@ export const FOOD_UNITS = [
   'カップ',
   '大さじ',
   '小さじ',
+  '杯',
   
   // その他
   '適量',
@@ -36,21 +37,34 @@ export const FOOD_UNITS = [
 
 export type FoodUnit = typeof FOOD_UNITS[number];
 
-// 数値と単位を分離する関数
+// 数値と単位を分離する関数（分数や文字列にも対応）
 export const parseQuantity = (quantity: string): { amount: string; unit: FoodUnit } => {
   if (!quantity) return { amount: '', unit: '-' };
   
-  // 数値部分と単位部分を分離
-  const match = quantity.match(/^(\d*\.?\d*)\s*(.*)$/);
-  if (match) {
-    const [, amount, unit] = match;
-    return {
-      amount: amount || '',
-      unit: (FOOD_UNITS.includes(unit as FoodUnit) ? unit : '') as FoodUnit
-    };
+  // 単位のマッチング順序を長い順でソート（例：「大さじ」が「大」より優先）
+  const sortedUnits = [...FOOD_UNITS].sort((a, b) => b.length - a.length);
+  
+  // 各単位について、文字列の末尾にマッチするかチェック
+  for (const unit of sortedUnits) {
+    if (unit === '-') continue; // 単位なしは後で処理
+    
+    if (quantity.endsWith(unit)) {
+      const amount = quantity.slice(0, -unit.length).trim();
+      return {
+        amount: amount || '',
+        unit: unit
+      };
+    }
   }
   
-  return { amount: '', unit: quantity as FoodUnit };
+  // 単位が見つからない場合
+  // 1. 全て数値・分数・「適量」系の場合は amount として扱う
+  if (/^[\d/.]+$/.test(quantity) || ['適量', 'お好み', '少々', 'ひとつまみ', 'ひとかけ'].includes(quantity)) {
+    return { amount: quantity, unit: '-' };
+  }
+  
+  // 2. その他の場合も amount として扱う（自由入力を許可）
+  return { amount: quantity, unit: '-' };
 };
 
 // 数値と単位を結合する関数
