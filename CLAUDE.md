@@ -862,3 +862,29 @@ export const supabase = createClient(supabaseUrl, supabaseKey)
 #### 12.1.2 実装ファイル
 - `/public/sw.js`: サービスワーカー本体
 - `/src/App.tsx`: 更新通知UI
+
+### 12.2 デプロイ時の確実な更新システム
+
+デプロイごとにService Workerが確実に更新されるよう、動的バージョン管理を実装。
+
+#### 12.2.1 動的バージョン生成
+- **ビルド時**: `scripts/generate-sw-version.js`で一意バージョンを生成
+- **Netlify環境**: BUILD_ID、COMMIT_REF、CONTEXTを活用した一意バージョン
+- **ローカル環境**: タイムスタンプベースの一意バージョン
+
+#### 12.2.2 キャッシュ戦略
+- **HTML/CSS/JS**: ネットワークファースト（確実な更新のため）
+- **画像・アセット**: キャッシュファースト（パフォーマンス重視）
+- **API**: ネットワークファースト + LRUキャッシュ
+
+#### 12.2.3 実装ファイル
+- `/scripts/generate-sw-version.js`: バージョン生成スクリプト
+- `/vite.config.ts`: Viteビルドプラグイン
+- `/netlify.toml`: Netlify設定（キャッシュヘッダー含む）
+- `/package.json`: prebuildフック
+
+#### 12.2.4 確実な更新を保証する仕組み
+1. **prebuildフック**: ビルド前にバージョン更新
+2. **Viteプラグイン**: ビルド開始時にもバージョン更新
+3. **Netlifyヘッダー**: Service Workerファイルの完全キャッシュ無効化
+4. **キャッシュクリア**: アクティベート時に旧バージョンキャッシュ削除

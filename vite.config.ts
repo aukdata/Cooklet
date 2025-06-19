@@ -1,9 +1,27 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react-swc'
+import { execSync } from 'child_process'
+
+// ビルド時にService Workerバージョンを更新するプラグイン
+const swVersionPlugin = () => {
+  return {
+    name: 'sw-version-plugin',
+    buildStart() {
+      // ビルド開始時にService Workerバージョンを更新
+      console.log('🔄 Service Workerバージョン更新中...')
+      try {
+        execSync('node scripts/generate-sw-version.js', { stdio: 'inherit' })
+        console.log('✅ Service Workerバージョン更新完了')
+      } catch (error) {
+        console.error('❌ Service Workerバージョン更新エラー:', error)
+      }
+    }
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), swVersionPlugin()],
   // Netlify用の設定
   base: '/',
   build: {

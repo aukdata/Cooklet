@@ -1,7 +1,7 @@
 // Cooklet Service Worker
 // 基本的なキャッシュ機能とオフライン対応を提供
 
-const CACHE_NAME = 'cooklet-v1.0.1';
+const CACHE_NAME = 'cooklet-v1.0.0-20250619T142618-178320';
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',
@@ -10,7 +10,7 @@ const STATIC_CACHE_URLS = [
   '/icons/icon-512x512.png'
 ];
 
-const API_CACHE_NAME = 'cooklet-api-v1.0.0';
+const API_CACHE_NAME = 'cooklet-api-v1.0.0-20250619T142618-178320';
 const MAX_API_CACHE_SIZE = 50; // APIレスポンスの最大キャッシュ数
 
 // Service Worker インストール時
@@ -35,22 +35,36 @@ self.addEventListener('activate', event => {
   console.log('[SW] アクティベート開始');
   
   event.waitUntil(
-    caches.keys()
-      .then(cacheNames => {
+    Promise.all([
+      // 1. 古いキャッシュを全て削除
+      caches.keys().then(cacheNames => {
+        console.log('[SW] 現在のキャッシュ一覧:', cacheNames);
         return Promise.all(
           cacheNames.map(cacheName => {
-            // 古いキャッシュを削除
+            // 現在のバージョンと異なるキャッシュは全て削除
             if (cacheName !== CACHE_NAME && cacheName !== API_CACHE_NAME) {
               console.log('[SW] 古いキャッシュを削除:', cacheName);
               return caches.delete(cacheName);
             }
           })
         );
-      })
-      .then(() => {
-        console.log('[SW] アクティベート完了');
-        return self.clients.claim(); // 既存のページに対してもSWを有効化
-      })
+      }),
+      
+      // 2. 既存のページに対してもSWを有効化
+      self.clients.claim()
+    ]).then(() => {
+      console.log('[SW] アクティベート完了 - バージョン:', CACHE_NAME);
+      
+      // 3. 全てのクライアントに更新完了を通知
+      return self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+          client.postMessage({
+            type: 'SW_UPDATED',
+            version: CACHE_NAME
+          });
+        });
+      });
+    })
   );
 });
 
@@ -127,33 +141,59 @@ async function handleSupabaseRequest(request) {
 
 // 静的リソースの処理
 async function handleStaticRequest(request) {
+  const cache = await caches.open(CACHE_NAME);
+  
   try {
-    // キャッシュ優先戦略（高速化のため）
-    const cache = await caches.open(CACHE_NAME);
-    const cachedResponse = await cache.match(request);
+    // HTML、CSS、JSファイルはネットワークファーストで常に最新版を取得
+    const url = new URL(request.url);
+    const isMainAsset = url.pathname === '/' || 
+                       url.pathname.endsWith('.html') || 
+                       url.pathname.endsWith('.js') || 
+                       url.pathname.endsWith('.css');
     
-    if (cachedResponse) {
-      // バックグラウンドで最新版を取得してキャッシュを更新
-      fetch(request).then(response => {
-        if (response.ok) {
-          cache.put(request, response.clone());
-        }
-      }).catch(() => {
-        // ネットワークエラーは無視（既にキャッシュから返答済み）
-      });
+    if (isMainAsset) {
+      // ネットワークファースト戦略：デプロイ時の確実な更新のため
+      console.log('[SW] ネットワークファーストで取得:', request.url);
       
-      return cachedResponse;
+      try {
+        const networkResponse = await fetch(request);
+        if (networkResponse.ok) {
+          await cache.put(request, networkResponse.clone());
+          return networkResponse;
+        }
+      } catch (networkError) {
+        console.log('[SW] ネットワークエラー、キャッシュから取得:', request.url);
+      }
+      
+      // ネットワークエラーの場合のみキャッシュから取得
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+    } else {
+      // 画像など静的アセットはキャッシュファースト戦略
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        // バックグラウンドで最新版を取得してキャッシュを更新
+        fetch(request).then(response => {
+          if (response.ok) {
+            cache.put(request, response.clone());
+          }
+        }).catch(() => {
+          // ネットワークエラーは無視（既にキャッシュから返答済み）
+        });
+        
+        return cachedResponse;
+      }
+      
+      // キャッシュにない場合はネットワークから取得
+      const response = await fetch(request);
+      if (response.ok) {
+        cache.put(request, response.clone());
+      }
+      
+      return response;
     }
-    
-    // キャッシュにない場合はネットワークから取得
-    const response = await fetch(request);
-    
-    // 成功した場合はキャッシュに保存
-    if (response.ok) {
-      cache.put(request, response.clone());
-    }
-    
-    return response;
   } catch {
     console.log('[SW] ネットワークエラー、キャッシュから取得を試行:', request.url);
     

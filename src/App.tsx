@@ -51,6 +51,16 @@ const AppContent: React.FC = () => {
             window.location.reload();
           });
           
+          // Service Workerからのメッセージ受信
+          navigator.serviceWorker.addEventListener('message', (event) => {
+            console.log('[PWA] Service Workerからメッセージ受信:', event.data);
+            
+            if (event.data && event.data.type === 'SW_UPDATED') {
+              console.log('[PWA] Service Worker更新完了:', event.data.version);
+              // 必要に応じて追加の処理をここに記述
+            }
+          });
+          
         } catch (error) {
           console.error('[PWA] Service Worker登録失敗:', error);
         }
