@@ -7,7 +7,7 @@ import { useToast } from '../../hooks/useToast.tsx';
 
 // カレンダー画面コンポーネント - 週間表示・献立追加機能付き
 export const MealPlans: React.FC = () => {
-  const { showInfo } = useToast();
+  const { showInfo, showSuccess, showError } = useToast();
 
   // 選択された日付（今日がデフォルト）
   const [selectedDate, setSelectedDate] = useState(new Date());
