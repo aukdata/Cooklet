@@ -10,7 +10,7 @@ export const Cost: React.FC = () => {
 
   // 現在の月を管理
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [showAddDialog, setShowAddDialog] = useState(false);
   
   // 期間フィルタと検索の状態管理
   const [periodFilter, setPeriodFilter] = useState<'weekly' | 'monthly'>('monthly');
@@ -32,13 +32,6 @@ export const Cost: React.FC = () => {
   const [showCostDialog, setShowCostDialog] = useState(false);
   const [editingCost, setEditingCost] = useState<CostRecord | null>(null);
 
-  // 新規記録用の状態
-  const [newRecord, setNewRecord] = useState({
-    date: new Date().toISOString().split('T')[0],
-    description: '',
-    amount: '',
-    is_eating_out: false
-  });
 
   // 月の表示用フォーマット
   const monthString = `${currentMonth.getFullYear()}年${currentMonth.getMonth() + 1}月`;
@@ -103,33 +96,10 @@ export const Cost: React.FC = () => {
     setCurrentMonth(newMonth);
   };
 
-  // 新規記録を保存する関数
-  const handleSaveRecord = async () => {
-    if (!newRecord.amount || !newRecord.description.trim()) {
-      showError('金額と内容を入力してください');
-      return;
-    }
-
-    try {
-      await addCostRecord({
-        date: newRecord.date,
-        description: newRecord.description.trim(),
-        amount: parseInt(newRecord.amount),
-        is_eating_out: newRecord.is_eating_out
-      });
-
-      // フォームをリセット
-      setNewRecord({
-        date: new Date().toISOString().split('T')[0],
-        description: '',
-        amount: '',
-        is_eating_out: false
-      });
-      setShowAddForm(false);
-    } catch (err) {
-      console.error('コスト記録の保存に失敗しました:', err);
-      showError('保存に失敗しました');
-    }
+  // 新規追加ダイアログを開く
+  const handleAddCost = () => {
+    setEditingCost(null);
+    setShowAddDialog(true);
   };
 
   // コスト編集ボタンクリック処理
@@ -149,6 +119,7 @@ export const Cost: React.FC = () => {
         await addCostRecord(costData);
       }
       setShowCostDialog(false);
+      setShowAddDialog(false);
       setEditingCost(null);
     } catch (err) {
       console.error('コスト記録の保存に失敗しました:', err);
@@ -296,108 +267,18 @@ export const Cost: React.FC = () => {
 
       {/* 新規記録 */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
-        <div className="flex justify-between items-center mb-3">
+        <div className="flex justify-between items-center">
           <h3 className="font-medium text-gray-900 flex items-center">
             <span className="mr-2">➕</span>
             新しい支出を記録
           </h3>
           <button
-            onClick={() => setShowAddForm(!showAddForm)}
-            className="text-sm text-indigo-600 hover:text-indigo-500"
+            onClick={handleAddCost}
+            className="px-4 py-2 bg-indigo-600 text-white rounded text-sm hover:bg-indigo-700"
           >
-            {showAddForm ? '閉じる' : '追加'}
+            追加
           </button>
         </div>
-
-        {showAddForm && (
-          <div className="space-y-3 border-t border-gray-100 pt-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  日付:
-                </label>
-                <input
-                  type="date"
-                  value={newRecord.date}
-                  onChange={(e) => setNewRecord(prev => ({ ...prev, date: e.target.value }))}
-                  className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  金額:
-                </label>
-                <div className="flex">
-                  <input
-                    type="number"
-                    value={newRecord.amount}
-                    onChange={(e) => setNewRecord(prev => ({ ...prev, amount: e.target.value }))}
-                    placeholder="金額"
-                    className="flex-1 border border-gray-300 rounded-l px-2 py-1 text-sm"
-                  />
-                  <span className="bg-gray-100 border border-l-0 border-gray-300 rounded-r px-2 py-1 text-sm text-gray-600">
-                    円
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                内容:
-              </label>
-              <input
-                type="text"
-                value={newRecord.description}
-                onChange={(e) => setNewRecord(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="昼食 - 牛丼"
-                className="w-full border border-gray-300 rounded px-2 py-1 text-sm"
-              />
-            </div>
-
-            <div className="flex items-center space-x-4">
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="meal_type"
-                  checked={!newRecord.is_eating_out}
-                  onChange={() => setNewRecord(prev => ({ ...prev, is_eating_out: false }))}
-                  className="mr-2"
-                />
-                <span className="text-sm flex items-center">
-                  <span className="mr-1">🏠</span>自炊
-                </span>
-              </label>
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  name="meal_type"
-                  checked={newRecord.is_eating_out}
-                  onChange={() => setNewRecord(prev => ({ ...prev, is_eating_out: true }))}
-                  className="mr-2"
-                />
-                <span className="text-sm flex items-center">
-                  <span className="mr-1">🍽️</span>外食
-                </span>
-              </label>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={() => setShowAddForm(false)}
-                className="flex-1 px-3 py-2 border border-gray-300 rounded text-sm hover:bg-gray-50"
-              >
-                キャンセル
-              </button>
-              <button
-                onClick={handleSaveRecord}
-                className="flex-1 bg-indigo-600 text-white px-3 py-2 rounded text-sm hover:bg-indigo-700"
-              >
-                保存
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
       {/* 支出履歴 */}
@@ -506,7 +387,7 @@ export const Cost: React.FC = () => {
         </div>
       </div>
 
-      {/* コスト記録ダイアログ */}
+      {/* コスト記録ダイアログ（編集用） */}
       {showCostDialog && (
         <CostDialog
           isOpen={showCostDialog}
@@ -518,6 +399,16 @@ export const Cost: React.FC = () => {
           onDelete={handleDeleteCost}
           initialData={editingCost || undefined}
           isEditing={!!editingCost?.id}
+        />
+      )}
+
+      {/* コスト記録ダイアログ（新規追加用） */}
+      {showAddDialog && (
+        <CostDialog
+          isOpen={showAddDialog}
+          onClose={() => setShowAddDialog(false)}
+          onSave={handleSaveCost}
+          isEditing={false}
         />
       )}
     </div>

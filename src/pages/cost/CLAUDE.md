@@ -17,10 +17,9 @@
 - 1日平均・1回平均の計算
 
 **新規記録機能**
-- 折りたたみ式の追加フォーム
-- 日付・金額・内容の入力
-- 自炊・外食の選択（ラジオボタン）
-- 保存・キャンセル機能
+- ダイアログ形式の追加画面（CostDialog流用）
+- 「追加」ボタンクリックでダイアログ表示
+- 既存のCostDialogコンポーネントを新規追加・編集両対応で使用
 
 **支出履歴表示**
 - 日付・内容・金額の一覧表示
@@ -43,8 +42,9 @@
 
 **ローカル状態**
 - `currentMonth`: 現在表示中の月
-- `showAddForm`: 新規記録フォーム表示状態
-- `newRecord`: 新規記録入力データ
+- `showAddDialog`: 新規記録ダイアログ表示状態
+- `showCostDialog`: 編集用ダイアログ表示状態
+- `editingCost`: 編集中のコストレコード
 
 **サンプルデータ**
 - `monthlySummary`: 月間サマリー情報
@@ -70,15 +70,12 @@
 
 #### 機能詳細
 
-**新規記録フォーム**
-```typescript
-interface NewRecord {
-  date: string;        // 日付（YYYY-MM-DD形式）
-  description: string; // 内容説明
-  amount: string;      // 金額（文字列）
-  is_eating_out: boolean; // 外食フラグ
-}
-```
+**ダイアログ機能**
+- 新規追加・編集の両方でCostDialogコンポーネントを使用
+- ダイアログ表示状態を`showAddDialog`・`showCostDialog`で分離管理
+- `handleAddCost()`: 新規追加ダイアログを開く
+- `handleEditCost()`: 編集ダイアログを開く
+- `handleSaveCost()`: 新規追加・編集両対応の保存処理
 
 **月間サマリー計算**
 - 自炊・外食別の集計
