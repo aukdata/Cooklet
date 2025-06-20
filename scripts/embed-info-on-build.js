@@ -71,3 +71,26 @@ if (netlifyBuildId) {
 } else {
   console.log(`   - ビルド日時: ${buildDate}`)
 }
+
+// build-info.jsonファイルのパス
+const buildInfoPath = path.join(projectRoot, 'dist', 'build-info.json')
+
+// Service Workerファイルを読み込み
+let buildInfoContent = fs.readFileSync(buildInfoPath, 'utf8')
+
+// Versionを動的バージョンに置換
+const originalVersion = '<REPLACE_WITH_VERSION_ON_BUILD>'
+const newVersion = `${packageVersion}`
+buildInfoContent = buildInfoContent.replace(originalVersion, newVersion)
+
+// Build Dateも同様に更新
+const originalBuiuldDate = '<REPLACE_WITH_DATE_ON_BUILD>'
+const newBuildDate = new Date().toISOString()
+buildInfoContent = buildInfoContent.replace(originalBuiuldDate, newBuildDate)
+
+// Service Workerファイルに書き戻し
+fs.writeFileSync(buildInfoPath, buildInfoContent, 'utf8')
+
+console.log('✅ ビルド情報更新完了:');
+console.log(`   - バージョン: ${newVersion}`)
+console.log(`   - ビルド日時: ${newBuildDate}`)

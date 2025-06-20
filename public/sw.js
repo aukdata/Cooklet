@@ -1,7 +1,7 @@
 // Cooklet Service Worker
 // 基本的なキャッシュ機能とオフライン対応を提供
 
-const CACHE_NAME = 'cooklet-v1.0.0-20250619T143448-688595';
+const CACHE_NAME = '<REPLACE_WITH_CHACHE_NAME_ON_BUILD>';
 const STATIC_CACHE_URLS = [
   '/',
   '/index.html',
@@ -10,7 +10,7 @@ const STATIC_CACHE_URLS = [
   '/icons/icon-512x512.png'
 ];
 
-const API_CACHE_NAME = 'cooklet-api-v1.0.0-20250619T143448-688595';
+const API_CACHE_NAME = '<REPLACE_WITH_API_CHACHE_NAME_ON_BUILD>';
 const MAX_API_CACHE_SIZE = 50; // APIレスポンスの最大キャッシュ数
 
 // Service Worker インストール時
