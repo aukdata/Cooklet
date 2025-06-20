@@ -8,7 +8,7 @@ import { useBuildInfo } from '../../hooks/useBuildInfo';
 export const Settings: React.FC = () => {
   const { supabaseUser, signOut } = useAuth();
   const { showSuccess, showError } = useToast();
-  const { buildInfo, formatBuildDate } = useBuildInfo();
+  const { version, formatBuildDate } = useBuildInfo();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -156,7 +156,7 @@ export const Settings: React.FC = () => {
         <div className="bg-gray-50 p-3 rounded-md space-y-2">
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-700">バージョン</span>
-            <span className="text-sm text-gray-900">{buildInfo?.version || '1.0.0'}</span>
+            <span className="text-sm text-gray-900">{version}</span>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-gray-700">ビルド日時</span>

@@ -7,9 +7,28 @@ export interface BuildInfo {
   buildTimestamp: number;
 }
 
-// ビルド情報取得フック
+// 日時フォーマット関数（JST表示）
+const formatBuildDate = (dateString: string): string => {
+  try {
+    const date = new Date(dateString);
+    return date.toLocaleString('ja-JP', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      timeZone: 'Asia/Tokyo'
+    });
+  } catch {
+    return '不明';
+  }
+};
+
+  // ビルド情報取得フック
 export const useBuildInfo = () => {
-  const [buildInfo, setBuildInfo] = useState<BuildInfo | null>(null);
+  const [versionDisplay, setVersionDisplay] = useState("不明");
+  const [buildInfoDisplay, setBuildInfoDisplay] = useState("不明");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,17 +46,11 @@ export const useBuildInfo = () => {
         }
 
         const data: BuildInfo = await response.json();
-        setBuildInfo(data);
+        setVersionDisplay(data.version || '不明');
+        setBuildInfoDisplay(formatBuildDate(data.buildDate));
       } catch (err) {
         console.error('ビルド情報の読み込みエラー:', err);
         setError(err instanceof Error ? err.message : 'ビルド情報の取得に失敗しました');
-        
-        // フォールバック情報を設定
-        setBuildInfo({
-          version: '1.0.0',
-          buildDate: new Date().toISOString(),
-          buildTimestamp: Date.now()
-        });
       } finally {
         setIsLoading(false);
       }
@@ -46,28 +59,11 @@ export const useBuildInfo = () => {
     loadBuildInfo();
   }, []);
 
-  // 日時フォーマット関数（JST表示）
-  const formatBuildDate = (dateString: string): string => {
-    try {
-      const date = new Date(dateString);
-      return date.toLocaleString('ja-JP', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-        second: '2-digit',
-        timeZone: 'Asia/Tokyo'
-      });
-    } catch {
-      return '不明';
-    }
-  };
 
   return {
-    buildInfo,
+    version: versionDisplay,
     isLoading,
     error,
-    formatBuildDate: buildInfo ? formatBuildDate(buildInfo.buildDate) : '不明'
+    formatBuildDate: buildInfoDisplay
   };
 };
