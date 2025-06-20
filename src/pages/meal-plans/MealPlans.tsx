@@ -355,7 +355,7 @@ export const MealPlans: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   {breakfastPlan?.recipe_url && (
                     <button 
                       onClick={() => window.open(breakfastPlan.recipe_url, '_blank')}
@@ -415,7 +415,7 @@ export const MealPlans: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   {lunchPlan?.recipe_url && (
                     <button 
                       onClick={() => window.open(lunchPlan.recipe_url, '_blank')}
@@ -475,7 +475,7 @@ export const MealPlans: React.FC = () => {
                     </div>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-2">
                   {dinnerPlan?.recipe_url && (
                     <button 
                       onClick={() => window.open(dinnerPlan.recipe_url, '_blank')}
