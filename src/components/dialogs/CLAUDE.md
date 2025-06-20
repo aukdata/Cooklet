@@ -195,6 +195,42 @@ const handleDelete = () => {
 };
 ```
 
+### IngredientDialog.tsx
+材料編集ダイアログコンポーネント - 材料マスタの追加・編集・削除機能を提供
+
+#### 機能
+- 材料名の入力・編集
+- カテゴリ選択（野菜・肉・調味料・その他）
+- デフォルト単位の設定
+- 一般的価格の設定（任意）
+- バリデーション機能
+
+#### Props
+- `isOpen`: ダイアログの表示状態
+- `onClose`: ダイアログを閉じるコールバック
+- `ingredient?`: 編集対象の材料（新規作成時はundefined）
+- `onSave`: 材料保存時のコールバック
+- `onDelete?`: 材料削除時のコールバック
+
+#### 使用例
+```typescript
+<IngredientDialog
+  isOpen={isDialogOpen}
+  onClose={() => setIsDialogOpen(false)}
+  ingredient={editingIngredient}
+  onSave={handleSaveIngredient}
+  onDelete={handleDeleteIngredient}
+/>
+```
+
+#### 特徴
+- BaseDialogベースの統一デザイン
+- 新規作成・編集モードの自動判定
+- フォームバリデーション（材料名・単位は必須）
+- カテゴリ別アイコン表示（🥬🥩🧂📦）
+- 非同期処理対応（保存・削除時のローディング状態）
+- 材料データベースとの完全CRUD対応
+
 ### index.ts
 エクスポート管理ファイル
 

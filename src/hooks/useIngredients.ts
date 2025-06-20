@@ -75,12 +75,71 @@ export const useIngredients = () => {
     }
   };
 
+  // 食材マスタを更新する関数
+  const updateIngredient = async (id: number, updates: Partial<Omit<Ingredient, 'id' | 'user_id' | 'created_at'>>) => {
+    if (!user) throw new Error('ユーザーが認証されていません');
+
+    try {
+      setError(null);
+      
+      // 食材マスタを更新
+      const { data, error } = await supabase
+        .from('ingredients')
+        .update(updates)
+        .eq('id', id)
+        .eq('user_id', user.id) // セキュリティ: 自分の食材のみ更新可能
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // ローカル状態を更新
+      setIngredients(prev => 
+        prev.map(item => item.id === id ? data : item)
+      );
+      markAsUpdated(); // データ変更後に更新時刻をマーク
+      return data;
+    } catch (err) {
+      console.error('食材の更新に失敗しました:', err);
+      setError(err instanceof Error ? err.message : '食材の更新に失敗しました');
+      throw err;
+    }
+  };
+
+  // 食材マスタを削除する関数
+  const deleteIngredient = async (id: number) => {
+    if (!user) throw new Error('ユーザーが認証されていません');
+
+    try {
+      setError(null);
+      
+      // 食材マスタを削除
+      const { error } = await supabase
+        .from('ingredients')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id); // セキュリティ: 自分の食材のみ削除可能
+
+      if (error) throw error;
+      
+      // ローカル状態を更新
+      setIngredients(prev => prev.filter(item => item.id !== id));
+      markAsUpdated(); // データ変更後に更新時刻をマーク
+    } catch (err) {
+      console.error('食材の削除に失敗しました:', err);
+      setError(err instanceof Error ? err.message : '食材の削除に失敗しました');
+      throw err;
+    }
+  };
+
   // フックが提供する機能を返す
   return {
     ingredients, // 食材マスタ配列
     loading, // 読み込み状態
     error, // エラーメッセージ
     addIngredient, // 食材追加関数
+    updateIngredient, // 食材更新関数
+    deleteIngredient, // 食材削除関数
     refetch: fetchIngredients, // 再取得関数
   };
 };

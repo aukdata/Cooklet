@@ -119,14 +119,17 @@ interface SavedRecipe {
 - `loading`: 読み込み状態
 - `error`: エラーメッセージ
 - `addIngredient`: 食材追加関数
+- `updateIngredient`: 食材更新関数
+- `deleteIngredient`: 食材削除関数
 - `refetch`: 食材再取得関数
 
 #### 特徴
 - カテゴリ・名前順での並び替え
 - ユーザー固有の食材マスタデータ取得
 - 認証ユーザー必須（useAuthとの連携）
-- user_id付きでの食材追加
+- user_id付きでの食材追加・更新・削除
 - RLSポリシーによるセキュリティ確保
+- **完全CRUD対応**: 作成・読み取り・更新・削除機能を提供
 
 ### useRecipeExtraction.ts
 レシピURLからの食材自動抽出機能を提供するカスタムフック。
