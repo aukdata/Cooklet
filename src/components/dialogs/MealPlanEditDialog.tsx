@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { type MealPlan } from '../../hooks';
 import { useRecipes } from '../../hooks/useRecipes';
-import { QuantityInput } from '../common/QuantityInput';
+import { BaseDialog } from '../ui/BaseDialog';
+import { IngredientsEditor, type Ingredient } from '../ui/IngredientsEditor';
 import { ConfirmDialog } from './ConfirmDialog';
 
 // レシピデータ型（食材情報付き）
@@ -44,7 +45,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   const [manualRecipeName, setManualRecipeName] = useState('');
   const [manualRecipeUrl, setManualRecipeUrl] = useState('');
   const [servings, setServings] = useState(2);
-  const [ingredients, setIngredients] = useState<{ name: string; quantity: string }[]>([]);
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [memo, setMemo] = useState('');
 
   // 削除確認ダイアログの状態管理
@@ -149,20 +150,8 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
     }
   };
 
-  // 食材追加
-  const handleAddIngredient = () => {
-    setIngredients([...ingredients, { name: '', quantity: '' }]);
-  };
-
-  // 食材削除
-  const handleRemoveIngredient = (index: number) => {
-    setIngredients(ingredients.filter((_, i) => i !== index));
-  };
-
-  // 食材変更
-  const handleIngredientChange = (index: number, field: 'name' | 'quantity', value: string) => {
-    const newIngredients = [...ingredients];
-    newIngredients[index][field] = value;
+  // 食材変更ハンドラ
+  const handleIngredientsChange = (newIngredients: Ingredient[]) => {
     setIngredients(newIngredients);
   };
 
@@ -178,7 +167,6 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
     };
 
     onSave(mealPlan);
-    onClose();
   };
 
   // 削除確認ハンドラ
@@ -215,23 +203,18 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
-      <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
-        {/* ヘッダー */}
-        <div className="flex justify-between items-center p-4 border-b border-gray-200">
-          <h2 className="text-lg font-semibold flex items-center">
-            <span className="mr-2">✏️</span>
-            {initialData ? '献立を編集' : '献立を追加'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl"
-          >
-            ×
-          </button>
-        </div>
-
-        <div className="p-4 space-y-4">
+    <>
+      <BaseDialog
+        isOpen={isOpen}
+        onClose={onClose}
+        title={initialData ? '献立を編集' : '献立を追加'}
+        icon="✏️"
+        onSave={handleSave}
+        showDelete={!!initialData && !!onDelete}
+        onDelete={handleDelete}
+        size="lg"
+      >
+      <div className="space-y-4 max-h-[50vh] overflow-y-auto">
           {/* 日付・食事 */}
           <div className="space-y-3">
             <div>
@@ -349,38 +332,12 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
             <label className="block text-sm font-medium text-gray-700 mb-2">
               📋 使用する食材:
             </label>
-            <div className="space-y-2">
-              {ingredients.map((ingredient, index) => (
-                <div key={index} className="flex items-center space-x-2">
-                  <div className="text-sm">•</div>
-                  <input
-                    type="text"
-                    value={ingredient.name}
-                    onChange={(e) => handleIngredientChange(index, 'name', e.target.value)}
-                    placeholder="食材名"
-                    className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm min-w-0"
-                  />
-                  <QuantityInput
-                    value={ingredient.quantity}
-                    onChange={(value) => handleIngredientChange(index, 'quantity', value)}
-                    placeholder="分量"
-                    className="w-32"
-                  />
-                  <button
-                    onClick={() => handleRemoveIngredient(index)}
-                    className="text-red-600 hover:text-red-500 text-sm"
-                  >
-                    -
-                  </button>
-                </div>
-              ))}
-              <button
-                onClick={handleAddIngredient}
-                className="text-sm text-indigo-600 hover:text-indigo-500"
-              >
-                + 食材追加
-              </button>
-            </div>
+            <IngredientsEditor
+              ingredients={ingredients}
+              onChange={handleIngredientsChange}
+              addButtonText="+ 食材追加"
+              showEmptyItem={true}
+            />
           </div>
 
           {/* メモ */}
@@ -397,32 +354,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
             />
           </div>
         </div>
-
-        {/* フッター */}
-        <div className="flex gap-3 p-4 border-t border-gray-200">
-          {initialData && onDelete && (
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm"
-            >
-              削除
-            </button>
-          )}
-          <button
-            onClick={onClose}
-            className="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded text-sm"
-          >
-            キャンセル
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2 px-4 rounded text-sm"
-          >
-            保存
-          </button>
-        </div>
-      </div>
+      </BaseDialog>
 
       {/* 削除確認ダイアログ */}
       <ConfirmDialog
@@ -436,6 +368,6 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
         cancelText="キャンセル"
         isDestructive={true}
       />
-    </div>
+    </>
   );
 };

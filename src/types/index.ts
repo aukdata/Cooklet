@@ -67,6 +67,7 @@ export interface MealPlan {
   recipe_url?: string; // レシピURL（任意）
   ingredients: { name: string; quantity: string }[]; // 食材リスト
   memo?: string; // メモ（任意）
+  consumed_status?: 'pending' | 'completed' | 'stored'; // 消費状態（未完了・完食・作り置き）
   created_at: string; // 作成日時
   updated_at: string; // 更新日時
 }
@@ -90,6 +91,17 @@ export interface CostRecord {
   description: string; // 内容説明
   amount: number; // 金額
   is_eating_out: boolean; // 外食フラグ
+  created_at: string; // 作成日時
+}
+
+// レシピ保存情報を表すインターフェース（CLAUDE.md仕様書で追加）
+export interface SavedRecipe {
+  id: string; // レシピID（UUID）
+  user_id: string; // ユーザーID
+  title: string; // レシピタイトル
+  url: string; // レシピURL
+  servings: number; // 何人前
+  tags: string[]; // タグ
   created_at: string; // 作成日時
 }
 

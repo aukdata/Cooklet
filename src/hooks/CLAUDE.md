@@ -5,22 +5,23 @@ Reactカスタムフックを集約したディレクトリ。データベース
 
 ## ファイル構成
 
-### useInventory.ts
-在庫管理機能を提供するカスタムフック。
+### useStockItems.ts
+在庫管理機能を提供するカスタムフック（CLAUDE.md仕様書準拠）。
 
 #### 提供する機能
-- `inventory`: 在庫アイテム配列
+- `stockItems`: 在庫アイテム配列（StockItem型）
 - `loading`: 読み込み状態
 - `error`: エラーメッセージ
-- `addInventoryItem`: 在庫追加関数
-- `updateInventoryItem`: 在庫更新関数
-- `deleteInventoryItem`: 在庫削除関数
+- `addStockItem`: 在庫追加関数
+- `updateStockItem`: 在庫更新関数
+- `deleteStockItem`: 在庫削除関数
 - `refetch`: 在庫再取得関数
 
 #### 特徴
-- ingredientsテーブルとのJOIN取得
+- stock_itemsテーブルへの直接アクセス
 - ユーザー認証状態に連動した自動データ取得
-- 作成日降順での並び替え
+- 賞味期限順での並び替え
+- 作り置きフラグ（is_homemade）による管理
 - 日本語エラーメッセージ
 
 ### useRecipes.ts
@@ -55,6 +56,61 @@ interface SavedRecipe {
 }
 ```
 
+### useMealPlans.ts
+献立計画管理機能を提供するカスタムフック（CLAUDE.md仕様書準拠）。
+
+#### 提供する機能
+- `mealPlans`: 献立計画配列（MealPlan型）
+- `loading`: 読み込み状態
+- `error`: エラーメッセージ
+- `addMealPlan`: 献立追加関数
+- `updateMealPlan`: 献立更新関数
+- `deleteMealPlan`: 献立削除関数
+- `refetch`: 献立再取得関数
+
+#### 特徴
+- meal_plansテーブルへの直接アクセス
+- 消費状態（consumed_status）管理
+- 日本語食事タイプ（朝・昼・夜・間食）
+- 食材情報のJSONB形式管理
+- 日付順での並び替え
+
+### useShoppingList.ts
+買い物リスト管理機能を提供するカスタムフック。
+
+#### 提供する機能
+- `shoppingList`: 買い物リスト配列（ShoppingListItem型）
+- `loading`: 読み込み状態
+- `error`: エラーメッセージ
+- `addShoppingItem`: アイテム追加関数
+- `updateShoppingItem`: アイテム更新関数
+- `deleteShoppingItem`: アイテム削除関数
+- `toggleShoppingItem`: チェック状態切り替え関数
+
+#### 特徴
+- shopping_listテーブルへの直接アクセス
+- 手動・自動（added_from）の区別管理
+- チェック状態の管理
+- 作成日順での並び替え
+
+### useCostRecords.ts
+コスト記録管理機能を提供するカスタムフック。
+
+#### 提供する機能
+- `costRecords`: コスト記録配列（CostRecord型）
+- `loading`: 読み込み状態
+- `error`: エラーメッセージ
+- `addCostRecord`: コスト記録追加関数
+- `updateCostRecord`: コスト記録更新関数
+- `deleteCostRecord`: コスト記録削除関数
+- `refetch`: コスト記録再取得関数
+
+#### 特徴
+- cost_recordsテーブルへの直接アクセス
+- 自炊・外食（is_eating_out）の区別管理
+- 日付逆順での並び替え
+- 金額総計・月別集計機能
+
 ### useIngredients.ts
 食材マスタ管理機能を提供するカスタムフック（ユーザー認証対応）。
 
@@ -71,6 +127,32 @@ interface SavedRecipe {
 - 認証ユーザー必須（useAuthとの連携）
 - user_id付きでの食材追加
 - RLSポリシーによるセキュリティ確保
+
+### useRecipeExtraction.ts
+レシピURLからの食材自動抽出機能を提供するカスタムフック。
+
+#### 提供する機能
+- `extractIngredients`: URLから食材抽出関数
+- `loading`: 抽出処理状態
+- `error`: エラーメッセージ
+
+#### 特徴
+- AIプロバイダーとの連携
+- HTTPS URLのみサポート
+- エラーハンドリングとリトライ機能
+
+### useAutoShoppingList.ts
+献立からの買い物リスト自動生成機能を提供するカスタムフック。
+
+#### 提供する機能
+- `generateShoppingList`: 買い物リスト自動生成関数
+- `loading`: 生成処理状態
+- `error`: エラーメッセージ
+
+#### 特徴
+- 献立と在庫の照合で不足食材を算出
+- 自動生成アイテムのadded_fromフラグ管理
+- 重複アイテムの統合処理
 
 ## 共通パターン
 - エラーハンドリングの統一
@@ -94,9 +176,10 @@ interface SavedRecipe {
 - **markAsUpdated**: データ変更操作後に更新時刻をマーク
 
 ## 注意点
-- 現在のテーブル名が仕様書と一部異なる（inventory vs stock_items等）
-- エラーハンドリングは基本的だが、より詳細な分類が可能
-- キャッシュ機能は未実装（毎回サーバーから取得）
+- CLAUDE.md仕様書に準拠したテーブル名とデータ型を使用
+- エラーハンドリングは日本語で統一、詳細分類も実装済み
+- タブ切り替え時の更新チェック機能により、キャッシュ問題を解決
+- すべてのhooksでユーザー認証（RLS）によるセキュリティを確保
 
 ## セキュリティ強化（最新更新）
 - ingredientsテーブルにユーザー認証を追加

@@ -5,7 +5,7 @@
 
 ## ファイル構成
 
-### Dashboard.tsx
+### Summary.tsx
 サマリーのメイン画面コンポーネント - CLAUDE.md仕様書に準拠した実装。
 
 #### 機能

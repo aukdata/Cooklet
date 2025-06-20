@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import type { StockItem } from '../../hooks/useStockItems';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
+import { BaseDialog } from '../ui/BaseDialog';
 import { ConfirmDialog } from './ConfirmDialog';
 
 // 在庫編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
@@ -69,8 +70,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   }, [initialData]);
 
   // フォーム送信ハンドラ
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSave = () => {
     if (!formData.name.trim()) {
       showError('食材名を入力してください');
       return;
@@ -80,7 +80,6 @@ export const StockDialog: React.FC<StockDialogProps> = ({
       return;
     }
     onSave(formData);
-    onClose();
   };
 
   // 削除確認ハンドラ
@@ -110,23 +109,18 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[100]">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
-        {/* ダイアログヘッダー */}
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-semibold flex items-center">
-            <span className="mr-2">✏️</span>
-            在庫を{isEditing ? '編集' : '追加'}
-          </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-xl"
-          >
-            ×
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
+    <>
+      <BaseDialog
+        isOpen={isOpen}
+        onClose={onClose}
+        title={`在庫を${isEditing ? '編集' : '追加'}`}
+        icon="✏️"
+        onSave={handleSave}
+        showDelete={!!isEditing && !!onDelete}
+        onDelete={handleDelete}
+        size="md"
+      >
+        <div className="space-y-4">
           {/* 食材名入力 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -222,33 +216,8 @@ export const StockDialog: React.FC<StockDialogProps> = ({
             </label>
           </div>
 
-          {/* ボタン */}
-          <div className="flex gap-3 pt-4">
-            {isEditing && onDelete && (
-              <button
-                type="button"
-                onClick={handleDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-              >
-                削除
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
-            >
-              キャンセル
-            </button>
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
-            >
-              保存
-            </button>
-          </div>
-        </form>
-      </div>
+        </div>
+      </BaseDialog>
 
       {/* 削除確認ダイアログ */}
       <ConfirmDialog
@@ -262,6 +231,6 @@ export const StockDialog: React.FC<StockDialogProps> = ({
         cancelText="キャンセル"
         isDestructive={true}
       />
-    </div>
+    </>
   );
 };
