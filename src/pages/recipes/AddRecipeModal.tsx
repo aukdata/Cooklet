@@ -51,6 +51,24 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onClose, onSucce
 
       await addRecipe(recipe);
 
+      // フォームデータをリセット
+      setFormData({
+        name: '',
+        external_url: '',
+        cooking_time: '',
+        servings: 1,
+        estimated_cost: '',
+        notes: '',
+      });
+      setRecipeIngredients([]);
+      setShowIngredientForm(false);
+      setIngredientForm({
+        ingredient_id: '',
+        quantity: '',
+        unit: '',
+        is_optional: false,
+      });
+
       onSuccess();
     } catch (error) {
       console.error('レシピ追加エラー:', error);
