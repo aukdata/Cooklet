@@ -19,7 +19,8 @@
       "Bash(convert:*)",
       "Bash(ls:*)",
       "Bash(node:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(find:*)"
     ],
     "deny": [
       "Bash(rm:*)"

@@ -34,88 +34,27 @@
 - **対象ユーザー**: 一人暮らしで自炊する個人ユーザー、献立・在庫・支出をシンプルに記録・管理したい人
 - **本番URL**: https://cooklet.netlify.app
 
-### セキュリティ設計
-- **Netlify Functions CORS制限**: 本番環境では cooklet.netlify.app のみアクセス許可
-- **HTTPS限定**: レシピプロキシはHTTPSのURLのみサポート
-- **Origin検証**: 不正なOriginからのアクセスを拒否・ログ記録
-- **開発環境**: localhost系は自動許可、本番では完全制限
-
 ### 開発スタイル
 - **個人開発**: 自分のペースで好きに開発
 - **Claude Code**: AI支援による効率的な開発
-
-### バージョン管理
-- **Git**: GitHub
-- **ブランチ戦略**: main（本番）/ develop（開発）
+- **Git**: GitHub、main（本番）ブランチで管理
 - **自動デプロイ**: GitHub連携でNetlifyに自動デプロイ
 
-## 2. 技術アーキテクチャ
+## 2. 技術仕様・設計
 
-### 2.1 フロントエンド
-- **React + TypeScript**
-- **PWA対応**でネイティブアプリ風の体験
-- **レスポンシブデザイン**（モバイルファースト）
+詳細な技術仕様は以下のファイルを参照：
+- **技術アーキテクチャ**: `.claude/TECH_SPECS.md`
+- **TypeScript型定義**: `.claude/TYPESCRIPT_MIGRATION.md`
+- **レシートOCR設計**: `.claude/RECEIPT_OCR_DESIGN.md`
+- **UI設計**: `.claude/UI.md`
+- **セキュリティ**: `.claude/SECURITY.md`
 
-### 2.2 バックエンド・データベース
-- **Supabase（無料枠）**
-  - PostgreSQLデータベース
-  - 認証機能（Google連携）
-  - リアルタイム機能
-  - ファイルストレージ
-  - 月500MBまで無料
-
-### 2.3 ホスティング
-- **Netlify（無料枠）**
-  - 静的サイトホスティング
-  - GitHub連携で自動デプロイ
-  - カスタムドメイン対応
-  - 月100GB帯域まで無料
-  - PWA対応・CDN最適化
-
-### 2.4 API設計
-- **Supabase Client直接利用**
-  - フロントエンドから直接SupabaseのREST APIを呼び出し
-  - 認証・認可はSupabaseが自動処理
-  - リアルタイム更新も簡単
-
-```typescript
-// API利用例
-import { createClient } from '@supabase/supabase-js'
-
-// 在庫取得
-const { data } = await supabase.from('stock_items').select('*')
-
-// 献立作成
-const { data } = await supabase.from('meal_plans').insert({...})
-
-// 在庫減算（ストアドプロシージャ）
-await supabase.rpc('update_inventory_after_cooking', { recipe_id: 1 })
-```
-
-### 2.5 通知機能
-- **Web Push API**（ブラウザ標準）
-- PWAで利用可能
-- 完全無料
-- **期限通知機能**: 賞味期限が近い食品をプッシュ通知
-- **朝の通知機能**: 毎朝指定した時間に期限の近い食材を通知
-- **ユーザー設定**: 通知の有効/無効切り替え
-- **通知タイミング**: 1-7日前から選択可能（デフォルト3日前）
-- **朝の通知時間**: ユーザーが自由に設定可能（デフォルト08:00）
-- **権限管理**: ブラウザの通知権限を要求
-- **自動チェック**: 1時間ごとの期限チェック
-- **スケジュール管理**: 朝の通知は毎日自動実行
-
-### 2.6 レシートOCR機能
-- **Netlify Functions**（サーバーレス）
-- **Google Cloud Vision API**による高精度OCR
-- **セキュリティ**: APIキーはサーバーサイドで管理
-- **段階的実装**: 
-  - 第一段階: OCR結果のテキスト抽出
-  - 第二段階: 商品名・価格・数量の構造化データ抽出
-- **対応形式**: JPEG, PNG, WebP (最大10MB)
-- **レスポンス時間**: 2-5秒（画像サイズに依存）
-- **エラーハンドリング**: 詳細なエラー分類と日本語メッセージ
-- **CORS対応**: 本番・開発環境の適切な制限
+### 主要技術スタック
+- **フロントエンド**: React + TypeScript + PWA
+- **バックエンド**: Supabase（PostgreSQL + 認証）
+- **ホスティング**: Netlify（自動デプロイ）
+- **OCR**: Google Cloud Vision API + Netlify Functions
+- **通知**: Web Push API
 
 ## 3. アプリ特徴
 
@@ -148,287 +87,26 @@ await supabase.rpc('update_inventory_after_cooking', { recipe_id: 1 })
 
 ## 6. データベース設計
 
-Supabase（PostgreSQL）を使用。
+詳細なデータベーススキーマは `.claude/TECH_SPECS.md` を参照
 
-### 6.1 users（ユーザー）
-```sql
--- ユーザー（Supabase auth.usersと連携）
-users (
-  id: UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email: TEXT UNIQUE NOT NULL,
-  name: TEXT,
-  google_id: TEXT UNIQUE,
-  notification_enabled: BOOLEAN DEFAULT FALSE,     -- 通知機能の有効/無効
-  expiry_notification_days: INTEGER DEFAULT 3,     -- 期限通知を行う日数（1-30日）
-  notification_enabled: BOOLEAN DEFAULT FALSE,  -- 朝の通知機能の有効/無効
-  notification_time: TIME DEFAULT '08:00',      -- 朝の通知時間
-  created_at: TIMESTAMP DEFAULT NOW(),
-  updated_at: TIMESTAMP DEFAULT NOW()
-)
-```
+**主要テーブル**:
+- `users`: ユーザー情報・通知設定
+- `meal_plans`: 献立データ（消費状態管理付き）
+- `stock_items`: 食材在庫・賞味期限管理
+- `shopping_list`: 買い物リスト
+- `cost_records`: コスト記録
+- `saved_recipes`: レシピURL保存
 
-### 6.2 meal_plans（献立）
-```sql
--- 献立（1日ごとの記録）
-meal_plans (
-  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  date: DATE NOT NULL,
-  meal_type: TEXT NOT NULL,      -- 朝 / 昼 / 夜 / 間食
-  recipe_url: TEXT,
-  ingredients: JSONB,            -- [{ name, quantity }]
-  memo: TEXT,
-  consumed_status: TEXT DEFAULT 'pending' CHECK (consumed_status IN ('pending', 'completed', 'stored')),  -- 消費状態（未完了・完食・作り置き）
-  created_at: TIMESTAMP DEFAULT NOW(),
-  updated_at: TIMESTAMP DEFAULT NOW()
-)
-```
+## 7. 関連ドキュメント
 
-### 6.3 stock_items（食材在庫）
-```sql
--- 食材在庫
-stock_items (
-  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  name: TEXT NOT NULL,
-  quantity: TEXT NOT NULL,
-  best_before: DATE,
-  storage_location: TEXT,
-  is_homemade: BOOLEAN DEFAULT FALSE,
-  created_at: TIMESTAMP DEFAULT NOW(),
-  updated_at: TIMESTAMP DEFAULT NOW()
-)
-```
+### 設計・仕様書
+- **技術仕様**: `.claude/TECH_SPECS.md`
+- **UI設計**: `.claude/UI.md`
+- **TypeScript**: `.claude/TYPESCRIPT_MIGRATION.md`
+- **レシートOCR**: `.claude/RECEIPT_OCR_DESIGN.md`
+- **セキュリティ**: `.claude/SECURITY.md`
 
-### 6.4 shopping_list（買い物リスト）
-```sql
--- 買い物リスト
-shopping_list (
-  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  name: TEXT NOT NULL,
-  quantity: TEXT,
-  checked: BOOLEAN DEFAULT FALSE,
-  added_from: TEXT,              -- manual / auto
-  created_at: TIMESTAMP DEFAULT NOW()
-)
-```
-
-### 6.5 cost_records（コスト記録）
-```sql
--- コスト記録
-cost_records (
-  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  date: DATE NOT NULL,
-  description: TEXT,
-  amount: INTEGER NOT NULL,
-  is_eating_out: BOOLEAN DEFAULT FALSE,
-  created_at: TIMESTAMP DEFAULT NOW()
-)
-```
-
-### 6.6 saved_recipes（レシピ保存）
-```sql
--- レシピ保存
-saved_recipes (
-  id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  title: TEXT NOT NULL,
-  url: TEXT NOT NULL,
-  servings: INTEGER DEFAULT 1,    -- 何人前
-  tags: TEXT[],
-  created_at: TIMESTAMP DEFAULT NOW()
-)
-```
-
-### 6.7 インデックス設計
-```sql
--- パフォーマンス向上のためのインデックス
-CREATE INDEX idx_meal_plans_user_date ON meal_plans(user_id, date);
-CREATE INDEX idx_meal_plans_consumed_status ON meal_plans(user_id, consumed_status);  -- 消費状態検索用
-CREATE INDEX idx_stock_items_user_best_before ON stock_items(user_id, best_before);
-CREATE INDEX idx_shopping_list_user_checked ON shopping_list(user_id, checked);
-CREATE INDEX idx_cost_records_user_date ON cost_records(user_id, date);
-```
-
-## 7. UI/UX設計
-
-### 7.1 デザインシステム
-- **軽量でシンプルなデザイン**
-- **Material Icons**を使用
-- **レスポンシブグリッド**システム
-- **アニメーション**による滑らかなUI遷移
-- **高速表示を重視**、リッチな装飾は控える
-
-### 7.2 TypeScript型定義例
-```typescript
-// 基本型定義
-interface MealPlan {
-  id: string;
-  user_id: string;
-  date: string;
-  meal_type: '朝' | '昼' | '夜' | '間食';
-  recipe_url?: string;
-  ingredients: { name: string; quantity: string }[];
-  memo?: string;
-  consumed_status?: 'pending' | 'completed' | 'stored';  // 消費状態（未完了・完食・作り置き）
-  created_at: string;
-  updated_at: string;
-}
-
-interface StockItem {
-  id: string;
-  user_id: string;
-  name: string;
-  quantity: string;
-  best_before?: string;
-  storage_location?: string;
-  is_homemade: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface ShoppingListItem {
-  id: string;
-  user_id: string;
-  name: string;
-  quantity?: string;
-  checked: boolean;
-  added_from: 'manual' | 'auto';
-  created_at: string;
-}
-
-interface CostRecord {
-  id: string;
-  user_id: string;
-  date: string;
-  description: string;
-  amount: number;
-  is_eating_out: boolean;
-  created_at: string;
-}
-
-interface SavedRecipe {
-  id: string;
-  user_id: string;
-  title: string;
-  url: string;
-  servings: number;
-  tags: string[];
-  created_at: string;
-}
-
-interface NotificationSettings {
-  notification_enabled: boolean;
-  expiry_notification_days: number;
-  notification_enabled: boolean;
-  notification_time: string;
-}
-
-interface ExpiryItem {
-  id: string;
-  name: string;
-  best_before: string;
-  days_until_expiry: number;
-  storage_location?: string;
-}
-```
-
-## 8. 開発・運用計画
-
-### 8.1 開発手順・優先順位
-
-**フェーズ1：基本CRUD機能**
-1. 認証機能（Google連携）
-2. 在庫管理（追加・編集・削除）
-3. レシピ管理（URL保存、食材抽出）
-4. 献立計画（カレンダー表示）
-5. 買い物リスト（基本機能）
-
-**フェーズ2：自動化機能**
-1. LLMによる食材自動抽出
-2. 献立からの買い物リスト自動生成
-3. 賞味期限管理・アラート
-
-**フェーズ3：コスト・通知機能**（実装済み）
-1. コスト管理機能 ✅
-2. 通知システム（Web Push API）✅
-3. PWA対応 ✅
-4. パフォーマンス最適化
-
-### 8.3 MVP（最小機能）の定義
-- 基本的な献立・在庫・買い物・コスト管理機能
-- レシピURL管理と食材管理
-- 個人利用に最適化された機能セット
-
-### 8.4 テスト戦略
-- **単体機能テスト**：各機能の動作確認
-- **手動テスト**：実際の使用シーンでの動作確認
-- **TypeScript**による型安全性の確保
-
-### 8.5 デプロイメント手順
-1. **ローカル開発**：`pnpm run dev:netlify`
-2. **ビルド**：`pnpm run build:netlify`
-3. **自動デプロイ**：GitHub pushでGitHub Pagesに自動デプロイ
-4. **データベース**：Supabaseのマイグレーション管理
-5. **CI/CD**：GitHub Actionsによる自動ビルド・デプロイ
-
-## 9. セキュリティ・パフォーマンス
-
-### 9.1 データ保護方針
-- **Google連携ログイン**による認証
-- **個人利用**のため最小限のセキュリティ対策
-- **機微情報を含まない**データ設計
-- **Supabase Row Level Security**による基本的なデータ保護
-
-### 9.2 パフォーマンス要件
-- **モバイルファースト**の軽量設計
-- **必要最小限のデータ取得**
-- **画像最適化**
-- **PWA対応**によるオフライン機能
-
-## 10. 環境構築
-
-### 10.1 開発環境
-```bash
-# プロジェクト作成
-pnpm create vite@latest cooklet -- --template react-ts
-cd cooklet
-
-# 依存関係インストール
-pnpm install @supabase/supabase-js
-pnpm install @types/react @types/react-dom
-pnpm install tailwindcss postcss autoprefixer
-pnpm install @headlessui/react
-pnpm install date-fns
-pnpm install react-calendar
-pnpm install lucide-react
-
-# 開発サーバー起動
-pnpm run dev
-```
-
-### 10.2 環境変数
-```env
-# Supabase
-VITE_SUPABASE_URL=your_supabase_url
-VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
-
-# Google Cloud Vision API (Netlify Functions用)
-GOOGLE_CLOUD_API_KEY=your_google_cloud_api_key
-
-# CORS設定 (Netlify Functions用)
-ALLOWED_ORIGINS=https://cooklet.netlify.app,http://localhost:5173
-```
-
-### 10.3 Supabase設定
-```typescript
-// lib/supabase.ts
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
-const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY
-
-export const supabase = createClient(supabaseUrl, supabaseKey)
-```
+### 開発・運用
+- **開発計画**: `.claude/DEVELOPMENT_PLAN.md`
+- **開発ログ**: `.claude/DEVELOPMENT_LOG.md`
+- **要素定義**: `.claude/ELEMENTS.md`
