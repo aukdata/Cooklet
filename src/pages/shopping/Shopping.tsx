@@ -368,9 +368,6 @@ export const Shopping: React.FC = () => {
                 className="hidden"
               />
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              レシート画像をアップロードして自動で商品リストを追加
-            </p>
           </div>
         </div>
       </div>
