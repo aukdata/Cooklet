@@ -10,8 +10,8 @@
 
 ### データベース変更
 - `users`テーブルに朝の通知関連カラムを追加
-  - `morning_notification_enabled: BOOLEAN DEFAULT FALSE`
-  - `morning_notification_time: TIME DEFAULT '08:00'`
+  - `notification_enabled: BOOLEAN DEFAULT FALSE`
+  - `notification_time: TIME DEFAULT '08:00'`
   - パッチファイル: `database/patch-morning-notification.sql`
 
 ### 新規ファイル

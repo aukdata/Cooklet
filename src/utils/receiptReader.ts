@@ -1,5 +1,6 @@
-// レシート読み取り機能のモック実装
-// 将来的にはOCR APIやAI APIと連携する予定
+// レシート読み取り機能 - Google Vision API使用
+import { createVisionClient, OCRError } from '../lib/vision/vision-client';
+import type { OCRResult } from '../lib/vision/vision-client';
 
 /**
  * レシート読み取り結果の型定義
@@ -21,57 +22,50 @@ export interface ReceiptResult {
 }
 
 /**
- * レシート画像を読み取って商品リストを返すモック関数
+ * レシート画像を読み取って商品リストを返す関数
+ * Google Vision API の DOCUMENT_TEXT_DETECTION を使用
  * @param file - アップロードされた画像ファイル
  * @returns Promise<ReceiptResult> - 読み取り結果
  */
 export const readReceiptFromImage = async (file: File): Promise<ReceiptResult> => {
-  // モック処理：実際の画像処理の時間をシミュレート
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-  // ファイル名やサイズに基づいてモックデータを変える
-  const mockResults: ReceiptResult[] = [
-    {
+  try {
+    // Vision API クライアントを作成
+    const visionClient = createVisionClient();
+    
+    // OCR処理を実行
+    const ocrResult: OCRResult = await visionClient.extractTextFromImage(file);
+    
+    // OCR結果をコンソールに出力（デバッグ用）
+    console.log('=== OCR結果 ===');
+    console.log('抽出されたテキスト:', ocrResult.fullText);
+    console.log('信頼度:', ocrResult.confidence);
+    console.log('処理時刻:', ocrResult.processedAt);
+    console.log('================');
+    
+    // 現在はOCR結果の出力のみ実装
+    // 今後、テキストパース機能を追加予定
+    return {
       items: [
-        { name: "キャベツ", quantity: "1個", price: 198 },
-        { name: "玉ねぎ", quantity: "3個", price: 168 },
-        { name: "豚バラ肉", quantity: "300g", price: 398 },
-        { name: "卵", quantity: "1パック", price: 248 },
-        { name: "牛乳", quantity: "1L", price: 198 }
+        {
+          name: "OCR結果確認用",
+          quantity: "1件",
+          price: 0
+        }
       ],
-      totalAmount: 1210,
-      storeName: "スーパーマーケット",
+      totalAmount: 0,
+      storeName: "テスト実行",
       date: new Date().toISOString().split('T')[0]
-    },
-    {
-      items: [
-        { name: "鶏むね肉", quantity: "2枚", price: 298 },
-        { name: "ブロッコリー", quantity: "1株", price: 158 },
-        { name: "にんじん", quantity: "3本", price: 98 },
-        { name: "米", quantity: "5kg", price: 1980 },
-        { name: "醤油", quantity: "1本", price: 168 }
-      ],
-      totalAmount: 2702,
-      storeName: "食品館",
-      date: new Date().toISOString().split('T')[0]
-    },
-    {
-      items: [
-        { name: "じゃがいも", quantity: "4個", price: 148 },
-        { name: "トマト", quantity: "3個", price: 268 },
-        { name: "レタス", quantity: "1玉", price: 128 },
-        { name: "パン", quantity: "1斤", price: 118 },
-        { name: "バター", quantity: "200g", price: 298 }
-      ],
-      totalAmount: 960,
-      storeName: "コンビニ",
-      date: new Date().toISOString().split('T')[0]
+    };
+    
+  } catch (error) {
+    console.error('レシート読み取りエラー:', error);
+    
+    if (error instanceof OCRError) {
+      throw new Error(`OCR処理に失敗しました: ${error.message}`);
     }
-  ];
-
-  // ファイルサイズに基づいて異なるモックデータを返す
-  const index = file.size % mockResults.length;
-  return mockResults[index];
+    
+    throw new Error('レシート読み取り中に予期しないエラーが発生しました');
+  }
 };
 
 /**

@@ -34,7 +34,7 @@ export const Settings: React.FC = () => {
         try {
           const { data, error } = await supabase
             .from('users')
-            .select('morning_notification_enabled, morning_notification_time')
+            .select('notification_enabled, notification_time')
             .eq('id', supabaseUser.id)
             .single();
 
@@ -44,14 +44,14 @@ export const Settings: React.FC = () => {
           }
 
           if (data) {
-            setMorningNotificationEnabled(data.morning_notification_enabled || false);
-            setMorningNotificationTime(data.morning_notification_time || '08:00');
+            setMorningNotificationEnabled(data.notification_enabled || false);
+            setMorningNotificationTime(data.notification_time || '08:00');
             
             // 有効な場合は通知をスケジュール
-            if (data.morning_notification_enabled) {
+            if (data.notification_enabled) {
               notificationService.scheduleMorningNotification({
                 enabled: true,
-                time: data.morning_notification_time || '08:00'
+                time: data.notification_time || '08:00'
               }, supabaseUser.id);
             }
           }
@@ -168,8 +168,8 @@ export const Settings: React.FC = () => {
       const { error } = await supabase
         .from('users')
         .update({
-          morning_notification_enabled: true,
-          morning_notification_time: morningNotificationTime
+          notification_enabled: true,
+          notification_time: morningNotificationTime
         })
         .eq('id', supabaseUser?.id);
 
@@ -200,7 +200,7 @@ export const Settings: React.FC = () => {
       // データベースに保存
       const { error } = await supabase
         .from('users')
-        .update({ morning_notification_enabled: false })
+        .update({ notification_enabled: false })
         .eq('id', supabaseUser?.id);
 
       if (error) {
@@ -227,7 +227,7 @@ export const Settings: React.FC = () => {
       // データベースに保存
       const { error } = await supabase
         .from('users')
-        .update({ morning_notification_time: time })
+        .update({ notification_time: time })
         .eq('id', supabaseUser?.id);
 
       if (error) {

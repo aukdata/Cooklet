@@ -99,7 +99,7 @@ import type { AIProviderConfig } from './types';
 
 const config: AIProviderConfig = {
   provider: 'gemini',
-  apiKey: process.env.VITE_GEMINI_API_KEY!,
+  apiKey: process.env.VITE_GOOGLE_API_KEY!,
   model: 'gemini-pro',
   temperature: 0.1
 };
@@ -112,7 +112,7 @@ const result = await provider.extractRecipeFromHtml(html, url);
 
 ```env
 # Gemini AI
-VITE_GEMINI_API_KEY=your_gemini_api_key
+VITE_GOOGLE_API_KEY=your_gemini_api_key
 
 # 将来対応予定
 # VITE_OPENAI_API_KEY=your_openai_api_key

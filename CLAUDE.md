@@ -148,8 +148,8 @@ users (
   google_id: TEXT UNIQUE,
   notification_enabled: BOOLEAN DEFAULT FALSE,     -- 通知機能の有効/無効
   expiry_notification_days: INTEGER DEFAULT 3,     -- 期限通知を行う日数（1-30日）
-  morning_notification_enabled: BOOLEAN DEFAULT FALSE,  -- 朝の通知機能の有効/無効
-  morning_notification_time: TIME DEFAULT '08:00',      -- 朝の通知時間
+  notification_enabled: BOOLEAN DEFAULT FALSE,  -- 朝の通知機能の有効/無効
+  notification_time: TIME DEFAULT '08:00',      -- 朝の通知時間
   created_at: TIMESTAMP DEFAULT NOW(),
   updated_at: TIMESTAMP DEFAULT NOW()
 )
@@ -310,8 +310,8 @@ interface SavedRecipe {
 interface NotificationSettings {
   notification_enabled: boolean;
   expiry_notification_days: number;
-  morning_notification_enabled: boolean;
-  morning_notification_time: string;
+  notification_enabled: boolean;
+  notification_time: string;
 }
 
 interface ExpiryItem {

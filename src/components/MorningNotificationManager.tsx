@@ -15,7 +15,7 @@ export const MorningNotificationManager: React.FC = () => {
           // ユーザーの朝の通知設定を取得
           const { data, error } = await supabase
             .from('users')
-            .select('morning_notification_enabled, morning_notification_time')
+            .select('notification_enabled, notification_time')
             .eq('id', supabaseUser.id)
             .single();
 
@@ -24,15 +24,15 @@ export const MorningNotificationManager: React.FC = () => {
             return;
           }
 
-          if (data && data.morning_notification_enabled) {
+          if (data && data.notification_enabled) {
             // 朝の通知が有効な場合はスケジュール
             notificationService.scheduleMorningNotification({
               enabled: true,
-              time: data.morning_notification_time || '08:00'
+              time: data.notification_time || '08:00'
             }, supabaseUser.id);
 
             console.log('朝の通知をスケジュールしました:', {
-              time: data.morning_notification_time || '08:00',
+              time: data.notification_time || '08:00',
               userId: supabaseUser.id
             });
           }
