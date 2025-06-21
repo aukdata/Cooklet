@@ -97,10 +97,13 @@ await supabase.rpc('update_inventory_after_cooking', { recipe_id: 1 })
 - PWAで利用可能
 - 完全無料
 - **期限通知機能**: 賞味期限が近い食品をプッシュ通知
+- **朝の通知機能**: 毎朝指定した時間に期限の近い食材を通知
 - **ユーザー設定**: 通知の有効/無効切り替え
 - **通知タイミング**: 1-7日前から選択可能（デフォルト3日前）
+- **朝の通知時間**: ユーザーが自由に設定可能（デフォルト08:00）
 - **権限管理**: ブラウザの通知権限を要求
 - **自動チェック**: 1時間ごとの期限チェック
+- **スケジュール管理**: 朝の通知は毎日自動実行
 
 ## 3. アプリ特徴
 
@@ -145,6 +148,8 @@ users (
   google_id: TEXT UNIQUE,
   notification_enabled: BOOLEAN DEFAULT FALSE,     -- 通知機能の有効/無効
   expiry_notification_days: INTEGER DEFAULT 3,     -- 期限通知を行う日数（1-30日）
+  morning_notification_enabled: BOOLEAN DEFAULT FALSE,  -- 朝の通知機能の有効/無効
+  morning_notification_time: TIME DEFAULT '08:00',      -- 朝の通知時間
   created_at: TIMESTAMP DEFAULT NOW(),
   updated_at: TIMESTAMP DEFAULT NOW()
 )
@@ -305,6 +310,8 @@ interface SavedRecipe {
 interface NotificationSettings {
   notification_enabled: boolean;
   expiry_notification_days: number;
+  morning_notification_enabled: boolean;
+  morning_notification_time: string;
 }
 
 interface ExpiryItem {

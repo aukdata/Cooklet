@@ -1,5 +1,40 @@
 # Cooklet 開発ログ
 
+## 2025-06-21
+
+### 実装内容
+- **毎朝の通知機能を実装**
+  - 設定画面で通知時間を設定可能（デフォルト08:00）
+  - 毎日指定した時間に期限の近い食材を通知
+  - 通知の有効/無効切り替え機能
+
+### データベース変更
+- `users`テーブルに朝の通知関連カラムを追加
+  - `morning_notification_enabled: BOOLEAN DEFAULT FALSE`
+  - `morning_notification_time: TIME DEFAULT '08:00'`
+  - パッチファイル: `database/patch-morning-notification.sql`
+
+### 新規ファイル
+- `src/services/notificationService.ts`: 朝の通知スケジュール管理
+- `src/components/MorningNotificationManager.tsx`: 朝の通知管理コンポーネント
+
+### 既存ファイル変更
+- `src/pages/settings/Settings.tsx`: 朝の通知設定UIを追加
+- `src/App.tsx`: MorningNotificationManagerを追加
+- `CLAUDE.md`: 通知機能の仕様を更新
+
+### 技術仕様
+- **スケジュール管理**: setTimeout を使用した毎日の通知スケジュール
+- **権限管理**: ブラウザの通知権限を要求・確認
+- **データ永続化**: Supabaseの users テーブルで設定を保存
+- **自動再スケジュール**: アプリ起動時に設定を読み込み、有効な場合は自動でスケジュール
+
+### 引き継ぎ事項
+1. **データベースパッチ適用**: `database/patch-morning-notification.sql` を実行
+2. **通知権限**: 初回利用時にブラウザの通知権限許可が必要
+3. **タイムゾーン**: 現在はユーザーのローカル時間で動作
+4. **バックグラウンド動作**: PWAでのバックグラウンド通知はService Workerでの実装が理想的
+
 ## 2025-06-20
 
 ### 実装内容

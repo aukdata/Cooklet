@@ -2,14 +2,18 @@
 -- エラーが発生した場合は、このファイルから段階的に実行してください
 
 -- 1. users テーブル (Supabase auth.usersと連携)
-CREATE TABLE IF NOT EXISTS users (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  email TEXT UNIQUE NOT NULL,
-  name TEXT,
-  google_id TEXT UNIQUE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+create table users (
+  id uuid not null,
+  email text not null,
+  name text null,
+  google_id text null,
+  created_at timestamp with time zone null default now(),
+  updated_at timestamp with time zone null default now(),
+  notification_enabled boolean not null default false,
+  expiry_notification_days integer not null default 3,
+  notification_time time without time zone null default '08:00:00'::time without time zone,
 );
+
 
 -- 2. ingredients テーブル (食材マスタ) - ユーザー認証対応
 CREATE TABLE IF NOT EXISTS ingredients (

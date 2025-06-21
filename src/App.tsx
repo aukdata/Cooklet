@@ -6,6 +6,7 @@ import { ToastProvider } from './hooks/useToast.tsx'
 import { Login } from './pages/auth/Login'
 import { MainLayout } from './components/layout/MainLayout'
 import { NotificationManager } from './components/NotificationManager'
+import { MorningNotificationManager } from './components/MorningNotificationManager'
 import { ConfirmDialog } from './components/dialogs/ConfirmDialog'
 
 const AppContent: React.FC = () => {
@@ -121,6 +122,9 @@ const AppContent: React.FC = () => {
       
       {/* 期限通知管理コンポーネント */}
       <NotificationManager />
+      
+      {/* 朝の通知管理コンポーネント */}
+      <MorningNotificationManager />
       
       {/* PWA更新確認ダイアログ */}
       <ConfirmDialog
