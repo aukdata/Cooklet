@@ -1,7 +1,7 @@
 // AI Provider抽象基底クラス
 
-import type { AIProvider, AIProviderConfig, RecipeExtraction } from './types';
-import { RecipeExtractionError } from './types';
+import type { AIProvider, AIProviderConfig, RecipeExtraction, ReceiptExtraction } from './types';
+import { RecipeExtractionError, ReceiptExtractionError } from './types';
 
 // レシピ抽出用の統一プロンプト - レシピサイト判定とタグ提案機能付き
 export const RECIPE_EXTRACTION_PROMPT = `
@@ -60,6 +60,60 @@ export const RECIPE_EXTRACTION_PROMPT = `
 HTMLコンテンツ:
 `;
 
+// レシート抽出用の統一プロンプト
+export const RECEIPT_EXTRACTION_PROMPT = `
+あなたはレシートのOCRテキストから正確に商品情報を抽出し、構造化データを生成する専門AIです。
+
+【重要】絶対に守るべき制約：
+1. OCRテキストに明確に記載されている情報のみを抽出してください
+2. 推測や想像で情報を追加してはいけません（ハルシネーション厳禁）
+3. 情報が不明な場合は、指定されたデフォルト値を使用してください
+
+抽出する情報：
+- 店舗名：レシート上部に記載されている店舗名
+- 購入日：YYYY/MM/DD、YYYY-MM-DD形式の日付
+- 商品一覧：商品名、数量、価格のセット
+
+商品抽出ルール：
+- 商品名：価格が記載されている行の商品名部分
+- 数量：明記されていない場合は「1個」とする
+- 価格：商品行の最後にある数値（カンマ区切り対応）
+
+数量の判定パターン：
+- 「玉ねぎ×2」→ quantity: "2個"
+- 「りんご 3個」→ quantity: "3個"
+- 「牛乳1L」→ quantity: "1本"
+- 「バナナ1房」→ quantity: "1房"
+- 数量記載なし→ quantity: "1個"
+
+価格パターン：
+- 「198円」「198」「¥198」→ price: 198
+- 「1,280円」「1,280」→ price: 1280
+- 価格不明→ price: 未設定
+
+店舗名の抽出：
+- レシート上部の店舗名を抽出
+- 「株式会社」「Co.,Ltd.」等の法人格は除去
+- 「〇〇店」の「店」は残す
+
+日付の抽出：
+- YYYY/MM/DD、YYYY-MM-DD形式に統一
+- 時刻情報は除去
+
+信頼度設定：
+- 明確に抽出できた場合：0.8-1.0
+- 一部不明確な情報がある場合：0.5-0.7
+- 多くの情報が不明確な場合：0.2-0.4
+
+注意事項：
+- itemsは配列で、各要素は必ずname、quantity、priceを持つオブジェクト
+- 商品が見つからない場合は空配列 [] を返す
+- 価格が不明な場合はpriceプロパティを省略
+- confidenceは抽出情報の明確性に応じて設定
+
+OCRテキスト:
+`;
+
 export abstract class BaseAIProvider implements AIProvider {
   protected config: AIProviderConfig;
 
@@ -69,6 +123,9 @@ export abstract class BaseAIProvider implements AIProvider {
 
   // HTMLからレシピ情報を抽出（抽象メソッド）
   abstract extractRecipeFromHtml(html: string, url: string): Promise<RecipeExtraction>;
+
+  // レシートテキストから構造化データを抽出（抽象メソッド）
+  abstract extractReceiptFromText(text: string): Promise<ReceiptExtraction>;
 
   // プロバイダー名を取得
   getProviderName(): string {
@@ -175,6 +232,55 @@ export abstract class BaseAIProvider implements AIProvider {
       confidence,
       isRecipeSite,
       suggestedTags
+    };
+  }
+
+  // レシート抽出結果を検証
+  protected validateReceiptExtractionResult(data: any): ReceiptExtraction {
+    if (!data || typeof data !== 'object') {
+      throw new ReceiptExtractionError(
+        '無効なレシート抽出結果です',
+        this.getProviderName()
+      );
+    }
+
+    // 信頼度の検証
+    const confidence = typeof data.confidence === 'number' ? 
+      Math.max(0, Math.min(1, data.confidence)) : 0.5;
+
+    // 商品リストの検証
+    let items: Array<{name: string; quantity: string; price?: number}> = [];
+    if (Array.isArray(data.items)) {
+      items = data.items
+        .filter((item: any) => item && typeof item === 'object' && item.name)
+        .map((item: any) => {
+          const processedItem: {name: string; quantity: string; price?: number} = {
+            name: String(item.name).trim(),
+            quantity: String(item.quantity || '1個').trim()
+          };
+          
+          // 価格が有効な数値の場合のみ追加
+          if (typeof item.price === 'number' && item.price > 0) {
+            processedItem.price = item.price;
+          }
+          
+          return processedItem;
+        });
+    }
+
+    // 店舗名の検証
+    const storeName = data.storeName && typeof data.storeName === 'string' ? 
+      String(data.storeName).trim() : undefined;
+
+    // 日付の検証
+    const date = data.date && typeof data.date === 'string' ? 
+      String(data.date).trim() : undefined;
+
+    return {
+      items,
+      storeName,
+      date,
+      confidence
     };
   }
 }

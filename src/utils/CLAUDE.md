@@ -6,7 +6,7 @@
 ## ファイル構成
 
 ### receiptReader.ts
-レシート読み取り機能のモック実装ファイル。将来的にはOCR APIやAI APIと連携予定。
+レシート読み取り機能の実装ファイル。Google Vision APIとGemini AIを組み合わせた高精度レシート解析。
 
 #### 型定義
 
@@ -23,22 +23,26 @@ interface ReceiptItem {
 ```typescript
 interface ReceiptResult {
   items: ReceiptItem[];    // 読み取った商品リスト
-  totalPrice?: number;     // 合計金額（任意）
+  totalPrice?: number;     // 計算された合計金額（任意）
   storeName?: string;      // 店舗名（任意）
   date?: string;          // 購入日（任意）
+  confidence?: number;     // AI構造化の信頼度（任意）
 }
 ```
 
 #### 実装済み機能
 
 **readReceiptFromImage(file: File): Promise<ReceiptResult>**
-- レシート画像を読み取って商品リストを返すモック関数
-- 2秒間の処理時間をシミュレート
-- ファイルサイズに基づいて3種類のモックデータから選択
-- 現在は以下のモックデータを返却：
-  - スーパーマーケット: キャベツ、玉ねぎ、豚バラ肉、卵、牛乳（合計1210円）
-  - 食品館: 鶏むね肉、ブロッコリー、にんじん、米、醤油（合計2702円）
-  - コンビニ: じゃがいも、トマト、レタス、パン、バター（合計960円）
+- レシート画像を読み取って商品リストを返す関数
+- Step 1: Google Vision APIでOCR処理（プレーンテキスト抽出）
+- Step 2: Gemini AIでテキスト構造化（商品・店舗・日付抽出）
+- Step 3: 商品価格から合計金額を自動計算
+- デバッグ用のコンソール出力機能付き
+
+**calculateTotalPrice(items: ReceiptItem[]): number**
+- 商品リストから合計金額を計算する関数
+- 価格が設定されている商品のみを対象
+- 数値型の価格のみを集計
 
 **validateImageFile(file: File): boolean**
 - 画像ファイルの妥当性チェック
@@ -62,32 +66,63 @@ try {
   const result = await readReceiptFromImage(file);
   console.log(`${result.items.length}件のアイテムを読み取りました`);
   console.log('店舗名:', result.storeName);
+  console.log('購入日:', result.date);
   console.log('合計金額:', result.totalPrice);
+  console.log('AI信頼度:', result.confidence);
+  
+  // 個別の商品詳細
+  result.items.forEach((item, index) => {
+    console.log(`${index + 1}: ${item.name} - ${item.quantity} - ¥${item.price || '価格不明'}`);
+  });
 } catch (error) {
   console.error('読み取りに失敗しました:', error);
 }
 ```
 
-#### 今後の実装予定
+#### 実装済み技術
 
-**実際のOCR API連携**
-- Google Vision API
-- AWS Textract
-- Azure Computer Vision
-などとの連携を検討
+**OCR処理**
+- Google Vision API（DOCUMENT_TEXT_DETECTION）
+- Netlify Functions経由でセキュアなAPI利用
+- 高精度なテキスト抽出
 
-**AI解析機能**
-- ChatGPT API等を使用したレシート内容の構造化
-- 商品名の正規化
-- 価格と数量の正確な抽出
+**AI構造化**
+- Google Gemini AI（gemini-2.5-flash）
+- JSON Schema指定による構造化レスポンス
+- 商品名、数量、価格の正確な抽出
+- 店舗名、日付の自動識別
 
-**エラーハンドリング強化**
+**エラーハンドリング**
+- OCR処理エラー対応
+- AI構造化エラー対応
 - ネットワークエラー対応
-- API制限対応
-- 画像品質チェック
+- 詳細なエラーメッセージ
+
+#### 今後の改良予定
+
+**精度向上**
+- プロンプトエンジニアリングの最適化
+- レシート形式別の対応強化
+- 商品名正規化ロジック
+
+**機能拡張**
+- カテゴリ自動分類
+- 栄養成分情報の関連付け
+- 買い物履歴との連携
 
 ## 注意点
-- 現在はモック実装のため、実際の画像読み取りは行わない
-- ファイルサイズによって返却するモックデータが変わる
-- 実際のAPI連携時は環境変数による設定管理が必要
-- プライバシー保護のため、画像データの適切な取り扱いが重要
+
+### API利用制限
+- Google Vision API: 月間制限と課金に注意
+- Google Gemini AI: リクエスト頻度制限あり
+- 環境変数による適切な設定管理が必要
+
+### セキュリティ
+- APIキーの適切な管理（環境変数での設定）
+- 画像データの一時的な処理（永続化なし）
+- プライバシー保護のための適切なデータ取り扱い
+
+### 精度について
+- レシート画質により結果が変動
+- 手書き文字や特殊フォントの認識精度に限界
+- AI構造化の信頼度を参考に結果を判断

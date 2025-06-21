@@ -29,11 +29,26 @@ export interface AIProvider {
   // レシピサイトのHTMLからレシピ情報を抽出
   extractRecipeFromHtml(html: string, url: string): Promise<RecipeExtraction>;
   
+  // レシートテキストから構造化データを抽出
+  extractReceiptFromText(text: string): Promise<ReceiptExtraction>;
+  
   // プロバイダー名を取得
   getProviderName(): string;
   
   // 設定を取得
   getConfig(): AIProviderConfig;
+}
+
+// レシート抽出結果のスキーマ
+export interface ReceiptExtraction {
+  items: Array<{
+    name: string; // 商品名
+    quantity: string; // 数量
+    price?: number; // 価格（任意）
+  }>;
+  storeName?: string; // 店舗名
+  date?: string; // 購入日
+  confidence: number; // 抽出結果の信頼度（0-1）
 }
 
 // レシピ抽出エラー
@@ -52,6 +67,23 @@ export class RecipeExtractionError extends Error {
     this.name = 'RecipeExtractionError';
     this.provider = provider;
     this.url = url;
+    this.originalError = originalError;
+  }
+}
+
+// レシート抽出エラー
+export class ReceiptExtractionError extends Error {
+  public readonly provider: string;
+  public readonly originalError?: Error;
+
+  constructor(
+    message: string,
+    provider: string,
+    originalError?: Error
+  ) {
+    super(message);
+    this.name = 'ReceiptExtractionError';
+    this.provider = provider;
     this.originalError = originalError;
   }
 }

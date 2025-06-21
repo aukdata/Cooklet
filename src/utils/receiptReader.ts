@@ -1,9 +1,12 @@
-// レシート読み取り機能 - Google Vision API使用
+// レシート読み取り機能 - Google Vision API + Gemini AI使用
 import { createVisionClient, OCRError } from '../lib/vision/vision-client';
 import type { OCRResult } from '../lib/vision/vision-client';
+import { AIProviderFactory } from '../lib/ai/provider-factory';
+import type { ReceiptExtraction } from '../lib/ai/types';
+import { ReceiptExtractionError } from '../lib/ai/types';
 
 /**
- * レシート読み取り結果の型定義
+ * レシート読み取り結果の型定義（互換性のため保持）
  */
 export interface ReceiptItem {
   name: string;
@@ -12,27 +15,37 @@ export interface ReceiptItem {
 }
 
 /**
- * レシート読み取り結果
+ * レシート読み取り結果（計算された合計金額付き）
  */
 export interface ReceiptResult {
   items: ReceiptItem[];
   totalPrice?: number;
   storeName?: string;
   date?: string;
+  confidence?: number;
 }
 
 /**
+ * レシート商品リストから合計金額を計算
+ * @param items - 商品リスト
+ * @returns 合計金額
+ */
+export const calculateTotalPrice = (items: ReceiptItem[]): number => {
+  return items
+    .filter(item => typeof item.price === 'number')
+    .reduce((total, item) => total + (item.price || 0), 0);
+};
+
+/**
  * レシート画像を読み取って商品リストを返す関数
- * Google Vision API の DOCUMENT_TEXT_DETECTION を使用
+ * Google Vision API の DOCUMENT_TEXT_DETECTION + Gemini AI構造化を使用
  * @param file - アップロードされた画像ファイル
  * @returns Promise<ReceiptResult> - 読み取り結果
  */
 export const readReceiptFromImage = async (file: File): Promise<ReceiptResult> => {
   try {
-    // Vision API クライアントを作成
+    // Step 1: Vision API でOCR処理を実行
     const visionClient = createVisionClient();
-    
-    // OCR処理を実行
     const ocrResult: OCRResult = await visionClient.extractTextFromImage(file);
     
     // OCR結果をコンソールに出力（デバッグ用）
@@ -40,50 +53,42 @@ export const readReceiptFromImage = async (file: File): Promise<ReceiptResult> =
     console.log('抽出されたテキスト:', ocrResult.fullText);
     console.log('信頼度:', ocrResult.confidence);
     console.log('処理時刻:', ocrResult.processedAt);
-    
-    // 構造化データがある場合は追加で表示
-    if (ocrResult.structured) {
-      console.log('=== 構造化データ ===');
-      console.log('店舗名:', ocrResult.structured.storeName);
-      console.log('購入日:', ocrResult.structured.date);
-      console.log('合計金額:', ocrResult.structured.totalPrice);
-      console.log('商品一覧:', ocrResult.structured.items);
-      console.log('抽出された商品数:', ocrResult.structured.items.length);
-      console.log('==================');
-    }
-    
     console.log('================');
     
-    // 構造化データがある場合はそれを使用、なければフォールバック
-    if (ocrResult.structured && ocrResult.structured.items.length > 0) {
-      return {
-        items: ocrResult.structured.items,
-        totalPrice: ocrResult.structured.totalPrice,
-        storeName: ocrResult.structured.storeName,
-        date: ocrResult.structured.date
-      };
-    } else {
-      // 構造化データがない場合のフォールバック
-      console.log('構造化データが抽出できませんでした。フォールバックデータを返します。');
-      return {
-        items: [
-          {
-            name: "OCR結果確認用（構造化失敗）",
-            quantity: "1件",
-            price: 0
-          }
-        ],
-        totalPrice: 0,
-        storeName: "テスト実行",
-        date: new Date().toISOString().split('T')[0]
-      };
-    }
+    // Step 2: Gemini AI でテキストを構造化
+    const aiProvider = AIProviderFactory.createFromEnvironment();
+    const receiptData: ReceiptExtraction = await aiProvider.extractReceiptFromText(ocrResult.fullText);
+    
+    // Gemini構造化結果をコンソールに出力（デバッグ用）
+    console.log('=== Gemini構造化結果 ===');
+    console.log('店舗名:', receiptData.storeName);
+    console.log('購入日:', receiptData.date);
+    console.log('商品一覧:', receiptData.items);
+    console.log('抽出された商品数:', receiptData.items.length);
+    console.log('AI信頼度:', receiptData.confidence);
+    
+    // Step 3: 合計金額を計算
+    const calculatedTotalPrice = calculateTotalPrice(receiptData.items);
+    console.log('計算された合計金額:', calculatedTotalPrice);
+    console.log('=========================');
+    
+    return {
+      items: receiptData.items,
+      totalPrice: calculatedTotalPrice > 0 ? calculatedTotalPrice : undefined,
+      storeName: receiptData.storeName,
+      date: receiptData.date,
+      confidence: receiptData.confidence
+    };
     
   } catch (error) {
     console.error('レシート読み取りエラー:', error);
     
     if (error instanceof OCRError) {
       throw new Error(`OCR処理に失敗しました: ${error.message}`);
+    }
+    
+    if (error instanceof ReceiptExtractionError) {
+      throw new Error(`AI構造化に失敗しました: ${error.message}`);
     }
     
     throw new Error('レシート読み取り中に予期しないエラーが発生しました');

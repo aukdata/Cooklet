@@ -2,15 +2,6 @@
 // セキュリティのためAPIキーはサーバーサイドで管理
 
 /**
- * レシート商品項目の型定義
- */
-export interface ReceiptItem {
-  name: string;
-  quantity: string;
-  price?: number;
-}
-
-/**
  * OCR処理結果の型定義
  */
 export interface OCRResult {
@@ -20,13 +11,6 @@ export interface OCRResult {
   metadata?: {
     imageSize: number;
     processingTime: number;
-  };
-  // 構造化データ（オプション）
-  structured?: {
-    items: ReceiptItem[];
-    totalPrice?: number;
-    storeName?: string;
-    date?: string;
   };
 }
 
@@ -101,20 +85,7 @@ export class VisionClient {
         );
       }
 
-      // 構造化データがある場合は一緒に返す
-      const result: OCRResult = {
-        fullText: responseData.data.fullText,
-        confidence: responseData.data.confidence,
-        processedAt: responseData.data.processedAt,
-        metadata: responseData.data.metadata
-      };
-
-      // 構造化データがある場合は追加
-      if (responseData.data.structured) {
-        result.structured = responseData.data.structured;
-      }
-
-      return result;
+      return responseData.data;
 
     } catch (error) {
       if (error instanceof OCRError) {

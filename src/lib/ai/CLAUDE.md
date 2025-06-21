@@ -1,7 +1,7 @@
 # AI ディレクトリ
 
 ## 概要
-レシピURLからの食材自動抽出機能を実現するAIプロバイダー抽象化レイヤー。
+レシピURLからの食材自動抽出とレシートOCRテキストからの構造化データ抽出機能を実現するAIプロバイダー抽象化レイヤー。
 複数のAI APIを統一インターフェースで利用できるよう設計されています。
 
 ## ファイル構成
@@ -29,9 +29,17 @@ AI関連の型定義とインターフェースを定義。
 - maxTokens: 最大トークン数（任意）
 - temperature: 生成温度（任意）
 
+**ReceiptExtraction型**
+- レシート抽出結果のスキーマ定義
+- items: 商品配列（name, quantity, price）
+- storeName: 店舗名
+- date: 購入日
+- confidence: 抽出結果の信頼度（0-1）
+
 **AIProvider型**
 - AI Provider抽象化インターフェース
 - extractRecipeFromHtml(): HTML→レシピ情報抽出
+- extractReceiptFromText(): OCRテキスト→レシート構造化データ抽出
 - getProviderName(): プロバイダー名取得
 - getConfig(): 設定情報取得
 
@@ -39,6 +47,11 @@ AI関連の型定義とインターフェースを定義。
 - レシピ抽出専用エラークラス
 - provider: エラー発生プロバイダー
 - url: 抽出対象URL（任意）
+- originalError: 元エラー（任意）
+
+**ReceiptExtractionError型**
+- レシート抽出専用エラークラス
+- provider: エラー発生プロバイダー
 - originalError: 元エラー（任意）
 
 ### base-provider.ts
@@ -64,15 +77,17 @@ Google Gemini AIプロバイダーの実装。
 
 #### 機能
 - Gemini API連携
-- HTMLから食材抽出
-- 日本語レシピサイト対応
+- HTMLから食材抽出（レシピサイト）
+- OCRテキストからレシート構造化
+- 日本語対応
 - 構造化レスポンス生成
 
 #### 特徴
-- CLAUDE.md仕様書のRecipeExtraction型に準拠
+- RecipeExtraction型とReceiptExtraction型に準拠
 - エラーハンドリングの詳細実装
 - 日本語コメント完備
 - レシピサイト判定ロジック
+- レシート商品・店舗・日付抽出
 
 ## 設計原則
 
@@ -93,18 +108,35 @@ Google Gemini AIプロバイダーの実装。
 
 ## 使用方法
 
+### レシピ抽出
 ```typescript
-import { ProviderFactory } from './provider-factory';
+import { AIProviderFactory } from './provider-factory';
+
+const provider = AIProviderFactory.createFromEnvironment();
+const recipeResult = await provider.extractRecipeFromHtml(html, url);
+```
+
+### レシート構造化
+```typescript
+import { AIProviderFactory } from './provider-factory';
+
+const provider = AIProviderFactory.createFromEnvironment();
+const receiptResult = await provider.extractReceiptFromText(ocrText);
+```
+
+### 手動設定
+```typescript
+import { AIProviderFactory } from './provider-factory';
 import type { AIProviderConfig } from './types';
 
 const config: AIProviderConfig = {
   provider: 'gemini',
   apiKey: process.env.VITE_GOOGLE_CLOUD_API_KEY!,
-  model: 'gemini-pro',
-  temperature: 0.1
+  model: 'gemini-2.5-flash',
+  temperature: 0.05
 };
 
-const provider = ProviderFactory.createProvider(config);
+const provider = AIProviderFactory.createProvider(config);
 const result = await provider.extractRecipeFromHtml(html, url);
 ```
 
