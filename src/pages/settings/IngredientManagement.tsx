@@ -133,9 +133,6 @@ export const IngredientManagement: React.FC = () => {
         <div className="flex justify-between items-center mb-4">
           <div>
             <h3 className="font-medium text-gray-900">登録済み材料</h3>
-            <p className="text-sm text-gray-500 mt-1">
-              よく使う材料を登録しておくと、レシピ作成時に選択できます
-            </p>
           </div>
           <button
             onClick={handleAddIngredient}
