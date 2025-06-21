@@ -41,8 +41,6 @@ export const TabNavigation: React.FC<TabNavigationProps> = ({ activeTab, onTabCh
           </button>
         ))}
       </div>
-      {/* iPhone PWA用の下部セーフエリア */}
-      <div className="h-safe-bottom"></div>
     </nav>
   );
 };
