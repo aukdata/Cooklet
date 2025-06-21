@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigation } from '../../contexts/NavigationContext';
 import { useIngredients } from '../../hooks/useIngredients';
 import { useToast } from '../../hooks/useToast.tsx';
@@ -14,6 +14,58 @@ export const IngredientManagement: React.FC = () => {
   // 材料設定関連の状態
   const [isIngredientDialogOpen, setIsIngredientDialogOpen] = useState(false);
   const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
+  
+  // 検索関連の状態
+  const [searchQuery, setSearchQuery] = useState('');
+
+  // 検索フィルター処理
+  const filteredIngredients = useMemo(() => {
+    if (!searchQuery.trim()) {
+      return ingredients;
+    }
+    
+    const query = searchQuery.toLowerCase().trim();
+    return ingredients.filter((ingredient) => {
+      // 材料名での検索
+      const matchesName = ingredient.name.toLowerCase().includes(query);
+      
+      // カテゴリでの検索（日本語名も対象）
+      const categoryName = getCategoryName(ingredient.category).toLowerCase();
+      const matchesCategory = categoryName.includes(query) || ingredient.category.toLowerCase().includes(query);
+      
+      // 単位での検索
+      const matchesUnit = ingredient.default_unit.toLowerCase().includes(query);
+      
+      return matchesName || matchesCategory || matchesUnit;
+    });
+  }, [ingredients, searchQuery]);
+
+  // 検索クリア処理
+  const handleClearSearch = () => {
+    setSearchQuery('');
+  };
+
+  // カテゴリ別のアイコンを取得
+  const getCategoryIcon = (category: string) => {
+    switch (category) {
+      case 'vegetables': return '🥬';
+      case 'meat': return '🥩';
+      case 'seasoning': return '🧂';
+      case 'others': return '📦';
+      default: return '🥕';
+    }
+  };
+
+  // カテゴリ別の日本語名を取得
+  const getCategoryName = (category: string) => {
+    switch (category) {
+      case 'vegetables': return '野菜';
+      case 'meat': return '肉・魚';
+      case 'seasoning': return '調味料';
+      case 'others': return 'その他';
+      default: return '不明';
+    }
+  };
 
   // 材料追加処理
   const handleAddIngredient = () => {
@@ -58,28 +110,6 @@ export const IngredientManagement: React.FC = () => {
     }
   };
 
-  // カテゴリ別のアイコンを取得
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'vegetables': return '🥬';
-      case 'meat': return '🥩';
-      case 'seasoning': return '🧂';
-      case 'others': return '📦';
-      default: return '🥕';
-    }
-  };
-
-  // カテゴリ別の日本語名を取得
-  const getCategoryName = (category: string) => {
-    switch (category) {
-      case 'vegetables': return '野菜';
-      case 'meat': return '肉・魚';
-      case 'seasoning': return '調味料';
-      case 'others': return 'その他';
-      default: return '不明';
-    }
-  };
-
   return (
     <div className="p-4">
       {/* ヘッダーセクション */}
@@ -115,6 +145,46 @@ export const IngredientManagement: React.FC = () => {
           </button>
         </div>
         
+        {/* 検索フィールド */}
+        <div className="mb-4">
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              placeholder="材料名、カテゴリ、単位で検索..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+            {searchQuery && (
+              <button
+                onClick={handleClearSearch}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center"
+              >
+                <svg className="h-5 w-5 text-gray-400 hover:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
+        
+        {/* 検索結果の表示 */}
+        {searchQuery && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+            <p className="text-sm text-blue-700">
+              「{searchQuery}」の検索結果: {filteredIngredients.length}件
+              {filteredIngredients.length === 0 && (
+                <span className="ml-2 text-blue-600">該当する材料が見つかりませんでした</span>
+              )}
+            </p>
+          </div>
+        )}
+
         {/* 材料一覧 */}
         <div className="space-y-3">
           {ingredientsLoading ? (
@@ -136,11 +206,25 @@ export const IngredientManagement: React.FC = () => {
                 最初の材料を追加
               </button>
             </div>
+          ) : filteredIngredients.length === 0 && searchQuery ? (
+            <div className="text-center py-8">
+              <div className="text-4xl mb-3">🔍</div>
+              <p className="text-gray-500 mb-2">検索結果が見つかりませんでした</p>
+              <p className="text-sm text-gray-400 mb-4">
+                別のキーワードで検索してみてください
+              </p>
+              <button
+                onClick={handleClearSearch}
+                className="bg-gray-600 text-white px-4 py-2 rounded-md text-sm hover:bg-gray-700 transition-colors"
+              >
+                検索をクリア
+              </button>
+            </div>
           ) : (
             <>
               {/* カテゴリ別に材料を表示 */}
               {['vegetables', 'meat', 'seasoning', 'others'].map((category) => {
-                const categoryIngredients = ingredients.filter((ingredient) => ingredient.category === category);
+                const categoryIngredients = filteredIngredients.filter((ingredient) => ingredient.category === category);
                 if (categoryIngredients.length === 0) return null;
 
                 return (
