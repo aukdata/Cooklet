@@ -262,24 +262,42 @@ export const Settings: React.FC = () => {
               <label className="block text-sm font-medium text-gray-900 mb-2">
                 通知タイミング
               </label>
-              <div className="flex items-center space-x-4">
-                <select
-                  value={notificationSettings.expiry_notification_days}
-                  onChange={(e) => handleExpiryDaysChange(Number(e.target.value))}
-                  className="block w-24 rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
-                  disabled={notificationLoading}
-                >
-                  {[1, 2, 3, 5, 7].map((days) => (
-                    <option key={days} value={days}>
-                      {days}日前
-                    </option>
-                  ))}
-                </select>
-                <span className="text-sm text-gray-500">から通知する</span>
+              <div className="space-y-3">
+                <div className="flex items-center space-x-4">
+                  <select
+                    value={notificationSettings.expiry_notification_days}
+                    onChange={(e) => handleExpiryDaysChange(Number(e.target.value))}
+                    className="block w-32 rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                    disabled={notificationLoading}
+                  >
+                    {/* よく使われる日数を優先表示 */}
+                    <optgroup label="よく使われる設定">
+                      <option value={1}>1日前</option>
+                      <option value={2}>2日前</option>
+                      <option value={3}>3日前</option>
+                      <option value={5}>5日前</option>
+                      <option value={7}>1週間前</option>
+                    </optgroup>
+                    <optgroup label="その他の設定">
+                      <option value={4}>4日前</option>
+                      <option value={6}>6日前</option>
+                      <option value={10}>10日前</option>
+                      <option value={14}>2週間前</option>
+                      <option value={21}>3週間前</option>
+                      <option value={30}>1ヶ月前</option>
+                    </optgroup>
+                  </select>
+                  <span className="text-sm text-gray-500">から通知を開始</span>
+                </div>
+                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+                  <p className="text-xs text-blue-700">
+                    <strong>現在の設定:</strong> 賞味期限の{notificationSettings.expiry_notification_days}日前から通知
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    例: 今日が1月1日で3日前に設定している場合、1月4日が賞味期限の食品から通知されます
+                  </p>
+                </div>
               </div>
-              <p className="text-xs text-gray-400 mt-2">
-                現在: 賞味期限の{notificationSettings.expiry_notification_days}日前から通知
-              </p>
             </div>
           )}
 

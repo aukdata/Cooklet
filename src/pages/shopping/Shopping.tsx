@@ -1,8 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useShoppingList, useMealPlans, useStockItems, useAutoShoppingList } from '../../hooks';
 import { type StockItem } from '../../hooks/useStockItems';
 import { QuantityInput } from '../../components/common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
+import { readReceiptFromImage, validateImageFile, type ReceiptResult } from '../../utils/receiptReader';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
 export const Shopping: React.FC = () => {
@@ -43,6 +44,9 @@ export const Shopping: React.FC = () => {
   // 完了アイテムの量編集状態
   const [editingQuantities, setEditingQuantities] = useState<Record<string, string>>({});
 
+  // レシート読み取り関連の状態
+  const [isReadingReceipt, setIsReadingReceipt] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 全選択状態の管理
   const [selectAll, setSelectAll] = useState(false);
@@ -190,6 +194,59 @@ export const Shopping: React.FC = () => {
     }
   };
 
+  // レシート読み取り機能
+  const handleReceiptUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // ファイル妥当性チェック
+    if (!validateImageFile(file)) {
+      showError('JPEGまたはPNG形式の画像ファイル（10MB以下）を選択してください');
+      return;
+    }
+
+    setIsReadingReceipt(true);
+    
+    try {
+      const result: ReceiptResult = await readReceiptFromImage(file);
+      
+      // レシート読み取り結果を完了リストに追加する処理
+      await handleAddReceiptItems(result);
+      
+      showSuccess(`レシートから${result.items.length}件のアイテムを追加しました！`);
+    } catch (err) {
+      console.error('レシート読み取りに失敗しました:', err);
+      showError('レシート読み取りに失敗しました');
+    } finally {
+      setIsReadingReceipt(false);
+      // ファイル入力をリセット
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  // レシート読み取り結果を完了リストに追加する関数
+  const handleAddReceiptItems = async (receiptResult: ReceiptResult) => {
+    for (const item of receiptResult.items) {
+      try {
+        await addShoppingItem({
+          name: item.name,
+          quantity: item.quantity,
+          checked: true, // レシートのアイテムは既に購入済みなので完了状態で追加
+          added_from: 'manual'
+        });
+      } catch (err) {
+        console.error(`アイテム追加に失敗: ${item.name}`, err);
+      }
+    }
+  };
+
+  // レシートアップロードボタンクリック
+  const handleReceiptButtonClick = () => {
+    fileInputRef.current?.click();
+  };
+
   // ローディング・エラー状態の処理
   if (loading) {
     return (
@@ -290,6 +347,30 @@ export const Shopping: React.FC = () => {
             >
               +
             </button>
+          </div>
+          
+          {/* レシートからの追加 */}
+          <div className="pt-2 border-t border-gray-200">
+            <div className="flex gap-2">
+              <button
+                onClick={handleReceiptButtonClick}
+                disabled={isReadingReceipt}
+                className="flex-1 bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                <span className="mr-2">📄</span>
+                {isReadingReceipt ? '読み取り中...' : 'レシートから追加'}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handleReceiptUpload}
+                className="hidden"
+              />
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              レシート画像をアップロードして自動で商品リストを追加
+            </p>
           </div>
         </div>
       </div>

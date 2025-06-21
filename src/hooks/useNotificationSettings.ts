@@ -123,11 +123,17 @@ export const useNotificationSettings = () => {
 
   // 期限通知日数の変更
   const updateExpiryDays = useCallback(async (days: number) => {
-    if (days < 1 || days > 30) {
-      throw new Error('期限通知日数は1-30日の範囲で設定してください');
+    // バリデーション: 1-30日の範囲
+    if (!Number.isInteger(days) || days < 1 || days > 30) {
+      throw new Error('期限通知日数は1-30日の整数で設定してください');
     }
     await updateSettings({ expiry_notification_days: days });
   }, [updateSettings]);
+
+  // 有効な期限通知日数の範囲を取得
+  const getValidExpiryDaysRange = useCallback(() => {
+    return { min: 1, max: 30 };
+  }, []);
 
   // 初期読み込み
   useEffect(() => {
@@ -143,6 +149,7 @@ export const useNotificationSettings = () => {
     disableNotifications,
     updateExpiryDays,
     requestNotificationPermission,
+    getValidExpiryDaysRange,
     refetch: fetchSettings,
   };
 };

@@ -21,6 +21,14 @@
 - 追加ボタン（+）
 - フォームバリデーション
 
+**レシート読み取り機能**
+- レシートから追加ボタン（📄アイコン付き）
+- 画像ファイルアップロード機能
+- モック画像認識処理（2秒のシミュレート）
+- ファイル妥当性チェック（JPEG/PNG、10MB以下）
+- 読み取り結果を完了状態で自動追加
+- トースト通知による結果表示
+
 **未完了アイテム表示**
 - チェックボックス付きアイテム一覧
 - 食材名と数量の表示
@@ -68,6 +76,13 @@ interface ShoppingItem {
 - 一括削除（handleDeleteCompleted）
 - 完了アイテムの量編集（handleQuantityEdit）
 - 完了アイテムの在庫追加（handleAddToStock）
+
+**レシート読み取り**
+- ファイル選択（handleReceiptButtonClick）
+- 画像アップロード処理（handleReceiptUpload）
+- レシート認識結果の追加（handleAddReceiptItems）
+- ファイル妥当性チェック（validateImageFile）
+- 読み取り状態管理（isReadingReceipt）
 
 **UI操作**
 - 折りたたみ表示制御
