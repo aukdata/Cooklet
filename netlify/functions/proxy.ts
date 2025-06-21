@@ -1,12 +1,13 @@
 // Netlify Functions用プロキシサーバー (TypeScript版)
 // レシピサイトからのコンテンツ取得をCORS制限なしで実行
 
-import type { Handler } from '@netlify/functions';
+import type { Handler, Context } from '@netlify/functions';
 import type {
   CorsHeaders,
   ErrorResponse,
   ProxySuccessResponse,
-  LogEntry
+  LogEntry,
+  NetlifyEvent
 } from './types/shared';
 
 /**
@@ -43,21 +44,8 @@ interface ProxyResponse {
  * @returns CORS ヘッダー
  */
 function getCorsHeaders(origin?: string): Record<string, string> {
-  const allowedOrigins: string[] = [
-    'https://cooklet.netlify.app',  // 本番環境
-    'http://localhost:8888',        // Netlify Dev
-    'http://localhost:5173'         // Vite Dev
-  ];
-
-  const isAllowedOrigin: boolean = Boolean(
-    origin && (
-      allowedOrigins.includes(origin) ||
-      (process.env.NODE_ENV !== 'production' && origin.includes('localhost'))
-    )
-  );
-
   return {
-    'Access-Control-Allow-Origin': isAllowedOrigin && origin ? origin : 'https://cooklet.netlify.app',
+    'Access-Control-Allow-Origin': process.env.VITE_ALLOWED_ORIGINS ?? 'https://cooklet.netlify.app',
     'Access-Control-Allow-Headers': 'Content-Type, Accept, Origin, X-Requested-With',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Content-Type': 'application/json'
@@ -154,7 +142,7 @@ function createErrorResponse(
 /**
  * メインのハンドラー関数
  */
-export const handler: Handler = async (event, context) => {
+export const handler: Handler = async (event: NetlifyEvent, _context: Context) => {
   const startTime: number = Date.now();
   const origin: string | undefined = event.headers.origin || event.headers.Origin;
   const headers = getCorsHeaders(origin);

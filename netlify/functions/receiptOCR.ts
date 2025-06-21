@@ -20,22 +20,9 @@ import type {
  * @param origin - リクエストのOrigin
  * @returns CORS ヘッダー
  */
-function getCorsHeaders(origin?: string): Record<string, string> {
-  const allowedOrigins: string[] = [
-    'https://cooklet.netlify.app',  // 本番環境
-    'http://localhost:8888',        // Netlify Dev
-    'http://localhost:5173'         // Vite Dev
-  ];
-
-  const isAllowedOrigin: boolean = Boolean(
-    origin && (
-      allowedOrigins.includes(origin) ||
-      (process.env.NODE_ENV !== 'production' && origin.includes('localhost'))
-    )
-  );
-
+function getCorsHeaders(_origin?: string): Record<string, string> {
   return {
-    'Access-Control-Allow-Origin': isAllowedOrigin && origin ? origin : 'https://cooklet.netlify.app',
+    'Access-Control-Allow-Origin': process.env.VITE_ALLOWED_ORIGINS ?? 'https://cooklet.netlify.app',
     'Access-Control-Allow-Headers': 'Content-Type, Accept, Origin, X-Requested-With',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
     'Content-Type': 'application/json'
@@ -77,11 +64,11 @@ function validateImageData(imageData: string): ValidationResult {
  */
 async function performOCR(imageBuffer: Buffer): Promise<OCRResult> {
   const client = new ImageAnnotatorClient({
-    apiKey: process.env.GOOGLE_CLOUD_API_KEY
+    apiKey: process.env.VITE_GOOGLE_CLOUD_API_KEY
   });
 
   // DOCUMENT_TEXT_DETECTION を使用してテキストを抽出
-  const [result]: [VisionApiResponse] = await client.documentTextDetection({
+  const [result] = await client.documentTextDetection({
     image: {
       content: imageBuffer
     }
@@ -155,7 +142,7 @@ function createErrorResponse(
 /**
  * メインのハンドラー関数
  */
-export const handler: Handler = async (event: NetlifyEvent, context: Context) => {
+export const handler: Handler = async (event: NetlifyEvent, _context: Context) => {
   const startTime: number = Date.now();
 
   // CORS プリフライトリクエスト対応

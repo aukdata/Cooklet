@@ -136,18 +136,18 @@ export interface LogEntry {
 }
 
 /**
- * Google Vision API レスポンスの型定義
+ * Google Vision API レスポンスの型定義（実際のGoogle Cloud Vision APIに合わせて修正）
  */
 export interface VisionApiTextAnnotation {
-  description?: string;
+  description?: string | null;
   boundingPoly?: {
     vertices: Array<{ x?: number; y?: number }>;
-  };
-  locale?: string;
+  } | null;
+  locale?: string | null;
 }
 
 export interface VisionApiFullTextAnnotation {
-  text?: string;
+  text?: string | null;
   pages?: Array<{
     property?: {
       detectedLanguages?: Array<{
@@ -155,12 +155,12 @@ export interface VisionApiFullTextAnnotation {
         confidence: number;
       }>;
     };
-  }>;
+  }> | null;
 }
 
 export interface VisionApiResponse {
-  textAnnotations?: VisionApiTextAnnotation[];
-  fullTextAnnotation?: VisionApiFullTextAnnotation;
+  textAnnotations?: VisionApiTextAnnotation[] | null;
+  fullTextAnnotation?: VisionApiFullTextAnnotation | null;
   error?: {
     code: number;
     message: string;
@@ -180,7 +180,7 @@ export interface OCRResult {
  * 環境変数の型定義
  */
 export interface EnvironmentVariables {
-  GOOGLE_CLOUD_API_KEY?: string;
-  ALLOWED_ORIGINS?: string;
+  VITE_GOOGLE_CLOUD_API_KEY?: string;
+  VITE_ALLOWED_ORIGINS?: string;
   NODE_ENV?: 'development' | 'production' | 'test';
 }
