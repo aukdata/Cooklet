@@ -136,6 +136,47 @@ export interface LogEntry {
 }
 
 /**
+ * Google Vision API レスポンスの型定義
+ */
+export interface VisionApiTextAnnotation {
+  description?: string;
+  boundingPoly?: {
+    vertices: Array<{ x?: number; y?: number }>;
+  };
+  locale?: string;
+}
+
+export interface VisionApiFullTextAnnotation {
+  text?: string;
+  pages?: Array<{
+    property?: {
+      detectedLanguages?: Array<{
+        languageCode: string;
+        confidence: number;
+      }>;
+    };
+  }>;
+}
+
+export interface VisionApiResponse {
+  textAnnotations?: VisionApiTextAnnotation[];
+  fullTextAnnotation?: VisionApiFullTextAnnotation;
+  error?: {
+    code: number;
+    message: string;
+    status: string;
+  };
+}
+
+/**
+ * OCR処理結果の型定義
+ */
+export interface OCRResult {
+  fullText: string;
+  confidence: number;
+}
+
+/**
  * 環境変数の型定義
  */
 export interface EnvironmentVariables {

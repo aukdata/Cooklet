@@ -28,7 +28,7 @@ export class AIProviderFactory {
 
     switch (providerType) {
       case 'gemini':
-        apiKey = import.meta.env.VITE_GOOGLE_API_KEY || '';
+        apiKey = import.meta.env.VITE_GOOGLE_CLOUD_API_KEY || '';
         model = import.meta.env.VITE_GEMINI_MODEL || 'models/gemini-2.5-flash-lite-preview-06-17';
         break;
       default:

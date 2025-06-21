@@ -137,7 +137,7 @@ netlify/functions/
 ### 環境変数
 ```env
 # Google Cloud API
-VITE_GOOGLE_API_KEY=your_vision_api_key
+VITE_GOOGLE_CLOUD_API_KEY=your_vision_api_key
 ```
 
 ### セキュリティ対策

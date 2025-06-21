@@ -2,36 +2,43 @@
 // Google Vision APIを使用してレシート画像からテキストを抽出
 
 import { ImageAnnotatorClient } from '@google-cloud/vision';
-import type { Handler } from '@netlify/functions';
+import type { Handler, Context } from '@netlify/functions';
 import type {
   CorsHeaders,
   ErrorResponse,
   OCRSuccessResponse,
   OCRRequestBody,
   ValidationResult,
-  LogEntry
+  LogEntry,
+  VisionApiResponse,
+  OCRResult,
+  NetlifyEvent
 } from './types/shared';
 
 /**
- * CORS ヘッダーを設定
+ * CORS ヘッダーを設定（プロキシ用）
  * @param origin - リクエストのOrigin
  * @returns CORS ヘッダー
  */
-function getCorsHeaders(origin?: string): CorsHeaders {
-  const allowedOrigins: string[] = (process.env.ALLOWED_ORIGINS || '').split(',');
-  const isAllowed: boolean = Boolean(
+function getCorsHeaders(origin?: string): Record<string, string> {
+  const allowedOrigins: string[] = [
+    'https://cooklet.netlify.app',  // 本番環境
+    'http://localhost:8888',        // Netlify Dev
+    'http://localhost:5173'         // Vite Dev
+  ];
+
+  const isAllowedOrigin: boolean = Boolean(
     origin && (
       allowedOrigins.includes(origin) ||
-      origin.includes('localhost') ||
-      origin.includes('127.0.0.1')
+      (process.env.NODE_ENV !== 'production' && origin.includes('localhost'))
     )
   );
 
   return {
-    'Access-Control-Allow-Origin': isAllowed && origin ? origin : 'null',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-    'Access-Control-Max-Age': '86400'
+    'Access-Control-Allow-Origin': isAllowedOrigin && origin ? origin : 'https://cooklet.netlify.app',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept, Origin, X-Requested-With',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+    'Content-Type': 'application/json'
   };
 }
 
@@ -68,13 +75,13 @@ function validateImageData(imageData: string): ValidationResult {
  * @param imageBuffer - 画像データのBuffer
  * @returns OCR結果
  */
-async function performOCR(imageBuffer: Buffer): Promise<{ fullText: string; confidence: number }> {
+async function performOCR(imageBuffer: Buffer): Promise<OCRResult> {
   const client = new ImageAnnotatorClient({
     apiKey: process.env.GOOGLE_CLOUD_API_KEY
   });
 
   // DOCUMENT_TEXT_DETECTION を使用してテキストを抽出
-  const [result] = await client.documentTextDetection({
+  const [result]: [VisionApiResponse] = await client.documentTextDetection({
     image: {
       content: imageBuffer
     }
@@ -148,7 +155,7 @@ function createErrorResponse(
 /**
  * メインのハンドラー関数
  */
-export const handler: Handler = async (event, context) => {
+export const handler: Handler = async (event: NetlifyEvent, context: Context) => {
   const startTime: number = Date.now();
 
   // CORS プリフライトリクエスト対応
@@ -211,7 +218,7 @@ export const handler: Handler = async (event, context) => {
     const imageBuffer: Buffer = Buffer.from(base64Content, 'base64');
 
     // Google Vision API キーの確認
-    if (!process.env.GOOGLE_CLOUD_API_KEY) {
+    if (!process.env.VITE_GOOGLE_CLOUD_API_KEY) {
       log({
         timestamp: new Date().toISOString(),
         level: 'ERROR',
@@ -230,7 +237,7 @@ export const handler: Handler = async (event, context) => {
     }
 
     // OCR処理を実行
-    const ocrResult = await performOCR(imageBuffer);
+    const ocrResult: OCRResult = await performOCR(imageBuffer);
     const processingTime: number = Date.now() - startTime;
 
     // 成功ログ出力

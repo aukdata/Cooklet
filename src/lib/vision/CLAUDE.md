@@ -49,7 +49,7 @@ interface OCRResult {
 
 **createVisionClient(): VisionClient**
 - 環境変数からAPIキーを取得してクライアントを作成
-- VITE_GOOGLE_API_KEY の存在チェック
+- VITE_GOOGLE_CLOUD_API_KEY の存在チェック
 - デフォルトインスタンスの生成
 
 #### Vision API 仕様
@@ -121,7 +121,7 @@ console.log('信頼度:', result.confidence);
 
 ### 必須設定
 ```env
-VITE_GOOGLE_API_KEY=your_google_vision_api_key
+VITE_GOOGLE_CLOUD_API_KEY=your_google_vision_api_key
 ```
 
 ### Google Cloud Console 設定
