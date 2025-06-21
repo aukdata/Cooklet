@@ -20,3 +20,9 @@ export { useAutoShoppingList, type AutoGenerationResult } from './useAutoShoppin
 
 // タブ切り替え時の更新チェック機能
 export { useTabRefresh } from './useTabRefresh';
+
+// 通知設定管理フック
+export { useNotificationSettings, type NotificationSettings } from './useNotificationSettings';
+
+// 期限通知管理フック
+export { useExpiryNotifications, type ExpiryItem, type ExpiryNotificationResult } from './useExpiryNotifications';

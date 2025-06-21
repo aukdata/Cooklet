@@ -96,6 +96,11 @@ await supabase.rpc('update_inventory_after_cooking', { recipe_id: 1 })
 - **Web Push API**（ブラウザ標準）
 - PWAで利用可能
 - 完全無料
+- **期限通知機能**: 賞味期限が近い食品をプッシュ通知
+- **ユーザー設定**: 通知の有効/無効切り替え
+- **通知タイミング**: 1-7日前から選択可能（デフォルト3日前）
+- **権限管理**: ブラウザの通知権限を要求
+- **自動チェック**: 1時間ごとの期限チェック
 
 ## 3. アプリ特徴
 
@@ -105,7 +110,7 @@ await supabase.rpc('update_inventory_after_cooking', { recipe_id: 1 })
 - **中途半端な食材・作り置きにも対応**した在庫管理
 - 献立と在庫から**買い物リストを自動生成**
 - **一食ごとの支出記録**（自炊・外食対応）
-- **Web Push通知で賞味期限リマインド**（予定）
+- **Web Push通知で賞味期限リマインド**（実装済み）
 - **UIは軽量・高速を重視**、リッチな装飾は控える
 
 ## 4. グローバルタブ構成
@@ -130,7 +135,22 @@ await supabase.rpc('update_inventory_after_cooking', { recipe_id: 1 })
 
 Supabase（PostgreSQL）を使用。
 
-### 6.1 meal_plans（献立）
+### 6.1 users（ユーザー）
+```sql
+-- ユーザー（Supabase auth.usersと連携）
+users (
+  id: UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email: TEXT UNIQUE NOT NULL,
+  name: TEXT,
+  google_id: TEXT UNIQUE,
+  notification_enabled: BOOLEAN DEFAULT FALSE,     -- 通知機能の有効/無効
+  expiry_notification_days: INTEGER DEFAULT 3,     -- 期限通知を行う日数（1-30日）
+  created_at: TIMESTAMP DEFAULT NOW(),
+  updated_at: TIMESTAMP DEFAULT NOW()
+)
+```
+
+### 6.2 meal_plans（献立）
 ```sql
 -- 献立（1日ごとの記録）
 meal_plans (
@@ -147,7 +167,7 @@ meal_plans (
 )
 ```
 
-### 6.2 stock_items（食材在庫）
+### 6.3 stock_items（食材在庫）
 ```sql
 -- 食材在庫
 stock_items (
@@ -163,7 +183,7 @@ stock_items (
 )
 ```
 
-### 6.3 shopping_list（買い物リスト）
+### 6.4 shopping_list（買い物リスト）
 ```sql
 -- 買い物リスト
 shopping_list (
@@ -177,7 +197,7 @@ shopping_list (
 )
 ```
 
-### 6.4 cost_records（コスト記録）
+### 6.5 cost_records（コスト記録）
 ```sql
 -- コスト記録
 cost_records (
@@ -191,7 +211,7 @@ cost_records (
 )
 ```
 
-### 6.5 saved_recipes（レシピ保存）
+### 6.6 saved_recipes（レシピ保存）
 ```sql
 -- レシピ保存
 saved_recipes (
@@ -205,7 +225,7 @@ saved_recipes (
 )
 ```
 
-### 6.6 インデックス設計
+### 6.7 インデックス設計
 ```sql
 -- パフォーマンス向上のためのインデックス
 CREATE INDEX idx_meal_plans_user_date ON meal_plans(user_id, date);
@@ -281,6 +301,19 @@ interface SavedRecipe {
   tags: string[];
   created_at: string;
 }
+
+interface NotificationSettings {
+  notification_enabled: boolean;
+  expiry_notification_days: number;
+}
+
+interface ExpiryItem {
+  id: string;
+  name: string;
+  best_before: string;
+  days_until_expiry: number;
+  storage_location?: string;
+}
 ```
 
 ## 8. 開発・運用計画
@@ -299,10 +332,10 @@ interface SavedRecipe {
 2. 献立からの買い物リスト自動生成
 3. 賞味期限管理・アラート
 
-**フェーズ3：コスト・通知機能**
-1. コスト管理機能
-2. 通知システム（Web Push API）
-3. PWA対応
+**フェーズ3：コスト・通知機能**（実装済み）
+1. コスト管理機能 ✅
+2. 通知システム（Web Push API）✅
+3. PWA対応 ✅
 4. パフォーマンス最適化
 
 ### 8.3 MVP（最小機能）の定義

@@ -5,6 +5,7 @@ import { NavigationProvider } from './contexts/NavigationContext'
 import { ToastProvider } from './hooks/useToast.tsx'
 import { Login } from './pages/auth/Login'
 import { MainLayout } from './components/layout/MainLayout'
+import { NotificationManager } from './components/NotificationManager'
 import { ConfirmDialog } from './components/dialogs/ConfirmDialog'
 
 const AppContent: React.FC = () => {
@@ -13,6 +14,7 @@ const AppContent: React.FC = () => {
   // PWA更新通知用の状態管理
   const [isPWAUpdateDialogOpen, setIsPWAUpdateDialogOpen] = useState(false)
   const [newServiceWorker, setNewServiceWorker] = useState<ServiceWorker | null>(null)
+  
 
   // PWA初期化処理
   useEffect(() => {
@@ -116,6 +118,9 @@ const AppContent: React.FC = () => {
   return (
     <>
       <MainLayout />
+      
+      {/* 期限通知管理コンポーネント */}
+      <NotificationManager />
       
       {/* PWA更新確認ダイアログ */}
       <ConfirmDialog

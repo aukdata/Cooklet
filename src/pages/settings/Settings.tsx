@@ -4,6 +4,7 @@ import { useNavigation } from '../../contexts/NavigationContext';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast.tsx';
 import { useBuildInfo } from '../../hooks/useBuildInfo';
+import { useNotificationSettings } from '../../hooks/useNotificationSettings';
 
 // ユーザ設定画面コンポーネント - issue #11対応（画面化）
 export const Settings: React.FC = () => {
@@ -11,6 +12,7 @@ export const Settings: React.FC = () => {
   const { showSuccess, showError } = useToast();
   const { version, formatBuildDate } = useBuildInfo();
   const { navigate } = useNavigation();
+  const { settings: notificationSettings, enableNotifications, disableNotifications, updateExpiryDays, loading: notificationLoading } = useNotificationSettings();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
@@ -73,6 +75,43 @@ export const Settings: React.FC = () => {
   // 材料マスタ管理画面への遷移
   const handleIngredientManagement = () => {
     navigate('settings/ingredients');
+  };
+
+  // 通知機能の有効化処理
+  const handleEnableNotifications = async () => {
+    try {
+      const success = await enableNotifications();
+      if (success) {
+        showSuccess('通知機能を有効にしました');
+      } else {
+        showError('通知権限が拒否されました。ブラウザの設定から通知を許可してください。');
+      }
+    } catch (error) {
+      console.error('通知有効化エラー:', error);
+      showError('通知機能の有効化に失敗しました');
+    }
+  };
+
+  // 通知機能の無効化処理
+  const handleDisableNotifications = async () => {
+    try {
+      await disableNotifications();
+      showSuccess('通知機能を無効にしました');
+    } catch (error) {
+      console.error('通知無効化エラー:', error);
+      showError('通知機能の無効化に失敗しました');
+    }
+  };
+
+  // 期限通知日数の変更処理
+  const handleExpiryDaysChange = async (days: number) => {
+    try {
+      await updateExpiryDays(days);
+      showSuccess(`期限通知を${days}日前に設定しました`);
+    } catch (error) {
+      console.error('期限日数変更エラー:', error);
+      showError('期限通知日数の変更に失敗しました');
+    }
   };
 
   return (
@@ -178,6 +217,89 @@ export const Settings: React.FC = () => {
               </svg>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* 通知設定セクション */}
+      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
+        <h3 className="font-medium text-gray-900 mb-3 flex items-center">
+          <span className="mr-2">🔔</span>
+          通知設定
+        </h3>
+        
+        <div className="space-y-4">
+          {/* 通知機能の有効/無効 */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900">期限通知</p>
+              <p className="text-xs text-gray-500 mt-1">
+                賞味期限が近い食品をプッシュ通知でお知らせします
+              </p>
+            </div>
+            <div className="flex items-center">
+              {notificationLoading ? (
+                <div className="w-10 h-6 bg-gray-200 rounded-full animate-pulse"></div>
+              ) : (
+                <button
+                  onClick={notificationSettings.notification_enabled ? handleDisableNotifications : handleEnableNotifications}
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
+                    notificationSettings.notification_enabled ? 'bg-indigo-600' : 'bg-gray-200'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                      notificationSettings.notification_enabled ? 'translate-x-5' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* 期限通知日数設定 */}
+          {notificationSettings.notification_enabled && (
+            <div className="border-t pt-4">
+              <label className="block text-sm font-medium text-gray-900 mb-2">
+                通知タイミング
+              </label>
+              <div className="flex items-center space-x-4">
+                <select
+                  value={notificationSettings.expiry_notification_days}
+                  onChange={(e) => handleExpiryDaysChange(Number(e.target.value))}
+                  className="block w-24 rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                  disabled={notificationLoading}
+                >
+                  {[1, 2, 3, 5, 7].map((days) => (
+                    <option key={days} value={days}>
+                      {days}日前
+                    </option>
+                  ))}
+                </select>
+                <span className="text-sm text-gray-500">から通知する</span>
+              </div>
+              <p className="text-xs text-gray-400 mt-2">
+                現在: 賞味期限の{notificationSettings.expiry_notification_days}日前から通知
+              </p>
+            </div>
+          )}
+
+          {/* ブラウザ通知権限の説明 */}
+          {!notificationSettings.notification_enabled && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
+              <div className="flex">
+                <div className="flex-shrink-0">
+                  <svg className="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-yellow-800">
+                    通知を有効にするには、ブラウザの通知権限が必要です。
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

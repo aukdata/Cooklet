@@ -157,6 +157,39 @@ interface SavedRecipe {
 - 自動生成アイテムのadded_fromフラグ管理
 - 重複アイテムの統合処理
 
+### useNotificationSettings.ts
+通知設定管理機能を提供するカスタムフック。
+
+#### 提供する機能
+- `settings`: 通知設定情報
+- `loading`: 読み込み状態
+- `error`: エラーメッセージ
+- `updateSettings`: 設定更新関数
+- `enableNotifications`: 通知有効化関数
+- `disableNotifications`: 通知無効化関数
+- `updateExpiryDays`: 期限通知日数変更関数
+- `requestNotificationPermission`: 通知権限要求関数
+
+#### 特徴
+- usersテーブルの通知設定項目を管理
+- ブラウザの通知権限要求を処理
+- デフォルト設定: 無効、3日前通知
+
+### useExpiryNotifications.ts
+賞味期限チェックと通知管理機能を提供するカスタムフック。
+
+#### 提供する機能
+- `checkExpiryItems`: 期限近い食品をチェック
+- `sendNotification`: Web Push通知送信
+- `checkAndNotify`: チェックと通知の実行
+- `loading`: 処理状態
+
+#### 特徴
+- 在庫データと通知設定の連携
+- 期限日数に基づく自動フィルタリング
+- 1日1回の通知制限機能
+- PWA通知アイコンとメッセージ設定
+
 ## 共通パターン
 - エラーハンドリングの統一
 - 日本語エラーメッセージ
