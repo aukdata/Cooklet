@@ -174,6 +174,9 @@ export class GeminiProvider extends BaseAIProvider {
                 items: {
                   type: Type.OBJECT,
                   properties: {
+                    original_name: {
+                      type: Type.STRING,
+                    },
                     name: {
                       type: Type.STRING,
                     },
