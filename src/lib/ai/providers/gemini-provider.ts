@@ -174,7 +174,7 @@ export class GeminiProvider extends BaseAIProvider {
                 items: {
                   type: Type.OBJECT,
                   properties: {
-                    original_name: {
+                    originalName: {
                       type: Type.STRING,
                     },
                     name: {
@@ -187,7 +187,7 @@ export class GeminiProvider extends BaseAIProvider {
                       type: Type.NUMBER,
                     },
                   },
-                  propertyOrdering: ["name", "quantity", "price"],
+                  propertyOrdering: ["originalName", "name", "quantity", "price"],
                 },
               },
               storeName: {

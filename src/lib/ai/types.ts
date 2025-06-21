@@ -42,7 +42,8 @@ export interface AIProvider {
 // レシート抽出結果のスキーマ
 export interface ReceiptExtraction {
   items: Array<{
-    name: string; // 商品名
+    name: string; // 一般名
+    nameOriginal?: string; // 元の名前（任意）
     quantity: string; // 数量
     price?: number; // 価格（任意）
   }>;
