@@ -6,7 +6,6 @@ import { ToastProvider } from './hooks/useToast.tsx'
 import { Login } from './pages/auth/Login'
 import { MainLayout } from './components/layout/MainLayout'
 import { ConfirmDialog } from './components/dialogs/ConfirmDialog'
-import './App.css'
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth()
@@ -14,6 +13,15 @@ const AppContent: React.FC = () => {
   // PWA更新通知用の状態管理
   const [isPWAUpdateDialogOpen, setIsPWAUpdateDialogOpen] = useState(false)
   const [newServiceWorker, setNewServiceWorker] = useState<ServiceWorker | null>(null)
+
+  // PWA初期化処理
+  useEffect(() => {
+    // PWA表示モード検出
+    if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('[PWA] スタンドアロンモードで実行中');
+      document.body.classList.add('pwa-standalone');
+    }
+  }, []);
 
   // PWA Service Worker更新チェック
   useEffect(() => {

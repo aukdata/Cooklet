@@ -8,5 +8,6 @@ html, body {
 
 #root {
   margin: 0;
+  margin-bottom: env(safe-area-inset-bottom);
   padding: 0;
 }
