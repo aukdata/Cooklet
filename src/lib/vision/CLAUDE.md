@@ -20,12 +20,32 @@ Netlify Functions経由でGoogle Vision API を使用するOCRクライアント
 - ネットワークエラー対応
 - 接続テスト機能
 
+**ReceiptItem インターフェース**
+```typescript
+interface ReceiptItem {
+  name: string;           // 商品名
+  quantity: string;       // 数量
+  price?: number;         // 価格（任意）
+}
+```
+
 **OCRResult インターフェース**
 ```typescript
 interface OCRResult {
   fullText: string;        // 抽出されたテキスト全体
   confidence: number;      // 抽出結果の信頼度
   processedAt: string;     // 処理時刻
+  metadata?: {
+    imageSize: number;     // 画像サイズ
+    processingTime: number; // 処理時間
+  };
+  // 構造化データ（オプション）
+  structured?: {
+    items: ReceiptItem[];   // 抽出された商品リスト
+    totalPrice?: number;    // 合計金額
+    storeName?: string;     // 店舗名
+    date?: string;          // 購入日
+  };
 }
 ```
 
@@ -41,6 +61,7 @@ interface OCRResult {
 - DOCUMENT_TEXT_DETECTION を使用した高精度認識
 - Base64エンコーディングによる画像データ変換
 - Vision API レスポンスの解析とエラーハンドリング
+- 構造化データ（商品リスト、店舗名、合計金額等）の自動抽出
 
 **convertToBase64(file: File): Promise<string>**
 - ファイルをBase64文字列に変換
@@ -101,6 +122,13 @@ const result = await visionClient.extractTextFromImage(imageFile);
 
 console.log('抽出テキスト:', result.fullText);
 console.log('信頼度:', result.confidence);
+
+// 構造化データがある場合
+if (result.structured) {
+  console.log('店舗名:', result.structured.storeName);
+  console.log('合計金額:', result.structured.totalPrice);
+  console.log('商品一覧:', result.structured.items);
+}
 ```
 
 #### エラーハンドリング

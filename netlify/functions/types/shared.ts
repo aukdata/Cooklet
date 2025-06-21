@@ -85,6 +85,13 @@ export interface OCRSuccessResponse {
       imageSize: number;
       processingTime: number;
     };
+    // 構造化データ（オプション）
+    structured?: {
+      items: ReceiptItem[];
+      totalPrice?: number;
+      storeName?: string;
+      date?: string;
+    };
   };
 }
 
@@ -174,6 +181,27 @@ export interface VisionApiResponse {
 export interface OCRResult {
   fullText: string;
   confidence: number;
+}
+
+/**
+ * レシート商品項目の型定義
+ */
+export interface ReceiptItem {
+  name: string;
+  quantity: string;
+  price?: number;
+}
+
+/**
+ * 構造化されたOCR処理結果の型定義
+ */
+export interface StructuredOCRResult {
+  fullText: string;
+  confidence: number;
+  items: ReceiptItem[];
+  totalPrice?: number;
+  storeName?: string;
+  date?: string;
 }
 
 /**

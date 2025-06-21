@@ -12,7 +12,9 @@ import type {
   LogEntry,
   VisionApiResponse,
   OCRResult,
-  NetlifyEvent
+  NetlifyEvent,
+  ReceiptItem,
+  StructuredOCRResult
 } from './types/shared';
 
 /**
@@ -93,6 +95,100 @@ async function performOCR(imageBuffer: Buffer): Promise<OCRResult> {
   return {
     fullText: detections[0].description || '',
     confidence: 0.95
+  };
+}
+
+/**
+ * OCRテキストからレシートデータを構造化して抽出
+ * @param fullText - OCRで抽出されたテキスト全体
+ * @returns 構造化されたレシートデータ
+ */
+function parseReceiptText(fullText: string): StructuredOCRResult {
+  // デバッグ用：生のOCRテキストをログ出力
+  log({
+    timestamp: new Date().toISOString(),
+    level: 'INFO',
+    message: 'OCRテキスト解析開始',
+    data: { fullText }
+  });
+
+  // 行ごとに分割
+  const lines: string[] = fullText.split('\n').map(line => line.trim()).filter(line => line.length > 0);
+  
+  const items: ReceiptItem[] = [];
+  let totalPrice: number | undefined;
+  let storeName: string | undefined;
+  let date: string | undefined;
+
+  // 簡単なパターンマッチングで商品を抽出
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    
+    // 店舗名を抽出（最初の数行から）
+    if (i < 5 && !storeName && line.length > 2 && !line.match(/\d{4}/)) {
+      // 数字が多くない行を店舗名として判定
+      const digitCount = (line.match(/\d/g) || []).length;
+      if (digitCount < line.length / 3) {
+        storeName = line;
+      }
+    }
+
+    // 日付を抽出（YYYY/MM/DD、YYYY-MM-DD形式）
+    const dateMatch = line.match(/(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})/);
+    if (dateMatch && !date) {
+      date = `${dateMatch[1]}-${dateMatch[2].padStart(2, '0')}-${dateMatch[3].padStart(2, '0')}`;
+    }
+
+    // 合計金額を抽出
+    if (line.includes('合計') || line.includes('計') || line.includes('総計')) {
+      const amountMatch = line.match(/(\d{1,3}(?:,\d{3})*)/);
+      if (amountMatch) {
+        totalPrice = parseInt(amountMatch[1].replace(/,/g, ''), 10);
+      }
+    }
+
+    // 商品項目を抽出（価格パターンがある行）
+    const priceMatch = line.match(/(\d{1,3}(?:,\d{3})*)\s*円?$/);
+    if (priceMatch && !line.includes('合計') && !line.includes('計')) {
+      // 価格が見つかった場合、商品名を前の部分から抽出
+      const priceStr = priceMatch[0];
+      const price = parseInt(priceMatch[1].replace(/,/g, ''), 10);
+      const itemName = line.replace(priceMatch[0], '').trim();
+      
+      if (itemName.length > 0) {
+        // 数量を抽出（商品名の最後にある数字×数字パターン）
+        const quantityMatch = itemName.match(/(\d+)\s*[×x]\s*(\d+)\s*$/i);
+        let quantity = '1個';
+        let cleanName = itemName;
+        
+        if (quantityMatch) {
+          quantity = `${quantityMatch[1]}個`;
+          cleanName = itemName.replace(quantityMatch[0], '').trim();
+        } else {
+          // 単体の数量パターン
+          const singleQuantityMatch = itemName.match(/\s+(\d+)\s*$/);
+          if (singleQuantityMatch) {
+            quantity = `${singleQuantityMatch[1]}個`;
+            cleanName = itemName.replace(singleQuantityMatch[0], '').trim();
+          }
+        }
+
+        items.push({
+          name: cleanName,
+          quantity,
+          price
+        });
+      }
+    }
+  }
+
+  return {
+    fullText,
+    confidence: 0.85, // 構造化解析の信頼度
+    items,
+    totalPrice,
+    storeName,
+    date
   };
 }
 
@@ -225,6 +321,10 @@ export const handler: Handler = async (event: NetlifyEvent, _context: Context) =
 
     // OCR処理を実行
     const ocrResult: OCRResult = await performOCR(imageBuffer);
+    
+    // OCRテキストから構造化データを抽出
+    const structuredResult: StructuredOCRResult = parseReceiptText(ocrResult.fullText);
+    
     const processingTime: number = Date.now() - startTime;
 
     // 成功ログ出力
@@ -236,7 +336,10 @@ export const handler: Handler = async (event: NetlifyEvent, _context: Context) =
         processingTime,
         imageSize: imageBuffer.length,
         textLength: ocrResult.fullText.length,
-        confidence: ocrResult.confidence
+        confidence: ocrResult.confidence,
+        itemsFound: structuredResult.items.length,
+        totalPrice: structuredResult.totalPrice,
+        storeName: structuredResult.storeName
       }
     });
 
@@ -250,6 +353,13 @@ export const handler: Handler = async (event: NetlifyEvent, _context: Context) =
         metadata: {
           imageSize: imageBuffer.length,
           processingTime
+        },
+        // 構造化データを追加
+        structured: {
+          items: structuredResult.items,
+          totalPrice: structuredResult.totalPrice,
+          storeName: structuredResult.storeName,
+          date: structuredResult.date
         }
       }
     };

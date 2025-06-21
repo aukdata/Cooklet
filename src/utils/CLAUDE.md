@@ -23,7 +23,7 @@ interface ReceiptItem {
 ```typescript
 interface ReceiptResult {
   items: ReceiptItem[];    // 読み取った商品リスト
-  totalAmount?: number;    // 合計金額（任意）
+  totalPrice?: number;     // 合計金額（任意）
   storeName?: string;      // 店舗名（任意）
   date?: string;          // 購入日（任意）
 }
@@ -62,7 +62,7 @@ try {
   const result = await readReceiptFromImage(file);
   console.log(`${result.items.length}件のアイテムを読み取りました`);
   console.log('店舗名:', result.storeName);
-  console.log('合計金額:', result.totalAmount);
+  console.log('合計金額:', result.totalPrice);
 } catch (error) {
   console.error('読み取りに失敗しました:', error);
 }

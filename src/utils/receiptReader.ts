@@ -16,7 +16,7 @@ export interface ReceiptItem {
  */
 export interface ReceiptResult {
   items: ReceiptItem[];
-  totalAmount?: number;
+  totalPrice?: number;
   storeName?: string;
   date?: string;
 }
@@ -40,22 +40,44 @@ export const readReceiptFromImage = async (file: File): Promise<ReceiptResult> =
     console.log('抽出されたテキスト:', ocrResult.fullText);
     console.log('信頼度:', ocrResult.confidence);
     console.log('処理時刻:', ocrResult.processedAt);
+    
+    // 構造化データがある場合は追加で表示
+    if (ocrResult.structured) {
+      console.log('=== 構造化データ ===');
+      console.log('店舗名:', ocrResult.structured.storeName);
+      console.log('購入日:', ocrResult.structured.date);
+      console.log('合計金額:', ocrResult.structured.totalPrice);
+      console.log('商品一覧:', ocrResult.structured.items);
+      console.log('抽出された商品数:', ocrResult.structured.items.length);
+      console.log('==================');
+    }
+    
     console.log('================');
     
-    // 現在はOCR結果の出力のみ実装
-    // 今後、テキストパース機能を追加予定
-    return {
-      items: [
-        {
-          name: "OCR結果確認用",
-          quantity: "1件",
-          price: 0
-        }
-      ],
-      totalAmount: 0,
-      storeName: "テスト実行",
-      date: new Date().toISOString().split('T')[0]
-    };
+    // 構造化データがある場合はそれを使用、なければフォールバック
+    if (ocrResult.structured && ocrResult.structured.items.length > 0) {
+      return {
+        items: ocrResult.structured.items,
+        totalPrice: ocrResult.structured.totalPrice,
+        storeName: ocrResult.structured.storeName,
+        date: ocrResult.structured.date
+      };
+    } else {
+      // 構造化データがない場合のフォールバック
+      console.log('構造化データが抽出できませんでした。フォールバックデータを返します。');
+      return {
+        items: [
+          {
+            name: "OCR結果確認用（構造化失敗）",
+            quantity: "1件",
+            price: 0
+          }
+        ],
+        totalPrice: 0,
+        storeName: "テスト実行",
+        date: new Date().toISOString().split('T')[0]
+      };
+    }
     
   } catch (error) {
     console.error('レシート読み取りエラー:', error);
