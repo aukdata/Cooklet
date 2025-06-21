@@ -1,29 +1,5 @@
-// Google Vision API を使用したOCR処理クライアント
-// REST API を使用してブラウザから直接呼び出し（@google-cloud/visionはNode.js専用のため）
-
-/**
- * Vision API のレスポンス型定義
- */
-interface VisionApiResponse {
-  responses: Array<{
-    textAnnotations?: Array<{
-      description: string;
-      boundingPoly?: {
-        vertices: Array<{
-          x: number;
-          y: number;
-        }>;
-      };
-    }>;
-    fullTextAnnotation?: {
-      text: string;
-    };
-    error?: {
-      code: number;
-      message: string;
-    };
-  }>;
-}
+// Netlify Functions経由でGoogle Vision APIを使用するOCRクライアント
+// セキュリティのためAPIキーはサーバーサイドで管理
 
 /**
  * OCR処理結果の型定義
@@ -32,149 +8,119 @@ export interface OCRResult {
   fullText: string;
   confidence: number;
   processedAt: string;
+  metadata?: {
+    imageSize: number;
+    processingTime: number;
+  };
 }
 
 /**
  * OCR処理専用エラークラス
  */
 export class OCRError extends Error {
-  public readonly code?: number;
-  public readonly originalError?: Error;
+  public readonly code?: string;
+  public readonly statusCode?: number;
+  public readonly timestamp?: string;
 
   constructor(
     message: string,
-    code?: number,
-    originalError?: Error
+    code?: string,
+    statusCode?: number,
+    timestamp?: string
   ) {
     super(message);
     this.name = 'OCRError';
     this.code = code;
-    this.originalError = originalError;
+    this.statusCode = statusCode;
+    this.timestamp = timestamp;
   }
 }
 
 /**
- * Google Vision API を使用したOCR処理クライアント
- * ブラウザ環境対応のREST API使用版
+ * Netlify Functions経由でVision APIを使用するOCRクライアント
  */
 export class VisionClient {
-  private readonly apiKey: string;
-  private readonly apiUrl = 'https://vision.googleapis.com/v1/images:annotate';
+  private readonly apiEndpoint: string;
 
-  constructor(apiKey: string) {
-    if (!apiKey) {
-      throw new OCRError('Google Vision API キーが設定されていません');
-    }
-    this.apiKey = apiKey;
+  constructor() {
+    // Netlify Functionsのエンドポイントを設定
+    this.apiEndpoint = '/.netlify/functions/receiptOCR';
   }
 
   /**
-   * 画像ファイルからテキストを抽出（DOCUMENT_TEXT_DETECTION使用）
+   * 画像ファイルからテキストを抽出
    * @param imageFile - 解析する画像ファイル
    * @returns Promise<OCRResult> - OCR処理結果
    */
   async extractTextFromImage(imageFile: File): Promise<OCRResult> {
     try {
-      // 画像をBase64に変換
-      const base64Image: string = await this.convertToBase64(imageFile);
+      // 画像をBase64形式に変換
+      const base64Image: string = await this.convertToDataURL(imageFile);
 
-      // Vision API へのリクエストボディを構築
-      const requestBody = {
-        requests: [
-          {
-            image: {
-              content: base64Image
-            },
-            features: [
-              {
-                type: 'DOCUMENT_TEXT_DETECTION',
-                maxResults: 1
-              }
-            ]
-          }
-        ]
-      };
-
-      // Vision API を呼び出し
-      const response = await fetch(`${this.apiUrl}?key=${this.apiKey}`, {
+      // Netlify Functionsへリクエスト送信
+      const response = await fetch(this.apiEndpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify({
+          image: base64Image,
+          options: {
+            format: this.getImageFormat(imageFile.type),
+            maxSize: imageFile.size
+          }
+        })
       });
 
-      if (!response.ok) {
+      // レスポンス解析
+      const responseData = await response.json();
+
+      if (!response.ok || !responseData.success) {
+        const error = responseData.error;
         throw new OCRError(
-          `Vision API リクエストが失敗しました: ${response.status} ${response.statusText}`,
-          response.status
+          error?.message || 'OCR処理に失敗しました',
+          error?.code || 'UNKNOWN_ERROR',
+          response.status,
+          error?.details?.timestamp
         );
       }
 
-      const data: VisionApiResponse = await response.json();
-
-      // レスポンスエラーチェック
-      if (data.responses[0]?.error) {
-        const error = data.responses[0].error;
-        throw new OCRError(
-          `Vision API エラー: ${error.message}`,
-          error.code
-        );
-      }
-
-      // テキスト抽出結果を取得
-      const textAnnotations = data.responses[0]?.textAnnotations;
-      
-      if (!textAnnotations || textAnnotations.length === 0) {
-        // フォールバック: fullTextAnnotationから取得を試行
-        const fullTextAnnotation = data.responses[0]?.fullTextAnnotation;
-        if (fullTextAnnotation?.text) {
-          return {
-            fullText: fullTextAnnotation.text,
-            confidence: 0.90,
-            processedAt: new Date().toISOString()
-          };
-        }
-        
-        throw new OCRError('画像からテキストを検出できませんでした');
-      }
-
-      // 最初のtextAnnotationが全体のテキストを含む
-      const fullText: string = textAnnotations[0].description;
-
-      return {
-        fullText,
-        confidence: 0.95, // Vision APIは信頼度を返さないため固定値
-        processedAt: new Date().toISOString()
-      };
+      return responseData.data;
 
     } catch (error) {
       if (error instanceof OCRError) {
         throw error;
       }
-      
+
+      // ネットワークエラーや予期しないエラー
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        throw new OCRError(
+          'ネットワークエラーが発生しました。接続を確認してください。',
+          'NETWORK_ERROR'
+        );
+      }
+
       throw new OCRError(
-        'OCR処理中にエラーが発生しました',
+        'OCR処理中に予期しないエラーが発生しました',
+        'UNEXPECTED_ERROR',
         undefined,
-        error as Error
+        new Date().toISOString()
       );
     }
   }
 
   /**
-   * ファイルをBase64文字列に変換
+   * ファイルをData URL形式に変換
    * @param file - 変換するファイル
-   * @returns Promise<string> - Base64文字列（データURLプレフィックスなし）
+   * @returns Promise<string> - Data URL形式の画像データ
    */
-  private async convertToBase64(file: File): Promise<string> {
+  private async convertToDataURL(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       
       reader.onload = () => {
         if (typeof reader.result === 'string') {
-          // "data:image/jpeg;base64," プレフィックスを除去
-          const base64: string = reader.result.split(',')[1];
-          resolve(base64);
+          resolve(reader.result);
         } else {
           reject(new Error('ファイル読み込みに失敗しました'));
         }
@@ -187,17 +133,45 @@ export class VisionClient {
       reader.readAsDataURL(file);
     });
   }
+
+  /**
+   * MIMEタイプから画像形式を取得
+   * @param mimeType - ファイルのMIMEタイプ
+   * @returns string - 画像形式
+   */
+  private getImageFormat(mimeType: string): string {
+    switch (mimeType) {
+      case 'image/jpeg':
+      case 'image/jpg':
+        return 'jpeg';
+      case 'image/png':
+        return 'png';
+      case 'image/webp':
+        return 'webp';
+      default:
+        return 'unknown';
+    }
+  }
+
+  /**
+   * OCR処理の接続テスト
+   * @returns Promise<boolean> - 接続可能かどうか
+   */
+  async testConnection(): Promise<boolean> {
+    try {
+      const response = await fetch(this.apiEndpoint, {
+        method: 'OPTIONS'
+      });
+      return response.ok;
+    } catch {
+      return false;
+    }
+  }
 }
 
 /**
  * デフォルトのVisionクライアントインスタンスを作成
  */
 export const createVisionClient = (): VisionClient => {
-  const apiKey: string = import.meta.env.VITE_GOOGLE_API_KEY;
-  
-  if (!apiKey) {
-    throw new OCRError('VITE_GOOGLE_API_KEY 環境変数が設定されていません');
-  }
-  
-  return new VisionClient(apiKey);
+  return new VisionClient();
 };

@@ -2,34 +2,81 @@
 
 ## 2025-06-21
 
-### 実装内容
+### 【最新】レシートOCR機能のNetlify Functions TypeScript化完了
+
+#### 実装内容
+- **Netlify Functions をJavaScriptからTypeScriptに移行**
+  - `receiptOCR.js` → `receiptOCR.ts`: Google Vision API レシートOCR処理
+  - `proxy.js` → `proxy.ts`: レシピサイトプロキシ処理
+  - 厳密な型定義による型安全性の大幅向上
+
+#### 新規作成ファイル
+- `netlify/functions/types/shared.ts`: 共通型定義システム
+  - OCR・プロキシAPI用統一インターフェース
+  - エラーハンドリング・バリデーション用型
+  - Netlify Functions共通レスポンス型
+- `netlify/functions/tsconfig.json`: TypeScript設定（Netlify Functions用）
+- `netlify/functions/package.json`: 依存関係更新（`@netlify/functions`等）
+- `.claude/TYPESCRIPT_MIGRATION.md`: 移行詳細ドキュメント
+
+#### 型安全性の向上
+```typescript
+// Before (JavaScript) - 実行時エラーリスク
+const validation = validateImageData(image);
+
+// After (TypeScript) - コンパイル時型チェック
+const validation: ValidationResult = validateImageData(image);
+const response: OCRSuccessResponse = { success: true, data: {...} };
+```
+
+#### 技術仕様
+- **TypeScript設定**: ES2022 target, CommonJS module, strict mode
+- **型定義共有**: フロントエンドとバックエンド間での型統一
+- **エラーハンドリング**: 分類された型安全なエラーレスポンス
+- **IDEサポート**: 自動補完・リファクタリング・エラー検出
+
+#### セキュリティ・パフォーマンス向上
+- APIキーのサーバーサイド管理（GOOGLE_CLOUD_API_KEY）
+- CORS制限とOrigin検証
+- 詳細なログ出力とエラー分類
+- レスポンス形式の統一
+
+#### 引き継ぎ事項
+1. **手動削除必要**: 古いJSファイル（`receiptOCR.js`, `proxy.js`）
+2. **環境変数設定**: `GOOGLE_CLOUD_API_KEY`, `ALLOWED_ORIGINS`
+3. **第二段階準備完了**: 構造化データ抽出（`{items: [{name, count, price}], total_price, store_name}`）
+4. **型定義拡張**: 必要に応じて `types/shared.ts` を拡張
+
+### 毎朝の通知機能を実装
+
+#### 実装内容
 - **毎朝の通知機能を実装**
   - 設定画面で通知時間を設定可能（デフォルト08:00）
   - 毎日指定した時間に期限の近い食材を通知
   - 通知の有効/無効切り替え機能
 
-### データベース変更
+#### データベース変更
 - `users`テーブルに朝の通知関連カラムを追加
   - `notification_enabled: BOOLEAN DEFAULT FALSE`
   - `notification_time: TIME DEFAULT '08:00'`
   - パッチファイル: `database/patch-morning-notification.sql`
 
-### 新規ファイル
+#### 新規ファイル
 - `src/services/notificationService.ts`: 朝の通知スケジュール管理
 - `src/components/MorningNotificationManager.tsx`: 朝の通知管理コンポーネント
 
-### 既存ファイル変更
+#### 既存ファイル変更
 - `src/pages/settings/Settings.tsx`: 朝の通知設定UIを追加
 - `src/App.tsx`: MorningNotificationManagerを追加
 - `CLAUDE.md`: 通知機能の仕様を更新
 
-### 技術仕様
+#### 技術仕様
 - **スケジュール管理**: setTimeout を使用した毎日の通知スケジュール
 - **権限管理**: ブラウザの通知権限を要求・確認
 - **データ永続化**: Supabaseの users テーブルで設定を保存
 - **自動再スケジュール**: アプリ起動時に設定を読み込み、有効な場合は自動でスケジュール
 
-### 引き継ぎ事項
+#### 引き継ぎ事項
 1. **データベースパッチ適用**: `database/patch-morning-notification.sql` を実行
 2. **通知権限**: 初回利用時にブラウザの通知権限許可が必要
 3. **タイムゾーン**: 現在はユーザーのローカル時間で動作
@@ -88,3 +135,148 @@
 - レシピ保存機能の完全実装
 - UI一貫性の全画面チェック
 - ELEMENTS.md活用による新機能開発効率化
+
+# Cooklet 開発ログ
+
+## 概要
+Cookletプロジェクトの開発過程で発生した変更の経緯と、解決に1 kToken以上要したバグ修正を記録するファイル。
+
+## 開発履歴
+
+### 2025-06-20
+
+#### レシピ追加後のダイアログ内容クリア機能実装
+**変更内容：**
+- レシピ追加成功後にフォームデータを初期値にリセットする機能を追加
+- `AddRecipeModal.tsx`の`handleSubmit`内で、`onSuccess()`実行前にフォームデータをクリア
+
+**実装詳細：**
+```typescript
+// フォームデータをリセット
+setFormData({
+  name: '',
+  external_url: '',
+  cooking_time: '',
+  servings: 1,
+  estimated_cost: '',
+  notes: '',
+});
+setRecipeIngredients([]);
+setShowIngredientForm(false);
+setIngredientForm({
+  ingredient_id: '',
+  quantity: '',
+  unit: '',
+  is_optional: false,
+});
+```
+
+**解決した問題：**
+- レシピ追加後にダイアログを再度開いた際、前回入力した内容が残る問題
+
+**コミット：** `a041ead - fix: レシピ追加後にダイアログの内容をクリアする機能を実装`
+
+#### 新しい支出記録のダイアログ化
+**変更内容：**
+- コスト管理画面の「新しい支出を記録」を折りたたみフォームからダイアログ形式に変更
+- 既存の`CostDialog`コンポーネントを流用して新規追加・編集両対応
+
+**実装詳細：**
+- `Cost.tsx`から折りたたみフォーム部分を削除
+- `showAddForm`状態を`showAddDialog`に変更
+- 新規追加用と編集用で別々のダイアログインスタンスを作成
+- `handleSaveCost`で両ダイアログの状態をクリア
+
+**変更されたファイル：**
+- `/src/pages/cost/Cost.tsx`: メイン実装
+- `/src/pages/cost/CLAUDE.md`: 仕様書更新
+
+**UI/UX改善：**
+- CLAUDE.md仕様書 5.6.6 コスト記録ダイアログに準拠
+- 統一されたダイアログデザイン
+- モバイルファーストのレスポンシブ対応
+
+**削除されたコード：**
+- 101行の折りたたみフォーム実装
+- `newRecord`状態管理
+- `handleSaveRecord`関数
+
+**追加されたコード：**
+- `showAddDialog`状態管理
+- `handleAddCost`関数
+- 新規追加用CostDialogインスタンス
+
+**解決した問題：**
+- 折りたたみフォームによるUI/UX統一性の欠如
+- CLAUDE.md仕様書との不整合
+
+**影響範囲：**
+- コスト管理画面のみ（他画面への影響なし）
+- 既存の編集機能は変更なし
+
+## 今後の課題
+
+### UI/UXの統一
+- [ ] 他画面でのダイアログ統一性確認
+- [ ] 共通ボタンコンポーネントの活用推進
+
+### 機能改善
+- [ ] レシピ食材自動抽出（LLM連携）
+- [ ] 在庫からの買い物リスト自動生成
+- [ ] Web Push通知機能
+
+### パフォーマンス最適化
+- [ ] バンドルサイズ最適化（現在689KB）
+- [ ] コード分割（dynamic import）
+
+## 12. PWA・サービスワーカー機能
+
+### 12.1 サービスワーカー更新機能
+
+アプリの新しいバージョンが利用可能になった場合の自動更新システムを実装。
+
+#### 12.1.1 更新検知フロー
+1. **updatefound**イベントでサービスワーカーの更新を検知
+2. 新しいサービスワーカーが**installed**状態になったらユーザーに通知
+3. ユーザーが承認すると**skipWaiting()**で即座に更新
+4. **controllerchange**イベントでページリロード
+
+#### 12.1.2 実装ファイル
+- `/public/sw.js`: サービスワーカー本体
+- `/src/App.tsx`: 更新通知UI
+
+### 12.2 デプロイ時の確実な更新システム
+
+デプロイごとにService Workerが確実に更新されるよう、動的バージョン管理を実装。
+
+#### 12.2.1 動的バージョン生成
+- **ビルド時**: `scripts/generate-sw-version.js`で一意バージョンを生成
+- **Netlify環境**: BUILD_ID、COMMIT_REF、CONTEXTを活用した一意バージョン
+- **ローカル環境**: タイムスタンプベースの一意バージョン
+
+#### 12.2.2 キャッシュ戦略
+- **HTML/CSS/JS**: ネットワークファースト（確実な更新のため）
+- **画像・アセット**: キャッシュファースト（パフォーマンス重視）
+- **API**: ネットワークファースト + LRUキャッシュ
+
+#### 12.2.3 実装ファイル
+- `/scripts/generate-sw-version.js`: バージョン生成スクリプト
+- `/vite.config.ts`: Viteビルドプラグイン
+- `/netlify.toml`: Netlify設定（キャッシュヘッダー含む）
+- `/package.json`: prebuildフック
+
+#### 12.2.4 確実な更新を保証する仕組み
+1. **prebuildフック**: ビルド前にバージョン更新
+2. **Viteプラグイン**: ビルド開始時にもバージョン更新
+3. **Netlifyヘッダー**: Service Workerファイルの完全キャッシュ無効化
+4. **キャッシュクリア**: アクティベート時に旧バージョンキャッシュ削除
+
+## バグ修正記録
+
+### 大きなバグ修正（1 kToken以上の解決コスト）
+現在のところ、1 kToken以上の大きなバグ修正は発生していません。
+
+---
+
+**記録開始日：** 2025-06-20  
+**最終更新：** 2025-06-20

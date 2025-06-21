@@ -12,7 +12,7 @@
 不要なパッケージは`pnpm uninstall`してください。
 **遵守** 変数を定義するときは必ず型を記述してください。`any`は決して使用してはいけません。
 **oxlint抑制コメント（`// oxlint-disable`）は決して使用してはいけません。**根本的な型安全性とコード品質の改善で解決してください。
-適宜`pnpm run lint && pnpm run build`を実行して、コードの品質を維持してください。
+適宜`pnpm run lint && pnpm run build:netlify`を実行して、コードの品質を維持してください。
 - **pre-commit hook**: コミット前に自動でlintチェック実行（エラー時はコミット阻止）
 - **pre-push hook**: プッシュ前に自動でlint & buildチェック実行（エラー時はプッシュ阻止）
 - Git hookにより品質管理が自動化されているため、手動チェックは不要
@@ -104,6 +104,18 @@ await supabase.rpc('update_inventory_after_cooking', { recipe_id: 1 })
 - **権限管理**: ブラウザの通知権限を要求
 - **自動チェック**: 1時間ごとの期限チェック
 - **スケジュール管理**: 朝の通知は毎日自動実行
+
+### 2.6 レシートOCR機能
+- **Netlify Functions**（サーバーレス）
+- **Google Cloud Vision API**による高精度OCR
+- **セキュリティ**: APIキーはサーバーサイドで管理
+- **段階的実装**: 
+  - 第一段階: OCR結果のテキスト抽出
+  - 第二段階: 商品名・価格・数量の構造化データ抽出
+- **対応形式**: JPEG, PNG, WebP (最大10MB)
+- **レスポンス時間**: 2-5秒（画像サイズに依存）
+- **エラーハンドリング**: 詳細なエラー分類と日本語メッセージ
+- **CORS対応**: 本番・開発環境の適切な制限
 
 ## 3. アプリ特徴
 
@@ -356,8 +368,8 @@ interface ExpiryItem {
 - **TypeScript**による型安全性の確保
 
 ### 8.5 デプロイメント手順
-1. **ローカル開発**：`pnpm run dev`
-2. **ビルド**：`pnpm run build`
+1. **ローカル開発**：`pnpm run dev:netlify`
+2. **ビルド**：`pnpm run build:netlify`
 3. **自動デプロイ**：GitHub pushでGitHub Pagesに自動デプロイ
 4. **データベース**：Supabaseのマイグレーション管理
 5. **CI/CD**：GitHub Actionsによる自動ビルド・デプロイ
@@ -399,8 +411,15 @@ pnpm run dev
 
 ### 10.2 環境変数
 ```env
+# Supabase
 VITE_SUPABASE_URL=your_supabase_url
 VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Google Cloud Vision API (Netlify Functions用)
+GOOGLE_CLOUD_API_KEY=your_google_cloud_api_key
+
+# CORS設定 (Netlify Functions用)
+ALLOWED_ORIGINS=https://cooklet.netlify.app,http://localhost:5173
 ```
 
 ### 10.3 Supabase設定

@@ -1,24 +1,24 @@
 # Vision ディレクトリ
 
 ## 概要
-Google Vision API を使用したOCR（光学文字認識）機能を提供するディレクトリ。
+Netlify Functions経由でGoogle Vision API を使用したOCR（光学文字認識）機能を提供するディレクトリ。
 レシート画像からテキストを抽出する機能を実装。
-ブラウザ環境対応のためREST APIを直接使用。
+セキュリティのためAPIキーはサーバーサイドで管理。
 
 ## ファイル構成
 
 ### vision-client.ts
-Google Vision API を使用したOCR処理クライアントの実装。
-ブラウザ環境で動作するようREST APIを直接呼び出し。
+Netlify Functions経由でGoogle Vision API を使用するOCRクライアントの実装。
+フロントエンドから安全にOCR処理を実行。
 
 #### 主要クラス・関数
 
 **VisionClient クラス**
-- Google Vision API への接続とOCR処理を管理
-- DOCUMENT_TEXT_DETECTION を使用したテキスト抽出
-- Base64エンコーディングによる画像データ送信
-- ブラウザ環境対応のREST API使用
-- 詳細なエラーハンドリング
+- Netlify Functions `/.netlify/functions/receiptOCR` への接続
+- 画像データのData URL形式変換
+- レスポンス解析とエラーハンドリング
+- ネットワークエラー対応
+- 接続テスト機能
 
 **OCRResult インターフェース**
 ```typescript
