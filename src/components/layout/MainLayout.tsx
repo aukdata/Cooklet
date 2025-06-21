@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { TabNavigation } from './TabNavigation';
 import { useDialog } from '../../contexts/DialogContext';
+import { useNavigation } from '../../contexts/NavigationContext';
 import { Dashboard } from '../../pages/summary/Summary';
 import { MealPlans } from '../../pages/meal-plans/MealPlans';
 import { Recipes } from '../../pages/recipes/Recipes';
@@ -8,12 +9,13 @@ import { Shopping } from '../../pages/shopping/Shopping';
 import { Stock } from '../../pages/stock/Stock';
 import { Cost } from '../../pages/cost/Cost';
 import { Settings } from '../../pages/settings/Settings';
+import { IngredientManagement } from '../../pages/settings/IngredientManagement';
 import { ErrorBoundary } from '../ErrorBoundary';
 
 // アプリケーションのメインレイアウトコンポーネント
 export const MainLayout: React.FC = () => {
-  // アクティブタブの状態管理（デフォルトはサマリー）
-  const [activeTab, setActiveTab] = useState('summary');
+  // ナビゲーション状態を取得
+  const { activeTab, setActiveTab } = useNavigation();
   // ダイアログの表示状態を取得
   const { isDialogOpen } = useDialog();
 
@@ -48,6 +50,8 @@ export const MainLayout: React.FC = () => {
         return <Cost /> // コスト管理ページ
       case 'settings':
         return <Settings /> // 設定ページ
+      case 'settings/ingredients':
+        return <IngredientManagement /> // 材料マスタ管理ページ
       default:
         return <Dashboard /> // デフォルトはサマリーページ
     }

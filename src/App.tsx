@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DialogProvider } from './contexts/DialogContext'
+import { NavigationProvider } from './contexts/NavigationContext'
 import { ToastProvider } from './hooks/useToast.tsx'
 import { Login } from './pages/auth/Login'
 import { MainLayout } from './components/layout/MainLayout'
@@ -126,11 +127,13 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <AuthProvider>
-      <DialogProvider>
-        <ToastProvider>
-          <AppContent />
-        </ToastProvider>
-      </DialogProvider>
+      <NavigationProvider>
+        <DialogProvider>
+          <ToastProvider>
+            <AppContent />
+          </ToastProvider>
+        </DialogProvider>
+      </NavigationProvider>
     </AuthProvider>
   )
 }

@@ -8,6 +8,40 @@ React Contextを使用したグローバル状態管理を行うディレクト�
 ### AuthContext.tsx
 ユーザー認証状態の管理を行うContext。
 
+### DialogContext.tsx
+ダイアログ表示状態の管理コンテキスト。
+
+#### 機能
+- ダイアログの表示・非表示状態管理
+- タブナビゲーションとの連携
+
+#### 提供する値
+- `isDialogOpen`: ダイアログが開いているかのフラグ
+- `setIsDialogOpen`: ダイアログ状態を変更する関数
+
+### NavigationContext.tsx
+アプリ内ナビゲーションの管理コンテキスト。
+
+#### 機能
+- タブベースの画面遷移管理
+- アクティブタブの状態管理
+- パス形式でのナビゲーション機能
+
+#### 提供する値
+- `activeTab`: 現在のアクティブタブID
+- `setActiveTab`: タブを直接設定する関数
+- `navigate`: パス形式でナビゲーションする関数
+
+#### サポートするパス
+- `summary`: サマリー画面
+- `meal-plans`: 献立画面
+- `shopping`: 買い物画面
+- `recipes`: レシピ画面
+- `stock`: 在庫画面
+- `cost`: コスト画面
+- `settings`: 設定画面
+- `settings/ingredients`: 材料マスタ管理画面
+
 #### 提供する機能
 
 **状態管理**
@@ -50,3 +84,5 @@ const { user, loading, signIn, signOut } = useAuth();
 - マウント/アンマウント状態を適切に管理してメモリリークを防止
 - 開発中はコンソールログが詳細に出力される
 - 本番環境ではログレベルの調整が必要
+- NavigationContextは独自のタブベースルーティングシステム
+- React Routerは使用せず、カスタムナビゲーションシステムを採用

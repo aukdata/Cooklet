@@ -30,8 +30,6 @@ export const FOOD_UNITS = [
   '杯',
   
   // その他
-  '適量',
-  'お好み',
   '-',  // 単位なし
 ] as const;
 

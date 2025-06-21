@@ -1,26 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation } from '../../contexts/NavigationContext';
 import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast.tsx';
 import { useBuildInfo } from '../../hooks/useBuildInfo';
-import { useIngredients } from '../../hooks/useIngredients';
-import { IngredientDialog } from '../../components/dialogs/IngredientDialog';
-import { type Ingredient } from '../../types';
 
 // ユーザ設定画面コンポーネント - issue #11対応（画面化）
 export const Settings: React.FC = () => {
   const { supabaseUser, signOut } = useAuth();
   const { showSuccess, showError } = useToast();
   const { version, formatBuildDate } = useBuildInfo();
-  const { ingredients, loading: ingredientsLoading, addIngredient, updateIngredient, deleteIngredient } = useIngredients();
+  const { navigate } = useNavigation();
   const [isEditing, setIsEditing] = useState(false);
   const [displayName, setDisplayName] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  
-  // 材料設定関連の状態
-  const [isIngredientDialogOpen, setIsIngredientDialogOpen] = useState(false);
-  const [editingIngredient, setEditingIngredient] = useState<Ingredient | undefined>();
 
   // supabaseUserの変更を監視してdisplayNameを同期
   useEffect(() => {
@@ -76,69 +70,9 @@ export const Settings: React.FC = () => {
     }
   };
 
-  // 材料追加処理
-  const handleAddIngredient = () => {
-    setEditingIngredient(undefined);
-    setIsIngredientDialogOpen(true);
-  };
-
-  // 材料編集処理
-  const handleEditIngredient = (ingredient: Ingredient) => {
-    setEditingIngredient(ingredient);
-    setIsIngredientDialogOpen(true);
-  };
-
-  // 材料保存処理
-  const handleSaveIngredient = async (ingredientData: Omit<Ingredient, 'id' | 'user_id' | 'created_at'>) => {
-    try {
-      if (editingIngredient) {
-        // 編集モード
-        await updateIngredient(editingIngredient.id, ingredientData);
-        showSuccess('材料を更新しました');
-      } else {
-        // 新規作成モード
-        await addIngredient(ingredientData);
-        showSuccess('材料を追加しました');
-      }
-    } catch (error) {
-      console.error('材料の保存に失敗しました:', error);
-      showError('材料の保存に失敗しました');
-      throw error;
-    }
-  };
-
-  // 材料削除処理
-  const handleDeleteIngredient = async (id: number) => {
-    try {
-      await deleteIngredient(id);
-      showSuccess('材料を削除しました');
-    } catch (error) {
-      console.error('材料の削除に失敗しました:', error);
-      showError('材料の削除に失敗しました');
-      throw error;
-    }
-  };
-
-  // カテゴリ別のアイコンを取得
-  const getCategoryIcon = (category: string) => {
-    switch (category) {
-      case 'vegetables': return '🥬';
-      case 'meat': return '🥩';
-      case 'seasoning': return '🧂';
-      case 'others': return '📦';
-      default: return '🥕';
-    }
-  };
-
-  // カテゴリ別の日本語名を取得
-  const getCategoryName = (category: string) => {
-    switch (category) {
-      case 'vegetables': return '野菜';
-      case 'meat': return '肉・魚';
-      case 'seasoning': return '調味料';
-      case 'others': return 'その他';
-      default: return '不明';
-    }
+  // 材料マスタ管理画面への遷移
+  const handleIngredientManagement = () => {
+    navigate('settings/ingredients');
   };
 
   return (
@@ -221,56 +155,29 @@ export const Settings: React.FC = () => {
 
       {/* 材料設定セクション */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
-        <div className="flex justify-between items-center mb-3">
-          <h3 className="font-medium text-gray-900 flex items-center">
-            <span className="mr-2">🥕</span>
-            材料設定
-          </h3>
-          <button
-            onClick={handleAddIngredient}
-            className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-sm hover:bg-indigo-700 transition-colors"
-          >
-            材料を追加
-          </button>
-        </div>
+        <h3 className="font-medium text-gray-900 mb-3 flex items-center">
+          <span className="mr-2">🥕</span>
+          材料設定
+        </h3>
         
-        {/* 材料一覧 */}
-        <div className="space-y-2">
-          {ingredientsLoading ? (
-            <div className="text-center py-4">
-              <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-indigo-600"></div>
-              <p className="text-sm text-gray-500 mt-2">読み込み中...</p>
+        <div className="bg-gray-50 p-4 rounded-md">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-900">材料マスタ管理</p>
+              <p className="text-xs text-gray-500 mt-1">
+                よく使う材料を登録・編集できます
+              </p>
             </div>
-          ) : ingredients.length === 0 ? (
-            <div className="text-center py-4">
-              <p className="text-sm text-gray-500">まだ材料が登録されていません</p>
-              <p className="text-xs text-gray-400 mt-1">「材料を追加」ボタンから登録してください</p>
-            </div>
-          ) : (
-            ingredients.map((ingredient) => (
-              <div
-                key={ingredient.id}
-                className="flex items-center justify-between bg-gray-50 p-3 rounded-md"
-              >
-                <div className="flex items-center space-x-3">
-                  <span className="text-lg">{getCategoryIcon(ingredient.category)}</span>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{ingredient.name}</p>
-                    <p className="text-xs text-gray-500">
-                      {getCategoryName(ingredient.category)} • {ingredient.default_unit}
-                      {ingredient.typical_price && ` • ${ingredient.typical_price}円`}
-                    </p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => handleEditIngredient(ingredient)}
-                  className="text-indigo-600 hover:text-indigo-500 text-sm"
-                >
-                  編集
-                </button>
-              </div>
-            ))
-          )}
+            <button
+              onClick={handleIngredientManagement}
+              className="bg-indigo-600 text-white px-3 py-2 rounded-md text-sm hover:bg-indigo-700 transition-colors flex items-center"
+            >
+              管理画面
+              <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -319,14 +226,6 @@ export const Settings: React.FC = () => {
         </button>
       </div>
 
-      {/* 材料編集ダイアログ */}
-      <IngredientDialog
-        isOpen={isIngredientDialogOpen}
-        onClose={() => setIsIngredientDialogOpen(false)}
-        ingredient={editingIngredient}
-        onSave={handleSaveIngredient}
-        onDelete={handleDeleteIngredient}
-      />
     </div>
   );
 };
