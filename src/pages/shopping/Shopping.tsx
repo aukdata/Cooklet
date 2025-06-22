@@ -2,8 +2,10 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useShoppingList, useMealPlans, useStockItems, useAutoShoppingList, useIngredients } from '../../hooks';
 import { type StockItem } from '../../hooks/useStockItems';
 import { QuantityInput } from '../../components/common/QuantityInput';
+import { NameQuantityUnitInput } from '../../components/common/NameQuantityUnitInput';
 import { useToast } from '../../hooks/useToast.tsx';
 import { readReceiptFromImage, validateImageFile, type ReceiptResult } from '../../utils/receiptReader';
+import { type FoodUnit } from '../../constants/units';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
 export const Shopping: React.FC = () => {
@@ -53,7 +55,7 @@ export const Shopping: React.FC = () => {
   const [editingReceiptItems, setEditingReceiptItems] = useState<Array<{
     name: string;
     quantity: string;
-    unit: string;
+    unit: FoodUnit;
     price?: number;
     normalizationResult?: any;
   }>>([]);
@@ -225,17 +227,19 @@ export const Shopping: React.FC = () => {
       // レシート読み取り結果を状態に保存し、編集可能にする
       setReceiptResult(result);
       
-      // 編集用のアイテムリストを初期化（quantityを分解してunit付きに）
-      const editableItems = result.items.map(item => {
-        const { quantity, unit } = parseQuantityAndUnit(item.quantity || '');
-        return {
-          name: item.name,
-          quantity,
-          unit,
-          price: item.price,
-          normalizationResult: item.normalizationResult
-        };
-      });
+          // 編集用のアイテムリストを初期化（nameが空欄のものを除外し、quantityを分解してunit付きに）
+      const editableItems = result.items
+        .filter(item => item.name && item.name.trim()) // nameが空欄のものを除外
+        .map(item => {
+          const { quantity, unit } = parseQuantityAndUnit(item.quantity || '');
+          return {
+            name: item.name,
+            quantity,
+            unit: unit as FoodUnit,
+            price: item.price,
+            normalizationResult: item.normalizationResult
+          };
+        });
       setEditingReceiptItems(editableItems);
       
       showSuccess(`レシートから${result.items.length}件のアイテムを読み取りました。内容を確認してください。`);
@@ -277,25 +281,67 @@ export const Shopping: React.FC = () => {
   const handleEditReceiptItem = (index: number, field: 'name' | 'quantity' | 'unit', value: string) => {
     setEditingReceiptItems(prev => 
       prev.map((item, i) => 
-        i === index ? { ...item, [field]: value } : item
+        i === index ? { ...item, [field]: field === 'unit' ? value as FoodUnit : value } : item
       )
     );
   };
 
-  // 編集したレシート結果を未完了アイテムに追加する関数
+  // 編集したレシート結果を完了済みアイテムに追加し、未登録の食材を自動登録する関数
   const handleAddReceiptItemsToList = async () => {
     if (editingReceiptItems.length === 0) return;
 
     try {
+      let addedCount = 0;
+      let registeredCount = 0;
+
       for (const item of editingReceiptItems) {
         if (item.name.trim()) {
-          const combinedQuantity = item.unit ? `${item.quantity}${item.unit}` : item.quantity;
+          // 1. まず食材マスタに登録されているかチェック
+          const originalNameForSearch = item.normalizationResult?.originalName || item.name;
+          const existingIngredient = ingredients.find(ing => 
+            ing.name === item.name || 
+            (ing.original_name && new RegExp(ing.original_name, 'i').test(originalNameForSearch))
+          );
+
+          // 2. 未登録の場合は自動登録
+          if (!existingIngredient) {
+            try {
+              // 基本的な推測でカテゴリを決定
+              let category: 'vegetables' | 'meat' | 'seasoning' | 'others' = 'others';
+              const itemName = item.name.toLowerCase();
+              if (itemName.includes('野菜') || itemName.includes('レタス') || itemName.includes('人参') || 
+                  itemName.includes('玉ねぎ') || itemName.includes('じゃがいも') || itemName.includes('トマト')) {
+                category = 'vegetables';
+              } else if (itemName.includes('肉') || itemName.includes('魚') || itemName.includes('鶏') || 
+                         itemName.includes('豚') || itemName.includes('牛') || itemName.includes('まぐろ')) {
+                category = 'meat';
+              } else if (itemName.includes('塩') || itemName.includes('砂糖') || itemName.includes('醤油') || 
+                         itemName.includes('味噌') || itemName.includes('酢') || itemName.includes('油')) {
+                category = 'seasoning';
+              }
+
+              await addIngredient({
+                name: item.name,
+                category,
+                default_unit: item.unit !== '-' ? item.unit : '個',
+                typical_price: item.price,
+                original_name: originalNameForSearch !== item.name ? originalNameForSearch : undefined
+              });
+              registeredCount++;
+            } catch (err) {
+              console.error(`食材マスタへの登録に失敗: ${item.name}`, err);
+            }
+          }
+
+          // 3. 買い物リストに完了済みとして追加
+          const combinedQuantity = item.unit !== '-' ? `${item.quantity}${item.unit}` : item.quantity;
           await addShoppingItem({
             name: item.name.trim(),
             quantity: combinedQuantity || undefined,
-            checked: false,
-            added_from: 'auto'
+            checked: true, // 完了済みとして追加
+            added_from: 'manual' // レシートから追加したものは手動扱い
           });
+          addedCount++;
         }
       }
 
@@ -303,7 +349,11 @@ export const Shopping: React.FC = () => {
       setReceiptResult(null);
       setEditingReceiptItems([]);
       
-      showSuccess(`${editingReceiptItems.length}件のアイテムを買い物リストに追加しました！`);
+      const messages = [];
+      if (addedCount > 0) messages.push(`${addedCount}件のアイテムを完了済みリストに追加`);
+      if (registeredCount > 0) messages.push(`${registeredCount}件の食材を自動登録`);
+      
+      showSuccess(messages.join('、') + 'しました！');
     } catch (err) {
       console.error('アイテムの追加に失敗しました:', err);
       showError('アイテムの追加に失敗しました');
@@ -316,44 +366,6 @@ export const Shopping: React.FC = () => {
     setEditingReceiptItems([]);
   };
 
-  // 個別アイテムをingredientsテーブルに登録する関数
-  const handleRegisterToIngredients = async (item: {
-    name: string;
-    quantity: string;
-    unit: string;
-    price?: number;
-    normalizationResult?: any;
-  }) => {
-    try {
-      // 基本的な推測でカテゴリを決定（後で改良可能）
-      let category: 'vegetables' | 'meat' | 'seasoning' | 'others' = 'others';
-      const itemName = item.name.toLowerCase();
-      if (itemName.includes('野菜') || itemName.includes('レタス') || itemName.includes('人参') || 
-          itemName.includes('玉ねぎ') || itemName.includes('じゃがいも') || itemName.includes('トマト')) {
-        category = 'vegetables';
-      } else if (itemName.includes('肉') || itemName.includes('魚') || itemName.includes('鶏') || 
-                 itemName.includes('豚') || itemName.includes('牛') || itemName.includes('まぐろ')) {
-        category = 'meat';
-      } else if (itemName.includes('塩') || itemName.includes('砂糖') || itemName.includes('醤油') || 
-                 itemName.includes('味噌') || itemName.includes('酢') || itemName.includes('油')) {
-        category = 'seasoning';
-      }
-
-      // ingredientsテーブルに登録
-      await addIngredient({
-        name: item.name,
-        category,
-        default_unit: item.unit || '個',
-        typical_price: item.price,
-        original_name: item.normalizationResult?.originalName || item.name
-      });
-
-      showSuccess(`「${item.name}」を食材マスタに登録しました！`);
-    } catch (err) {
-      console.error('食材マスタへの登録に失敗しました:', err);
-      showError('食材マスタへの登録に失敗しました');
-    }
-  };
 
   // ローディング・エラー状態の処理
   if (loading) {
@@ -503,53 +515,26 @@ export const Shopping: React.FC = () => {
                 <div className="space-y-2">
                   {editingReceiptItems.map((item, index) => (
                     <div key={index} className="bg-white p-3 rounded border border-gray-200">
-                      <div className="grid grid-cols-3 gap-2 mb-2">
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">名前</label>
-                          <input
-                            type="text"
-                            value={item.name}
-                            onChange={(e) => handleEditReceiptItem(index, 'name', e.target.value)}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">数量</label>
-                          <input
-                            type="text"
-                            value={item.quantity}
-                            onChange={(e) => handleEditReceiptItem(index, 'quantity', e.target.value)}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-xs font-medium text-gray-700 mb-1">単位</label>
-                          <input
-                            type="text"
-                            value={item.unit}
-                            onChange={(e) => handleEditReceiptItem(index, 'unit', e.target.value)}
-                            className="w-full px-2 py-1 border border-gray-300 rounded text-sm"
-                          />
-                        </div>
+                      <div className="mb-2">
+                        <NameQuantityUnitInput
+                          name={item.name}
+                          quantity={item.quantity}
+                          unit={item.unit}
+                          onNameChange={(name) => handleEditReceiptItem(index, 'name', name)}
+                          onQuantityChange={(quantity) => handleEditReceiptItem(index, 'quantity', quantity)}
+                          onUnitChange={(unit) => handleEditReceiptItem(index, 'unit', unit)}
+                        />
                       </div>
                       
-                      <div className="flex justify-between items-center">
-                        <div className="text-xs text-gray-500">
-                          {item.normalizationResult?.isNormalized && (
-                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                              「{item.normalizationResult.originalName}」から正規化
-                            </span>
-                          )}
-                          {item.price && (
-                            <span className="ml-2">価格: ¥{item.price}</span>
-                          )}
-                        </div>
-                        <button
-                          onClick={() => handleRegisterToIngredients(item)}
-                          className="bg-indigo-600 text-white px-2 py-1 rounded text-xs hover:bg-indigo-700"
-                        >
-                          登録
-                        </button>
+                      <div className="text-xs text-gray-500">
+                        {item.normalizationResult?.isNormalized && (
+                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            「{item.normalizationResult.originalName}」から正規化
+                          </span>
+                        )}
+                        {item.price && (
+                          <span className="ml-2">価格: ¥{item.price}</span>
+                        )}
                       </div>
                     </div>
                   ))}

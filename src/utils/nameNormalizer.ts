@@ -43,33 +43,45 @@ export const normalizeProductName = (
     };
   }
 
-  // 部分一致で検索（大文字小文字を無視）
-  const partialMatch = ingredients.find(ingredient => 
-    ingredient.original_name && 
-    ingredient.original_name.toLowerCase().includes(originalName.toLowerCase())
-  );
+  // 正規表現一致で検索（大文字小文字を無視）
+  const regexMatch = ingredients.find(ingredient => {
+    if (!ingredient.original_name) return false;
+    try {
+      const regex = new RegExp(ingredient.original_name, 'i');
+      return regex.test(originalName);
+    } catch {
+      // 正規表現が無効な場合は文字列一致にフォールバック
+      return ingredient.original_name.toLowerCase().includes(originalName.toLowerCase());
+    }
+  });
 
-  if (partialMatch) {
+  if (regexMatch) {
     return {
-      name: partialMatch.name,
+      name: regexMatch.name,
       originalName,
       isNormalized: true,
-      matchedIngredient: partialMatch
+      matchedIngredient: regexMatch
     };
   }
 
-  // 逆向き部分一致で検索（商品名の一部がoriginal_nameに含まれる場合）
-  const reversePartialMatch = ingredients.find(ingredient => 
-    ingredient.original_name && 
-    originalName.toLowerCase().includes(ingredient.original_name.toLowerCase())
-  );
+  // 逆向き正規表現一致で検索（商品名がoriginal_nameパターンに含まれる場合）
+  const reverseRegexMatch = ingredients.find(ingredient => {
+    if (!ingredient.original_name) return false;
+    try {
+      const regex = new RegExp(ingredient.original_name, 'i');
+      return regex.test(originalName);
+    } catch {
+      // 正規表現が無効な場合は文字列一致にフォールバック
+      return originalName.toLowerCase().includes(ingredient.original_name.toLowerCase());
+    }
+  });
 
-  if (reversePartialMatch) {
+  if (reverseRegexMatch) {
     return {
-      name: reversePartialMatch.name,
+      name: reverseRegexMatch.name,
       originalName,
       isNormalized: true,
-      matchedIngredient: reversePartialMatch
+      matchedIngredient: reverseRegexMatch
     };
   }
 
