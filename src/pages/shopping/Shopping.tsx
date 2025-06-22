@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useShoppingList, useMealPlans, useStockItems, useAutoShoppingList, useIngredients } from '../../hooks';
 import { type StockItem } from '../../hooks/useStockItems';
+import { type ShoppingListItem } from '../../types';
 import { QuantityInput } from '../../components/common/QuantityInput';
 import { NameQuantityUnitInput } from '../../components/common/NameQuantityUnitInput';
+import { ShoppingItemDialog } from '../../components/dialogs/ShoppingItemDialog';
 import { useToast } from '../../hooks/useToast.tsx';
 import { readReceiptFromImage, validateImageFile, type ReceiptItem, type ReceiptResult } from '../../utils/receiptReader';
 import { type FoodUnit } from '../../constants/units';
@@ -39,9 +41,8 @@ export const Shopping: React.FC = () => {
   // 食材マスタフック（商品名正規化用）
   const { ingredients, addIngredient } = useIngredients();
 
-  // 新規追加フォームの状態
-  const [newItemName, setNewItemName] = useState('');
-  const [newItemQuantity, setNewItemQuantity] = useState('');
+  // ダイアログ状態管理
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   
   // 完了アイテムの表示状態（折りたたみ機能）
   const [showCompleted, setShowCompleted] = useState(false);
@@ -71,22 +72,20 @@ export const Shopping: React.FC = () => {
     setSelectAll(allItemsSelected);
   }, [pendingItems]);
 
-  // 新規アイテム追加処理
-  const handleAddItem = async () => {
-    if (newItemName.trim()) {
-      try {
-        await addShoppingItem({
-          name: newItemName.trim(),
-          quantity: newItemQuantity.trim() || undefined,
-          checked: false,
-          added_from: 'manual'
-        });
-        setNewItemName('');
-        setNewItemQuantity('');
-      } catch (err) {
-        console.error('買い物リストアイテムの追加に失敗しました:', err);
-        showError('追加に失敗しました');
-      }
+  // 新規アイテム追加処理（ダイアログから）
+  const handleAddItem = async (item: Omit<ShoppingListItem, 'id' | 'userId' | 'createdAt'>) => {
+    try {
+      await addShoppingItem({
+        name: item.name,
+        quantity: item.quantity,
+        checked: false,
+        added_from: 'manual'
+      });
+      showSuccess('アイテムを追加しました');
+    } catch (err) {
+      console.error('買い物リストアイテムの追加に失敗しました:', err);
+      showError('追加に失敗しました');
+      throw err;
     }
   };
 
@@ -432,111 +431,89 @@ export const Shopping: React.FC = () => {
         </div>
       </div>
 
-      {/* 新規追加フォーム */}
+      {/* 新規追加とレシート読取ボタン */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
         <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-          <span className="mr-2">➕</span>
-          新規追加
+          <span className="mr-2">🛒</span>
+          アイテム追加
         </h3>
-        <div className="space-y-3">
-          <div>
-            <input
-              type="text"
-              value={newItemName}
-              onChange={(e) => setNewItemName(e.target.value)}
-              placeholder="食材名を入力..."
-              className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
-            />
-          </div>
-          <div className="flex gap-2">
-            <QuantityInput
-              value={newItemQuantity}
-              onChange={setNewItemQuantity}
-              placeholder="数量 (任意)"
-              className="flex-1"
-            />
-            <button
-              onClick={handleAddItem}
-              className="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700"
-            >
-              +
-            </button>
-          </div>
-          
-          {/* レシートからの追加 */}
-          <div className="pt-2 border-t border-gray-200">
-            <div className="flex gap-2">
-              <button
-                onClick={handleReceiptButtonClick}
-                disabled={isReadingReceipt}
-                className="flex-1 bg-orange-600 text-white px-4 py-2 rounded text-sm hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                <span className="mr-2">📄</span>
-                {isReadingReceipt ? '読み取り中...' : 'レシートから追加'}
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleReceiptUpload}
-                className="hidden"
-              />
+        <div className="flex gap-3">
+          <button
+            onClick={() => setIsAddDialogOpen(true)}
+            className="flex-1 bg-indigo-600 text-white px-4 py-3 rounded-lg text-sm hover:bg-indigo-700 flex items-center justify-center"
+          >
+            <span className="mr-2">➕</span>
+            新規追加
+          </button>
+          <button
+            onClick={handleReceiptButtonClick}
+            disabled={isReadingReceipt}
+            className="flex-1 bg-orange-600 text-white px-4 py-3 rounded-lg text-sm hover:bg-orange-700 disabled:bg-gray-300 disabled:cursor-not-allowed flex items-center justify-center"
+          >
+            <span className="mr-2">📄</span>
+            {isReadingReceipt ? '読み取り中...' : 'レシート読取'}
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleReceiptUpload}
+            className="hidden"
+          />
+        </div>
+        
+        {/* レシート読み取り結果表示 */}
+        {receiptResult && editingReceiptItems.length > 0 && (
+          <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
+            <div className="flex justify-between items-center mb-3">
+              <h4 className="font-medium text-gray-900">
+                読み取り結果（{editingReceiptItems.length}件）
+              </h4>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleAddReceiptItemsToList}
+                  className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
+                >
+                  すべて追加
+                </button>
+                <button
+                  onClick={handleCancelReceiptResult}
+                  className="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600"
+                >
+                  キャンセル
+                </button>
+              </div>
             </div>
             
-            {/* レシート読み取り結果表示 */}
-            {receiptResult && editingReceiptItems.length > 0 && (
-              <div className="mt-4 p-3 bg-gray-50 rounded-lg border border-gray-200">
-                <div className="flex justify-between items-center mb-3">
-                  <h4 className="font-medium text-gray-900">
-                    読み取り結果（{editingReceiptItems.length}件）
-                  </h4>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={handleAddReceiptItemsToList}
-                      className="bg-green-600 text-white px-3 py-1 rounded text-sm hover:bg-green-700"
-                    >
-                      すべて追加
-                    </button>
-                    <button
-                      onClick={handleCancelReceiptResult}
-                      className="bg-gray-500 text-white px-3 py-1 rounded text-sm hover:bg-gray-600"
-                    >
-                      キャンセル
-                    </button>
+            <div className="space-y-2">
+              {editingReceiptItems.map((item, index) => (
+                <div key={index} className="bg-white p-3 rounded border border-gray-200">
+                  <div className="mb-2">
+                    <NameQuantityUnitInput
+                      name={item.name}
+                      quantity={item.quantity}
+                      unit={item.unit}
+                      onNameChange={(name) => handleEditReceiptItem(index, 'name', name)}
+                      onQuantityChange={(quantity) => handleEditReceiptItem(index, 'quantity', quantity)}
+                      onUnitChange={(unit) => handleEditReceiptItem(index, 'unit', unit)}
+                    />
+                  </div>
+                  
+                  <div className="text-xs text-gray-500">
+                    {item.originalName && item.originalName !== item.name && (
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                        「{item.originalName}」から正規化
+                      </span>
+                    )}
+                    {item.price && (
+                      <span className="ml-2">価格: ¥{item.price}</span>
+                    )}
                   </div>
                 </div>
-                
-                <div className="space-y-2">
-                  {editingReceiptItems.map((item, index) => (
-                    <div key={index} className="bg-white p-3 rounded border border-gray-200">
-                      <div className="mb-2">
-                        <NameQuantityUnitInput
-                          name={item.name}
-                          quantity={item.quantity}
-                          unit={item.unit}
-                          onNameChange={(name) => handleEditReceiptItem(index, 'name', name)}
-                          onQuantityChange={(quantity) => handleEditReceiptItem(index, 'quantity', quantity)}
-                          onUnitChange={(unit) => handleEditReceiptItem(index, 'unit', unit)}
-                        />
-                      </div>
-                      
-                      <div className="text-xs text-gray-500">
-                        {item.originalName && item.originalName !== item.name && (
-                          <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                            「{item.originalName}」から正規化
-                          </span>
-                        )}
-                        {item.price && (
-                          <span className="ml-2">価格: ¥{item.price}</span>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 未完了アイテム */}
@@ -654,6 +631,13 @@ export const Shopping: React.FC = () => {
           </button>
         </div>
       )}
+
+      {/* 新規追加ダイアログ */}
+      <ShoppingItemDialog
+        isOpen={isAddDialogOpen}
+        onClose={() => setIsAddDialogOpen(false)}
+        onSave={handleAddItem}
+      />
 
     </div>
   );

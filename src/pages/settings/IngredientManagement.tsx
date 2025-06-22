@@ -3,6 +3,7 @@ import { useNavigation } from '../../contexts/NavigationContext';
 import { useIngredients } from '../../hooks/useIngredients';
 import { useToast } from '../../hooks/useToast.tsx';
 import { IngredientDialog } from '../../components/dialogs/IngredientDialog';
+import { EditButton } from '../../components/ui/Button';
 import { type Ingredient } from '../../types';
 
 // 材料マスタ管理画面コンポーネント
@@ -240,15 +241,9 @@ export const IngredientManagement: React.FC = () => {
                           <div className="flex justify-between items-center">
                             <div className="flex-1">
                               <div className="flex items-center text-sm">
-                                {ingredient.originalName ? (
-                                  <span>
-                                    <span className="text-gray-500">{ingredient.originalName}</span>
-                                    <span className="text-gray-400 mx-2">→</span>
-                                    <span className="text-gray-900 font-medium">{ingredient.name}</span>
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-900 font-medium">{ingredient.name}</span>
-                                )}
+                                <span className="text-gray-500">{ingredient.originalName}</span>
+                                <span className="text-gray-400 mx-2">→</span>
+                                <span className="text-gray-900 font-medium">{ingredient.name}</span>
                               </div>
                               {ingredient.typicalPrice && (
                                 <div className="text-xs text-gray-500 mt-1">
@@ -256,12 +251,9 @@ export const IngredientManagement: React.FC = () => {
                                 </div>
                               )}
                             </div>
-                            <button
+                            <EditButton
                               onClick={() => handleEditIngredient(ingredient)}
-                              className="text-indigo-600 hover:text-indigo-500 text-sm ml-4"
-                            >
-                              編集
-                            </button>
+                            />
                           </div>
                         </div>
                       ))}

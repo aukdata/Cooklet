@@ -6,6 +6,7 @@ import { useToast } from '../../hooks/useToast.tsx';
 import { useBuildInfo } from '../../hooks/useBuildInfo';
 import { useNotificationSettings } from '../../hooks/useNotificationSettings';
 import { notificationService } from '../../services/notificationService';
+import { EditButton } from '../../components/ui/Button';
 
 // ユーザ設定画面コンポーネント - issue #11対応（画面化）
 export const Settings: React.FC = () => {
@@ -319,12 +320,9 @@ export const Settings: React.FC = () => {
                 <p className="text-sm text-gray-900">
                   {displayName || 'まだ設定されていません'}
                 </p>
-                <button
+                <EditButton
                   onClick={() => setIsEditing(true)}
-                  className="text-indigo-600 hover:text-indigo-500 text-sm"
-                >
-                  編集
-                </button>
+                />
               </div>
             )}
           </div>

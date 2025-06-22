@@ -1,5 +1,6 @@
 import React from 'react';
 import type { SavedRecipe } from '../../hooks/useRecipes';
+import { Button, DeleteButton } from '../../components/ui/Button';
 
 interface RecipeDetailDialogProps {
   isOpen: boolean;
@@ -139,33 +140,34 @@ export const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
         <div className="p-4 border-t border-gray-200">
           <div className="flex justify-between space-x-3">
             {/* 左側: 危険アクション */}
-            <button
-              onClick={() => {
-                onDelete(recipe);
-                onClose();
-              }}
-              className="flex-1 bg-red-600 text-white py-2 px-4 rounded-md hover:bg-red-700 transition-colors text-sm"
-            >
-              削除
-            </button>
+            <div className="flex-1">
+              <DeleteButton
+                onClick={() => {
+                  onDelete(recipe);
+                  onClose();
+                }}
+              />
+            </div>
 
             {/* 右側: 安全アクション */}
             <div className="flex space-x-2 flex-1">
-              <button
+              <Button
                 onClick={onClose}
-                className="flex-1 bg-gray-300 text-gray-700 py-2 px-4 rounded-md hover:bg-gray-400 transition-colors text-sm"
+                variant="secondary"
+                className="flex-1"
               >
                 閉じる
-              </button>
-              <button
+              </Button>
+              <Button
                 onClick={() => {
                   onEdit(recipe);
                   onClose();
                 }}
-                className="flex-1 bg-indigo-600 text-white py-2 px-4 rounded-md hover:bg-indigo-700 transition-colors text-sm"
+                variant="primary"
+                className="flex-1"
               >
                 編集
-              </button>
+              </Button>
             </div>
           </div>
 
