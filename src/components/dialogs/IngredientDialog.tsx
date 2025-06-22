@@ -118,7 +118,7 @@ export const IngredientDialog = ({
   };
 
   // バリデーション
-  const isValid = name.trim() && defaultUnit.trim();
+  const isValid = name?.trim() && defaultUnit?.trim();
 
   return (
     <BaseDialog
