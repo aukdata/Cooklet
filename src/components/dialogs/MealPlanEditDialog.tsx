@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { type MealPlan } from '../../hooks';
+import { type MealType } from '../../types';
 import { useRecipes } from '../../hooks/useRecipes';
 import { BaseDialog } from '../ui/BaseDialog';
 import { IngredientsEditor, type Ingredient } from '../ui/IngredientsEditor';
@@ -21,7 +22,7 @@ interface MealPlanEditDialogProps {
   onDelete?: () => void; // 献立を削除する関数（編集時のみ）
   initialData?: MealPlan;
   selectedDate: string;
-  selectedMealType?: '朝' | '昼' | '夜' | '間食';
+  selectedMealType?: MealType;
 }
 
 // 献立編集ダイアログコンポーネント - CLAUDE.md仕様書5.6.2/5.6.3準拠
@@ -38,7 +39,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   const { recipes, loading: recipesLoading } = useRecipes();
 
   // フォームの状態管理
-  const [mealType, setMealType] = useState<'朝' | '昼' | '夜' | '間食'>(selectedMealType);
+  const [mealType, setMealType] = useState<MealType>(selectedMealType);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>(''); // コンボボックス用
   const [searchQuery, setSearchQuery] = useState(''); // 絡り込み用検索クエリ
@@ -230,7 +231,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
               </label>
               <select
                 value={mealType}
-                onChange={(e) => setMealType(e.target.value as '朝' | '昼' | '夜' | '間食')}
+                onChange={(e) => setMealType(e.target.value as MealType)}
                 className="w-full border border-gray-300 rounded px-3 py-2 text-sm"
               >
                 <option value="朝">朝食</option>

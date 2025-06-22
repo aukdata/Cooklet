@@ -163,7 +163,7 @@ interface MealPlan {
   id: string;
   user_id: string;
   date: string;
-  meal_type: '朝' | '昼' | '夜' | '間食';
+  meal_type: MealType;
   recipe_url?: string;
   ingredients: { name: string; quantity: string }[];
   memo?: string;

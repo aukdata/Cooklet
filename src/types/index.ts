@@ -1,3 +1,6 @@
+// 食事タイプを表す型定義
+export type MealType = '朝' | '昼' | '夜' | '間食';
+
 // ユーザー情報を表すインターフェース
 export interface User {
   id: string; // ユーザーID（UUID）
@@ -64,7 +67,7 @@ export interface MealPlan {
   id: string; // 献立ID（UUID）
   userId: string; // ユーザーID
   date: string; // 予定日
-  mealType: '朝' | '昼' | '夜' | '間食'; // 食事タイプ（日本語）
+  mealType: MealType; // 食事タイプ（日本語）
   recipeUrl?: string; // レシピURL（任意）
   ingredients: { name: string; quantity: string }[]; // 食材リスト
   memo?: string; // メモ（任意）

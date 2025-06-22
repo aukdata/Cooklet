@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
 import { useMealPlans, type MealPlan } from '../../hooks';
+import { type MealType } from '../../types';
 import { useStockItems } from '../../hooks/useStockItems';
 import { useToast } from '../../hooks/useToast.tsx';
 
@@ -21,7 +22,7 @@ export const MealPlans: React.FC = () => {
   
   // ダイアログの表示状態
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingMeal, setEditingMeal] = useState<{ date: string; mealType: '朝' | '昼' | '夜' | '間食' } | null>(null);
+  const [editingMeal, setEditingMeal] = useState<{ date: string; mealType: MealType } | null>(null);
   
   // 作った選択ダイアログの状態
   const [isConsumedDialogOpen, setIsConsumedDialogOpen] = useState(false);
@@ -79,7 +80,7 @@ export const MealPlans: React.FC = () => {
 
 
   // 献立追加ボタンクリック処理
-  const handleAddMeal = (date: Date, mealType: '朝' | '昼' | '夜' | '間食') => {
+  const handleAddMeal = (date: Date, mealType: MealType) => {
     const dateStr = date.toISOString().split('T')[0];
     setEditingMeal({ date: dateStr, mealType });
     setIsDialogOpen(true);

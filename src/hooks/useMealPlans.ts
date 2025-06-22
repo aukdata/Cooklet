@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useCache, CacheConfig } from './useCache';
 import { useTabRefresh } from './useTabRefresh';
+import { type MealType } from '../types';
 
 // 献立消費状態の型定義
 export type MealPlanConsumedStatus = 'pending' | 'completed' | 'stored';
@@ -12,7 +13,7 @@ export interface MealPlan {
   id?: string;
   user_id?: string;
   date: string;
-  meal_type: '朝' | '昼' | '夜' | '間食';
+  meal_type: MealType;
   recipe_url?: string;
   ingredients: { name: string; quantity: string }[];
   memo?: string;
@@ -207,7 +208,7 @@ export const useMealPlans = () => {
   };
 
   // 指定日・食事タイプの献立を取得
-  const getMealPlan = (date: Date, mealType: '朝' | '昼' | '夜' | '間食') => {
+  const getMealPlan = (date: Date, mealType: MealType) => {
     const dateStr = date.toISOString().split('T')[0];
     return (mealPlans || []).find(plan => plan.date === dateStr && plan.meal_type === mealType);
   };

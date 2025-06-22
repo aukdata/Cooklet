@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
 import { CostDialog } from '../../components/dialogs/CostDialog';
 import { useMealPlans, useStockItems, useCostRecords, type MealPlan, type CostRecord } from '../../hooks';
+import { type MealType } from '../../types';
 // import { useToast } from '../../hooks/useToast.tsx'; // 将来的に使用予定
 
 
@@ -16,7 +17,7 @@ export const Dashboard: React.FC = () => {
   
   // ダイアログの状態管理
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingMeal, setEditingMeal] = useState<{ date: string; mealType: '朝' | '昼' | '夜' | '間食' } | null>(null);
+  const [editingMeal, setEditingMeal] = useState<{ date: string; mealType: MealType } | null>(null);
   const [isCostDialogOpen, setIsCostDialogOpen] = useState(false);
   
   // 献立データの取得（Supabase連携）

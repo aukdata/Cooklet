@@ -8,6 +8,7 @@ import { AddToMealPlanDialog } from '../../components/dialogs/AddToMealPlanDialo
 import { EditButton } from '../../components/ui/Button';
 import { useToast } from '../../hooks/useToast.tsx';
 import type { SavedRecipe, RecipeFormData } from '../../types/recipe';
+import { type MealType } from '../../types';
 
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
 export const Recipes: React.FC = () => {
@@ -34,7 +35,7 @@ export const Recipes: React.FC = () => {
   const [replacementData, setReplacementData] = useState<{
     recipe: SavedRecipe;
     date: string;
-    mealType: '朝' | '昼' | '夜' | '間食';
+    mealType: MealType;
     existingMealPlan: unknown;
   } | null>(null);
 

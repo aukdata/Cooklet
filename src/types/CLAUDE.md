@@ -33,7 +33,7 @@ Cookletアプリケーションの主要なデータ型を定義。
 
 **MealPlan型** （CLAUDE.md仕様書準拠）
 - 献立計画（id, user_id, date, meal_type, recipe_url, ingredients, memo等）
-- meal_type: '朝' | '昼' | '夜' | '間食' （日本語）
+- meal_type: MealType （日本語）
 - consumed_status: 'pending' | 'completed' | 'stored' （消費状態管理）
 
 **ShoppingListItem型** （CLAUDE.md仕様書準拠）
