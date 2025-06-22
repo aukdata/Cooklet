@@ -328,7 +328,23 @@ meal_plans (
 )
 ```
 
-### 3.3 stock_items（食材在庫）
+### 3.3 ingredients（食材マスタ）
+```sql
+ingredients (
+  id: SERIAL PRIMARY KEY,
+  user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  name: TEXT NOT NULL,
+  category: TEXT NOT NULL CHECK (category IN ('vegetables', 'meat', 'seasoning', 'others')),
+  default_unit: TEXT NOT NULL,
+  typical_price: DECIMAL(10,2),
+  original_name: TEXT NOT NULL,
+  conversion_quantity: TEXT,
+  conversion_unit: TEXT,
+  created_at: TIMESTAMP DEFAULT NOW()
+)
+```
+
+### 3.4 stock_items（食材在庫）
 ```sql
 stock_items (
   id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),

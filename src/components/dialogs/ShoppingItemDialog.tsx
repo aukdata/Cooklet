@@ -89,20 +89,11 @@ export const ShoppingItemDialog: React.FC<ShoppingItemDialogProps> = ({
       onClose={onClose}
       title={isEditing ? '買い物リストアイテム編集' : '新しいアイテムを追加'}
       icon="🛒"
-      primaryButton={{
-        label: isEditing ? '更新' : '追加',
-        onClick: handleSave,
-        disabled: !isValid || isLoading
-      }}
-      secondaryButton={{
-        label: 'キャンセル',
-        onClick: onClose
-      }}
-      deleteButton={isEditing ? {
-        label: '削除',
-        onClick: handleDelete,
-        disabled: isLoading
-      } : undefined}
+      onSave={handleSave}
+      saveText={isEditing ? '更新' : '追加'}
+      onDelete={isEditing ? handleDelete : undefined}
+      showDelete={isEditing}
+      disabled={!isValid || isLoading}
     >
       <div className="space-y-4">
         {/* アイテム名入力 */}

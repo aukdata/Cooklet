@@ -20,6 +20,8 @@ export interface Ingredient {
   defaultUnit: string; // デフォルト単位（g, 個, etc.）
   typicalPrice?: number; // 一般的な価格（任意）
   originalName: string; // 正規化前の商品名（商品名を一般名に変換するときに使用）
+  conversionQuantity?: string; // 1個当たりの数量（任意）
+  conversionUnit?: string; // 1個当たりの単位（任意）
   createdAt: string; // 作成日時
 }
 

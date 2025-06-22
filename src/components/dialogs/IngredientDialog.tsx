@@ -34,12 +34,14 @@ export const IngredientDialog = ({
   onDelete
 }: IngredientDialogProps) => {
   // フォーム状態管理
-  const [originalName, setOriginalName] = useState('');
-  const [name, setName] = useState('');
+  const [originalName, setOriginalName] = useState<string>('');
+  const [name, setName] = useState<string>('');
   const [category, setCategory] = useState<'vegetables' | 'meat' | 'seasoning' | 'others'>('vegetables');
-  const [defaultUnit, setDefaultUnit] = useState('');
+  const [defaultUnit, setDefaultUnit] = useState<string>('');
   const [typicalPrice, setTypicalPrice] = useState<string>('');
-  const [isLoading, setIsLoading] = useState(false);
+  const [conversionQuantity, setConversionQuantity] = useState<string>('');
+  const [conversionUnit, setConversionUnit] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // 編集モードかどうかの判定
   const isEditing = !!ingredient;
@@ -48,10 +50,12 @@ export const IngredientDialog = ({
   useEffect(() => {
     if (ingredient) {
       setOriginalName(ingredient.originalName || '');
-      setName(ingredient.name);
+      setName(ingredient.name || '');
       setCategory(ingredient.category);
-      setDefaultUnit(ingredient.defaultUnit);
+      setDefaultUnit(ingredient.defaultUnit || '');
       setTypicalPrice(ingredient.typicalPrice ? ingredient.typicalPrice.toString() : '');
+      setConversionQuantity(ingredient.conversionQuantity || '');
+      setConversionUnit(ingredient.conversionUnit || '');
     } else {
       // 新規作成時は初期化
       setOriginalName('');
@@ -59,6 +63,8 @@ export const IngredientDialog = ({
       setCategory('vegetables');
       setDefaultUnit('');
       setTypicalPrice('');
+      setConversionQuantity('');
+      setConversionUnit('');
     }
   }, [ingredient]);
 
@@ -69,6 +75,8 @@ export const IngredientDialog = ({
     setCategory('vegetables');
     setDefaultUnit('');
     setTypicalPrice('');
+    setConversionQuantity('');
+    setConversionUnit('');
     setIsLoading(false);
     onClose();
   };
@@ -87,7 +95,9 @@ export const IngredientDialog = ({
         category,
         defaultUnit: defaultUnit.trim(),
         typicalPrice: typicalPrice ? parseFloat(typicalPrice) : undefined,
-        originalName: originalName.trim() || name.trim()
+        originalName: originalName.trim() || name.trim(),
+        conversionQuantity: conversionQuantity.trim() || undefined,
+        conversionUnit: conversionUnit.trim() || undefined
       });
       handleClose();
     } catch (error) {
@@ -202,6 +212,34 @@ export const IngredientDialog = ({
           placeholder="例: 個、g、大さじ"
           disabled={isLoading}
         />
+      </div>
+
+      {/* 1個当たりの量入力 */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          🔄 1個当たりの量 (任意)
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={conversionQuantity}
+            onChange={(e) => setConversionQuantity(e.target.value)}
+            placeholder="数量 (例: 50, 0.1)"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            disabled={isLoading}
+          />
+          <input
+            type="text"
+            value={conversionUnit}
+            onChange={(e) => setConversionUnit(e.target.value)}
+            placeholder="単位 (例: g, ml)"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            disabled={isLoading}
+          />
+        </div>
+        <p className="text-xs text-gray-500 mt-1">
+          例: たまご6個パックで1個あたり50gの場合、数量「50」単位「g」と入力
+        </p>
       </div>
 
       {/* 一般的価格入力（任意） */}

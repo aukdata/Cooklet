@@ -2,19 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTabRefresh } from './useTabRefresh';
-
-// 在庫データの型定義（CLAUDE.md仕様書準拠）
-export interface StockItem {
-  id?: string;
-  user_id?: string;
-  name: string;
-  quantity: string;
-  best_before?: string;
-  storage_location?: string;
-  is_homemade: boolean;
-  created_at?: string;
-  updated_at?: string;
-}
+import type { StockItem } from '../types/index';
 
 // useStockItemsフック - Supabase stock_itemsテーブルとの連携
 export const useStockItems = () => {
@@ -52,7 +40,7 @@ export const useStockItems = () => {
   }, [user]);
 
   // 在庫を追加
-  const addStockItem = async (stockItem: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+  const addStockItem = async (stockItem: Omit<StockItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
     if (!user) throw new Error('ユーザーが認証されていません');
 
     try {
@@ -65,9 +53,9 @@ export const useStockItems = () => {
             user_id: user.id,
             name: stockItem.name,
             quantity: stockItem.quantity,
-            best_before: stockItem.best_before,
-            storage_location: stockItem.storage_location,
-            is_homemade: stockItem.is_homemade
+            best_before: stockItem.bestBefore,
+            storage_location: stockItem.storageLocation,
+            is_homemade: stockItem.isHomemade
           }
         ])
         .select()
@@ -89,18 +77,26 @@ export const useStockItems = () => {
   };
 
   // 在庫を更新
-  const updateStockItem = async (id: string, updates: Partial<Omit<StockItem, 'id' | 'user_id' | 'created_at'>>) => {
+  const updateStockItem = async (id: string, updates: Partial<Omit<StockItem, 'id' | 'userId' | 'createdAt'>>) => {
     if (!user) throw new Error('ユーザーが認証されていません');
 
     try {
       setError(null);
 
+      // camelCaseをsnake_caseに変換
+      const dbUpdates: any = {
+        updated_at: new Date().toISOString()
+      };
+      
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
+      if (updates.bestBefore !== undefined) dbUpdates.best_before = updates.bestBefore;
+      if (updates.storageLocation !== undefined) dbUpdates.storage_location = updates.storageLocation;
+      if (updates.isHomemade !== undefined) dbUpdates.is_homemade = updates.isHomemade;
+
       const { data, error: updateError } = await supabase
         .from('stock_items')
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString()
-        })
+        .update(dbUpdates)
         .eq('id', id)
         .eq('user_id', user.id)
         .select()

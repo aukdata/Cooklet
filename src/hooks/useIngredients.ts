@@ -57,8 +57,14 @@ export const useIngredients = () => {
       const { data, error } = await supabase
         .from('ingredients')
         .insert([{
-          ...ingredient,
-          user_id: user.id
+          user_id: user.id,
+          name: ingredient.name,
+          category: ingredient.category,
+          default_unit: ingredient.defaultUnit,
+          typical_price: ingredient.typicalPrice,
+          original_name: ingredient.originalName,
+          conversion_quantity: ingredient.conversionQuantity,
+          conversion_unit: ingredient.conversionUnit
         }])
         .select()
         .single();
@@ -76,16 +82,27 @@ export const useIngredients = () => {
   };
 
   // 食材マスタを更新する関数
-  const updateIngredient = async (id: number, updates: Partial<Omit<Ingredient, 'id' | 'user_id' | 'created_at'>>) => {
+  const updateIngredient = async (id: number, updates: Partial<Omit<Ingredient, 'id' | 'userId' | 'createdAt'>>) => {
     if (!user) throw new Error('ユーザーが認証されていません');
 
     try {
       setError(null);
       
+      // camelCaseをsnake_caseに変換
+      const dbUpdates: any = {};
+      
+      if (updates.name !== undefined) dbUpdates.name = updates.name;
+      if (updates.category !== undefined) dbUpdates.category = updates.category;
+      if (updates.defaultUnit !== undefined) dbUpdates.default_unit = updates.defaultUnit;
+      if (updates.typicalPrice !== undefined) dbUpdates.typical_price = updates.typicalPrice;
+      if (updates.originalName !== undefined) dbUpdates.original_name = updates.originalName;
+      if (updates.conversionQuantity !== undefined) dbUpdates.conversion_quantity = updates.conversionQuantity;
+      if (updates.conversionUnit !== undefined) dbUpdates.conversion_unit = updates.conversionUnit;
+      
       // 食材マスタを更新
       const { data, error } = await supabase
         .from('ingredients')
-        .update(updates)
+        .update(dbUpdates)
         .eq('id', id)
         .eq('user_id', user.id) // セキュリティ: 自分の食材のみ更新可能
         .select()

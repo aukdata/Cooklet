@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { StockItem } from '../../hooks/useStockItems';
+import type { StockItem } from '../../types/index';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
 import { BaseDialog } from '../ui/BaseDialog';
@@ -34,9 +34,9 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   const [formData, setFormData] = useState<StockItem>({
     name: '',
     quantity: '',
-    best_before: '',
-    storage_location: '冷蔵庫',
-    is_homemade: false
+    bestBefore: '',
+    storageLocation: '冷蔵庫',
+    isHomemade: false
   });
 
   // 削除確認ダイアログの状態管理
@@ -53,18 +53,18 @@ export const StockDialog: React.FC<StockDialogProps> = ({
       setFormData({
         name: initialData.name || '',
         quantity: initialData.quantity || '',
-        best_before: initialData.best_before || '',
-        storage_location: initialData.storage_location || '冷蔵庫',
-        is_homemade: initialData.is_homemade || false
+        bestBefore: initialData.bestBefore || '',
+        storageLocation: initialData.storageLocation || '冷蔵庫',
+        isHomemade: initialData.isHomemade || false
       });
     } else {
       // 新規作成時はフォームをリセット
       setFormData({
         name: '',
         quantity: '',
-        best_before: '',
-        storage_location: '冷蔵庫',
-        is_homemade: false
+        bestBefore: '',
+        storageLocation: '冷蔵庫',
+        isHomemade: false
       });
     }
   }, [initialData]);
@@ -102,7 +102,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   // 日付クイック設定ハンドラ
   const setQuickDate = (dateType: 'today' | 'week') => {
     const date = dateType === 'today' ? today : oneWeekLater;
-    setFormData(prev => ({ ...prev, best_before: date }));
+    setFormData(prev => ({ ...prev, bestBefore: date }));
   };
 
   // ダイアログが閉じている場合は何も表示しない
@@ -149,6 +149,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
             />
           </div>
 
+
           {/* 賞味期限入力 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -157,8 +158,8 @@ export const StockDialog: React.FC<StockDialogProps> = ({
             <div className="flex gap-2">
               <input
                 type="date"
-                value={formData.best_before}
-                onChange={(e) => setFormData(prev => ({ ...prev, best_before: e.target.value }))}
+                value={formData.bestBefore}
+                onChange={(e) => setFormData(prev => ({ ...prev, bestBefore: e.target.value }))}
                 className="flex-1 border border-gray-300 rounded px-3 py-2"
               />
               <button
@@ -190,8 +191,8 @@ export const StockDialog: React.FC<StockDialogProps> = ({
                     type="radio"
                     name="storage_location"
                     value={location}
-                    checked={formData.storage_location === location}
-                    onChange={(e) => setFormData(prev => ({ ...prev, storage_location: e.target.value }))}
+                    checked={formData.storageLocation === location}
+                    onChange={(e) => setFormData(prev => ({ ...prev, storageLocation: e.target.value }))}
                     className="mr-2"
                   />
                   <span className="text-sm">{location}</span>
@@ -205,8 +206,8 @@ export const StockDialog: React.FC<StockDialogProps> = ({
             <label className="flex items-center">
               <input
                 type="checkbox"
-                checked={formData.is_homemade}
-                onChange={(e) => setFormData(prev => ({ ...prev, is_homemade: e.target.checked }))}
+                checked={formData.isHomemade}
+                onChange={(e) => setFormData(prev => ({ ...prev, isHomemade: e.target.checked }))}
                 className="mr-2"
               />
               <span className="text-sm font-medium text-gray-700 flex items-center">

@@ -19,7 +19,7 @@
 - `User` - ユーザー情報（id, email, name, google_id, 作成日時）
 
 #### 食材・在庫管理
-- `Ingredient` - 食材マスタ（id, user_id, name, category, default_unit, typical_price）
+- `Ingredient` - 食材マスタ（id, user_id, name, category, default_unit, typical_price, original_name, conversion_quantity, conversion_unit）
 - `StockItem` - 在庫アイテム（id, user_id, name, quantity, best_before, storage_location, is_homemade）
 
 #### 献立・レシピ管理

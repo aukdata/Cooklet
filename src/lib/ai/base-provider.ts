@@ -36,7 +36,7 @@ export const RECIPE_EXTRACTION_PROMPT = `
 - 「少々」→ quantity: "少々", unit: ""
 - 「鶏肉100gほど」→ quantity: "100", unit: "g"
 - 「鶏肉約100g」→ quantity: "100", unit: "g"
-- 単位が不明な場合は unit: "" を設定
+- 単位が不明な場合は unit: "-" を設定
 
 タグ提案ルール：
 - 料理ジャンル：「和食」「洋食」「中華」「エスニック」「イタリアン」「フレンチ」など
@@ -126,7 +126,7 @@ const RecipeExtractionSchema = z.object({
   ingredients: z.array(z.object({
     name: z.string().min(1, '材料名は必須です'),
     quantity: z.union([z.string(), z.number()]).optional().default('適量'),
-    unit: z.string().optional().default('')
+    unit: z.string().default('-')
   })).optional().default([]),
   confidence: z.number().min(0).max(1).optional().default(0.5),
   isRecipeSite: z.boolean().optional().default(false),
@@ -139,7 +139,7 @@ const ReceiptExtractionSchema = z.object({
     name: z.string().min(1, '商品名は必須です'),
     quantity: z.union([z.string(), z.number()]).optional().default('1'),
     price: z.number().min(0).optional(),
-    unit: z.string().optional(),
+    unit: z.string().default('個'),
     originalName: z.string()
   })),
   storeName: z.string().optional(),
@@ -266,7 +266,7 @@ export abstract class BaseAIProvider implements AIProvider {
           originalName: item.originalName,
           name: item.name.trim(),
           quantity: typeof item.quantity === 'number' ? String(item.quantity) : item.quantity.trim(),
-          unit: (item.unit?.trim() || '個') as FoodUnit,
+          unit: item.unit.trim() as FoodUnit,
           price: item.price || undefined
         };
         
