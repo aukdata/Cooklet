@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useStockItems, type StockItem } from '../../hooks/useStockItems';
+import { useStockItems } from '../../hooks/useStockItems';
+import { type StockItem } from "../../types/index";
 import { StockDialog } from '../../components/dialogs/StockDialog';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 import { EditButton, AddButton } from '../../components/ui/Button';
@@ -108,12 +109,12 @@ export const Stock: React.FC = () => {
   // 検索フィルタリング
   const filteredStockItems = stockItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLocation = selectedLocation === '全て' || item.storage_location === selectedLocation;
+    const matchesLocation = selectedLocation === '全て' || item.storageLocation === selectedLocation;
     return matchesSearch && matchesLocation;
   });
 
   // 全保存場所を取得
-  const allLocations = ['全て', ...Array.from(new Set(stockItems.map(item => item.storage_location).filter(Boolean)))];
+  const allLocations = ['全て', ...Array.from(new Set(stockItems.map(item => item.storageLocation).filter(Boolean)))];
 
   // ローディング状態の表示
   if (loading) {
@@ -212,25 +213,25 @@ export const Stock: React.FC = () => {
                     </div>
                     <div className="flex items-center">
                       <span className="mr-1">🏠</span>
-                      保存場所: {item.storage_location || '不明'}
+                      保存場所: {item.storageLocation || '不明'}
                     </div>
 
                     {/* 賞味期限 */}
-                    {item.best_before && (
+                    {item.bestBefore && (
                       <div className="flex items-center">
                         <span className="mr-1">📅</span>
-                        賞味期限: {new Date(item.best_before).toLocaleDateString('ja-JP')}
-                        {isExpired(item.best_before) && (
+                        賞味期限: {new Date(item.bestBefore).toLocaleDateString('ja-JP')}
+                        {isExpired(item.bestBefore) && (
                           <span className="ml-2 text-red-600 text-xs font-medium">期限切れ</span>
                         )}
-                        {isExpiringSoon(item.best_before) && !isExpired(item.best_before) && (
+                        {isExpiringSoon(item.bestBefore) && !isExpired(item.bestBefore) && (
                           <span className="ml-2 text-yellow-600 text-xs font-medium">期限間近</span>
                         )}
                       </div>
                     )}
 
                     {/* 作り置きフラグ */}
-                    {item.is_homemade && (
+                    {item.isHomemade && (
                       <div className="flex items-center">
                         <span className="mr-1">🍱</span>
                         <span className="text-orange-600 text-xs font-medium">作り置き</span>

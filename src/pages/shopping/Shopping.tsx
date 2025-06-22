@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useShoppingList, useMealPlans, useStockItems, useAutoShoppingList, useIngredients } from '../../hooks';
-import { type StockItem } from '../../hooks/useStockItems';
+import { type StockItem } from '../../types/index';
 import { type ShoppingListItem } from '../../types';
 import { QuantityInput } from '../../components/common/QuantityInput';
 import { NameQuantityUnitInput } from '../../components/common/NameQuantityUnitInput';
@@ -143,12 +143,12 @@ export const Shopping: React.FC = () => {
       for (const item of completedItems) {
         const quantity = editingQuantities[item.id!] || item.quantity || '1個';
         
-        const stockData: StockItem = {
+        const stockData: Omit<StockItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
           name: item.name,
           quantity: quantity,
-          best_before: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後
-          storage_location: '冷蔵庫',
-          is_homemade: false
+          bestBefore: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後
+          storageLocation: '冷蔵庫',
+          isHomemade: false
         };
         
         await addStockItem(stockData);

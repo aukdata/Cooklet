@@ -2,7 +2,7 @@
 // 献立から買い物リストを自動生成し、在庫との突合を行う機能
 
 import { type MealPlan } from '../hooks/useMealPlans';
-import { type StockItem } from '../hooks/useStockItems';
+import { type StockItem } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 
 export interface ShoppingListGenerationResult {

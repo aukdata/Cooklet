@@ -39,9 +39,9 @@ export const useExpiryNotifications = () => {
     thresholdDate.setDate(today.getDate() + settings.expiry_notification_days);
 
     const expiryItems: ExpiryItem[] = stockItems
-      .filter(item => item.best_before && item.id) // 賞味期限とIDがある食品のみ
+      .filter(item => item.bestBefore && item.id) // 賞味期限とIDがある食品のみ
       .map(item => {
-        const expiryDate = new Date(item.best_before!);
+        const expiryDate = new Date(item.bestBefore!);
         expiryDate.setHours(0, 0, 0, 0);
         
         const timeDiff = expiryDate.getTime() - today.getTime();
@@ -50,9 +50,9 @@ export const useExpiryNotifications = () => {
         return {
           id: item.id!,
           name: item.name,
-          best_before: item.best_before!,
+          best_before: item.bestBefore!,
           days_until_expiry: daysDiff,
-          storage_location: item.storage_location,
+          storage_location: item.storageLocation,
         };
       })
       .filter(item => 

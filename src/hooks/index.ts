@@ -7,7 +7,7 @@ export { useMealPlans, type MealPlan } from './useMealPlans';
 export { useRecipes, type SavedRecipe } from './useRecipes';
 
 // 在庫管理フック
-export { useStockItems, type StockItem } from './useStockItems';
+export { useStockItems } from './useStockItems';
 
 // コスト管理フック
 export { useCostRecords, type CostRecord } from './useCostRecords';

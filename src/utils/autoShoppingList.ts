@@ -1,7 +1,7 @@
 // 献立から買い物リスト自動生成のユーティリティ（CLAUDE.md仕様書準拠）
 
 import { type MealPlan } from '../hooks/useMealPlans';
-import { type StockItem } from '../hooks/useStockItems';
+import { type StockItem } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 
 // 食材名の正規化（類似食材をマッチングするため）

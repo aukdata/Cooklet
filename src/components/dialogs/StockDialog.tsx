@@ -31,7 +31,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   const { showError } = useToast();
 
   // フォームデータの状態管理（StockItem型に合わせて調整）
-  const [formData, setFormData] = useState<StockItem>({
+  const [formData, setFormData] = useState<Partial<StockItem>>({
     name: '',
     quantity: '',
     bestBefore: '',
@@ -71,15 +71,15 @@ export const StockDialog: React.FC<StockDialogProps> = ({
 
   // フォーム送信ハンドラ
   const handleSave = () => {
-    if (!formData.name.trim()) {
+    if (!formData.name?.trim()) {
       showError('食材名を入力してください');
       return;
     }
-    if (!formData.quantity.trim()) {
+    if (!formData.quantity?.trim()) {
       showError('数量を入力してください');
       return;
     }
-    onSave(formData);
+    onSave(formData as StockItem);
   };
 
   // 削除確認ハンドラ
@@ -128,7 +128,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
             </label>
             <input
               type="text"
-              value={formData.name}
+              value={formData.name || ''}
               onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
               placeholder="にんじん"
               className="w-full border border-gray-300 rounded px-3 py-2"
@@ -142,7 +142,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
               📊 数量:
             </label>
             <QuantityInput
-              value={formData.quantity}
+              value={formData.quantity || ''}
               onChange={(value) => setFormData(prev => ({ ...prev, quantity: value }))}
               placeholder="数量"
               className="w-full"
@@ -158,8 +158,8 @@ export const StockDialog: React.FC<StockDialogProps> = ({
             <div className="flex gap-2">
               <input
                 type="date"
-                value={formData.bestBefore}
-                onChange={(e) => setFormData(prev => ({ ...prev, bestBefore: e.target.value }))}
+                value={formData.bestBefore || ''}
+                onChange={(e) => setFormData(prev => ({ ...prev, bestBefore: e.target.value || undefined }))}
                 className="flex-1 border border-gray-300 rounded px-3 py-2"
               />
               <button

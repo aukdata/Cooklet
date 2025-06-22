@@ -156,8 +156,8 @@ export const Dashboard: React.FC = () => {
     const grouped: Record<string, typeof expiredItems> = {};
     
     expiredItems.forEach(item => {
-      if (item.best_before) {
-        const period = getExpiredPeriod(item.best_before);
+      if (item.bestBefore) {
+        const period = getExpiredPeriod(item.bestBefore);
         if (!grouped[period]) {
           grouped[period] = [];
         }
@@ -350,7 +350,7 @@ export const Dashboard: React.FC = () => {
                       {period}
                       {period !== '今日' && (
                         <span className="text-xs text-gray-500 ml-2 font-normal">
-                          ({items[0]?.best_before ? formatDate(items[0].best_before) : ''})
+                          ({items[0]?.bestBefore ? formatDate(items[0].bestBefore) : ''})
                         </span>
                       )}
                     </div>
@@ -377,7 +377,7 @@ export const Dashboard: React.FC = () => {
               <div className="ml-4 space-y-1">
                 {expiringItems.map((item) => (
                   <div key={item.id} className="text-sm text-gray-700">
-                    • {item.name} ({item.best_before ? formatDate(item.best_before) : '不明'}期限)
+                    • {item.name} ({item.bestBefore ? formatDate(item.bestBefore) : '不明'}期限)
                   </div>
                 ))}
               </div>

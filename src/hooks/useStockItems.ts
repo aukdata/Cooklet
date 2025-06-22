@@ -84,7 +84,7 @@ export const useStockItems = () => {
       setError(null);
 
       // camelCaseをsnake_caseに変換
-      const dbUpdates: any = {
+      const dbUpdates: Record<string, unknown> = {
         updated_at: new Date().toISOString()
       };
       
@@ -159,7 +159,7 @@ export const useStockItems = () => {
   const getExpiredItems = () => {
     const today = new Date().toISOString().split('T')[0];
     return stockItems.filter(item => 
-      item.best_before && item.best_before < today
+      item.bestBefore && item.bestBefore < today
     );
   };
 
@@ -171,15 +171,15 @@ export const useStockItems = () => {
     const today = new Date().toISOString().split('T')[0];
     
     return stockItems.filter(item => 
-      item.best_before && 
-      item.best_before >= today && 
-      item.best_before <= targetDateStr
+      item.bestBefore && 
+      item.bestBefore >= today && 
+      item.bestBefore <= targetDateStr
     );
   };
 
   // 保存場所別の在庫を取得
   const getItemsByLocation = (location: string) => {
-    return stockItems.filter(item => item.storage_location === location);
+    return stockItems.filter(item => item.storageLocation === location);
   };
 
   // 在庫名での検索

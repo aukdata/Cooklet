@@ -163,9 +163,9 @@ export const MealPlans: React.FC = () => {
       await addStockItem({
         name: dishName,
         quantity: '1食分',
-        best_before: tomorrow.toISOString().split('T')[0], // 明日まで
-        storage_location: '冷蔵庫',
-        is_homemade: true // 作り置きフラグをtrueに設定
+        bestBefore: tomorrow.toISOString().split('T')[0], // 明日まで
+        storageLocation: '冷蔵庫',
+        isHomemade: true // 作り置きフラグをtrueに設定
       });
       
       setIsConsumedDialogOpen(false);

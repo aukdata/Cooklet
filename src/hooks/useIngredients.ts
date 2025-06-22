@@ -89,7 +89,7 @@ export const useIngredients = () => {
       setError(null);
       
       // camelCaseをsnake_caseに変換
-      const dbUpdates: any = {};
+      const dbUpdates: Record<string, unknown> = {};
       
       if (updates.name !== undefined) dbUpdates.name = updates.name;
       if (updates.category !== undefined) dbUpdates.category = updates.category;

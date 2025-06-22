@@ -20,7 +20,8 @@
       "Bash(ls:*)",
       "Bash(node:*)",
       "Bash(grep:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(sed:*)"
     ],
     "deny": [
       "Bash(rm:*)"
