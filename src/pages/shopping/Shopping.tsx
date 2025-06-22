@@ -35,7 +35,7 @@ export const Shopping: React.FC = () => {
   } = useAutoShoppingList();
 
   // 食材マスタフック（商品名正規化用）
-  const { ingredients } = useIngredients();
+  const { ingredients, addIngredient } = useIngredients();
 
   // 新規追加フォームの状態
   const [newItemName, setNewItemName] = useState('');
@@ -251,21 +251,6 @@ export const Shopping: React.FC = () => {
     }
   };
 
-  // レシート読み取り結果を完了リストに追加する関数
-  const handleAddReceiptItems = async (receiptResult: ReceiptResult) => {
-    for (const item of receiptResult.items) {
-      try {
-        await addShoppingItem({
-          name: item.name,
-          quantity: item.quantity,
-          checked: true, // レシートのアイテムは既に購入済みなので完了状態で追加
-          added_from: 'manual'
-        });
-      } catch (err) {
-        console.error(`アイテム追加に失敗: ${item.name}`, err);
-      }
-    }
-  };
 
   // レシートアップロードボタンクリック
   const handleReceiptButtonClick = () => {

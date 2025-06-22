@@ -77,12 +77,12 @@ export const readReceiptFromImage = async (
     console.log('AI信頼度:', receiptData.confidence);
     
     // Step 3: 商品名正規化処理（ingredientsテーブルとの照らし合わせ）
-    let normalizedItems = receiptData.items;
+    let normalizedItems: ReceiptItem[] = receiptData.items;
     if (ingredients && ingredients.length > 0) {
-      normalizedItems = normalizeReceiptItems(receiptData.items, ingredients);
+      const normalizedWithResult = normalizeReceiptItems(receiptData.items, ingredients);
       
       // 正規化統計をコンソールに出力
-      const stats = getNormalizationStats(normalizedItems.map(item => item.normalizationResult));
+      const stats = getNormalizationStats(normalizedWithResult.map(item => item.normalizationResult));
       console.log('=== 商品名正規化結果 ===');
       console.log(`正規化対象: ${stats.total}件`);
       console.log(`正規化成功: ${stats.normalized}件`);
@@ -90,12 +90,20 @@ export const readReceiptFromImage = async (
       console.log(`正規化率: ${(stats.normalizationRate * 100).toFixed(1)}%`);
       
       // 正規化された商品詳細
-      normalizedItems.forEach((item, index) => {
+      normalizedWithResult.forEach((item, index) => {
         if (item.normalizationResult.isNormalized) {
           console.log(`${index + 1}: "${item.normalizationResult.originalName}" → "${item.name}"`);
         }
       });
       console.log('========================');
+      
+      // ReceiptItem型に変換（normalizationResultを追加）
+      normalizedItems = normalizedWithResult.map(item => ({
+        name: item.name,
+        quantity: item.quantity,
+        price: item.price,
+        normalizationResult: item.normalizationResult
+      }));
     }
     
     // Step 4: 合計金額を計算

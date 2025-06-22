@@ -26,3 +26,6 @@ export { useNotificationSettings, type NotificationSettings } from './useNotific
 
 // 期限通知管理フック
 export { useExpiryNotifications, type ExpiryItem, type ExpiryNotificationResult } from './useExpiryNotifications';
+
+// 食材マスタ管理フック
+export { useIngredients } from './useIngredients';
