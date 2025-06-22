@@ -7,6 +7,10 @@
 
 ### receiptReader.ts
 レシート読み取り機能の実装ファイル。Google Vision APIとGemini AIを組み合わせた高精度レシート解析。
+ingredientsテーブルのoriginal_nameと照らし合わせて商品名を一般名に自動変換。
+
+### nameNormalizer.ts
+商品名正規化ユーティリティ。レシートの商品名をingredientsテーブルの一般名に変換。
 
 #### 型定義
 
@@ -32,12 +36,13 @@ interface ReceiptResult {
 
 #### 実装済み機能
 
-**readReceiptFromImage(file: File): Promise<ReceiptResult>**
+**readReceiptFromImage(file: File, ingredients?: Ingredient[]): Promise<ReceiptResult>**
 - レシート画像を読み取って商品リストを返す関数
 - Step 1: Google Vision APIでOCR処理（プレーンテキスト抽出）
 - Step 2: Gemini AIでテキスト構造化（商品・店舗・日付抽出）
-- Step 3: 商品価格から合計金額を自動計算
-- デバッグ用のコンソール出力機能付き
+- Step 3: 商品名正規化処理（ingredientsテーブルのoriginal_nameと照らし合わせ）
+- Step 4: 商品価格から合計金額を自動計算
+- デバッグ用のコンソール出力機能付き（正規化統計を含む）
 
 **calculateTotalPrice(items: ReceiptItem[]): number**
 - 商品リストから合計金額を計算する関数
@@ -50,10 +55,28 @@ interface ReceiptResult {
 - 最大ファイルサイズ: 10MB
 - ファイルタイプとサイズの両方をチェック
 
+#### nameNormalizer.ts の機能
+
+**normalizeProductName(originalName: string, ingredients: Ingredient[]): NameNormalizationResult**
+- 商品名をingredientsテーブルと照らし合わせて一般名に変換
+- 完全一致 → 部分一致 → 逆向き部分一致の順で検索
+- 正規化結果と詳細情報を返す
+
+**normalizeReceiptItems<T>(items: T[], ingredients: Ingredient[]): Array<T & { normalizationResult: NameNormalizationResult }>**
+- レシートアイテムリストの商品名を一括正規化
+- 元のアイテムデータに正規化情報を追加して返す
+
+**getNormalizationStats(results: NameNormalizationResult[]): Stats**
+- 正規化統計情報（総数・成功数・未変更数・成功率）を計算
+
 #### 使用方法
 
 ```typescript
 import { readReceiptFromImage, validateImageFile } from '../utils/receiptReader';
+import { useIngredients } from '../hooks';
+
+// 食材マスタデータを取得
+const { ingredients } = useIngredients();
 
 // ファイル妥当性チェック
 if (!validateImageFile(file)) {
@@ -61,18 +84,21 @@ if (!validateImageFile(file)) {
   return;
 }
 
-// レシート読み取り実行
+// レシート読み取り実行（商品名正規化付き）
 try {
-  const result = await readReceiptFromImage(file);
+  const result = await readReceiptFromImage(file, ingredients);
   console.log(`${result.items.length}件のアイテムを読み取りました`);
   console.log('店舗名:', result.storeName);
   console.log('購入日:', result.date);
   console.log('合計金額:', result.totalPrice);
   console.log('AI信頼度:', result.confidence);
   
-  // 個別の商品詳細
+  // 個別の商品詳細（正規化情報付き）
   result.items.forEach((item, index) => {
     console.log(`${index + 1}: ${item.name} - ${item.quantity} - ¥${item.price || '価格不明'}`);
+    if (item.normalizationResult?.isNormalized) {
+      console.log(`  正規化: "${item.normalizationResult.originalName}" → "${item.name}"`);
+    }
   });
 } catch (error) {
   console.error('読み取りに失敗しました:', error);

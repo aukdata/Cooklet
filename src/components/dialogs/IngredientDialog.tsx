@@ -34,6 +34,7 @@ export const IngredientDialog = ({
   onDelete
 }: IngredientDialogProps) => {
   // フォーム状態管理
+  const [originalName, setOriginalName] = useState('');
   const [name, setName] = useState('');
   const [category, setCategory] = useState<'vegetables' | 'meat' | 'seasoning' | 'others'>('vegetables');
   const [defaultUnit, setDefaultUnit] = useState('');
@@ -46,12 +47,14 @@ export const IngredientDialog = ({
   // 材料データをフォームに反映
   useEffect(() => {
     if (ingredient) {
+      setOriginalName(ingredient.original_name || '');
       setName(ingredient.name);
       setCategory(ingredient.category);
       setDefaultUnit(ingredient.default_unit);
       setTypicalPrice(ingredient.typical_price ? ingredient.typical_price.toString() : '');
     } else {
       // 新規作成時は初期化
+      setOriginalName('');
       setName('');
       setCategory('vegetables');
       setDefaultUnit('');
@@ -61,6 +64,7 @@ export const IngredientDialog = ({
 
   // ダイアログが閉じられた時のクリーンアップ
   const handleClose = () => {
+    setOriginalName('');
     setName('');
     setCategory('vegetables');
     setDefaultUnit('');
@@ -82,7 +86,8 @@ export const IngredientDialog = ({
         name: name.trim(),
         category,
         default_unit: defaultUnit.trim(),
-        typical_price: typicalPrice ? parseFloat(typicalPrice) : undefined
+        typical_price: typicalPrice ? parseFloat(typicalPrice) : undefined,
+        original_name: originalName.trim() || undefined
       });
       handleClose();
     } catch (error) {
@@ -128,10 +133,30 @@ export const IngredientDialog = ({
       disabled={!isValid || isLoading}
       saveText={isLoading ? '保存中...' : '保存'}
     >
-      {/* 材料名入力 */}
+      {/* 商品名入力（original_name） */}
+      <div>
+        <label htmlFor="ingredient-original-name" className="block text-sm font-medium text-gray-700 mb-1">
+          商品名
+          <span className="text-sm text-gray-500 ml-1">（レシート読み取り時の変換用）</span>
+        </label>
+        <input
+          id="ingredient-original-name"
+          type="text"
+          value={originalName}
+          onChange={(e) => setOriginalName(e.target.value)}
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+          placeholder="例: 国産玉ねぎ、北海道産じゃがいも"
+          disabled={isLoading}
+        />
+        <p className="text-xs text-gray-500 mt-1">
+          レシートの商品名をここに登録すると、読み取り時に下の名前に自動変換されます
+        </p>
+      </div>
+
+      {/* 名前入力（name） */}
       <div>
         <label htmlFor="ingredient-name" className="block text-sm font-medium text-gray-700 mb-1">
-          材料名 *
+          名前 *
         </label>
         <input
           id="ingredient-name"

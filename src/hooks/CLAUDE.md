@@ -121,6 +121,7 @@ interface SavedRecipe {
 - `addIngredient`: 食材追加関数
 - `updateIngredient`: 食材更新関数
 - `deleteIngredient`: 食材削除関数
+- `findIngredientByOriginalName`: original_nameで食材検索関数
 - `refetch`: 食材再取得関数
 
 #### 特徴
@@ -130,6 +131,7 @@ interface SavedRecipe {
 - user_id付きでの食材追加・更新・削除
 - RLSポリシーによるセキュリティ確保
 - **完全CRUD対応**: 作成・読み取り・更新・削除機能を提供
+- **商品名検索機能**: original_nameによる食材検索（完全一致・部分一致対応）
 
 ### useRecipeExtraction.ts
 レシピURLからの食材自動抽出機能を提供するカスタムフック。
