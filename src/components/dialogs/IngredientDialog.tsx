@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { BaseDialog } from '../ui/BaseDialog';
 import { type Ingredient } from '../../types';
+import { FOOD_UNITS } from '../../constants/units';
 
 interface IngredientDialogProps {
   /** ダイアログの表示状態 */
@@ -198,20 +199,25 @@ export const IngredientDialog = ({
         </select>
       </div>
 
-      {/* デフォルト単位入力 */}
+      {/* デフォルト単位選択 */}
       <div>
         <label htmlFor="ingredient-unit" className="block text-sm font-medium text-gray-700 mb-1">
           デフォルト単位 *
         </label>
-        <input
+        <select
           id="ingredient-unit"
-          type="text"
           value={defaultUnit}
           onChange={(e) => setDefaultUnit(e.target.value)}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          placeholder="例: 個、g、大さじ"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
           disabled={isLoading}
-        />
+        >
+          <option value="">-- 単位を選択 --</option>
+          {FOOD_UNITS.map((unit) => (
+            <option key={unit} value={unit}>
+              {unit === '-' ? '単位なし' : unit}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* 1個当たりの量入力 */}
@@ -228,14 +234,19 @@ export const IngredientDialog = ({
             className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
             disabled={isLoading}
           />
-          <input
-            type="text"
+          <select
             value={conversionUnit}
             onChange={(e) => setConversionUnit(e.target.value)}
-            placeholder="単位 (例: g, ml)"
-            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white"
             disabled={isLoading}
-          />
+          >
+            <option value="">-- 単位を選択 --</option>
+            {FOOD_UNITS.map((unit) => (
+              <option key={unit} value={unit}>
+                {unit === '-' ? '単位なし' : unit}
+              </option>
+            ))}
+          </select>
         </div>
         <p className="text-xs text-gray-500 mt-1">
           例: たまご6個パックで1個あたり50gの場合、数量「50」単位「g」と入力
