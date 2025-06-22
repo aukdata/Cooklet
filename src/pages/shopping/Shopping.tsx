@@ -300,7 +300,7 @@ export const Shopping: React.FC = () => {
           const originalNameForSearch = item.normalizationResult?.originalName || item.name;
           const existingIngredient = ingredients.find(ing => 
             ing.name === item.name || 
-            (ing.original_name && new RegExp(ing.original_name, 'i').test(originalNameForSearch))
+            (ing.originalName && new RegExp(ing.originalName, 'i').test(originalNameForSearch))
           );
 
           // 2. 未登録の場合は自動登録
@@ -325,7 +325,7 @@ export const Shopping: React.FC = () => {
                 category,
                 default_unit: item.unit !== '-' ? item.unit : '個',
                 typical_price: item.price,
-                original_name: originalNameForSearch !== item.name ? originalNameForSearch : undefined
+                originalName: originalNameForSearch !== item.name ? originalNameForSearch : undefined
               });
               registeredCount++;
             } catch (err) {

@@ -1,4 +1,4 @@
-// 商品名正規化ユーティリティ - ingredientsテーブルのoriginal_nameと照らし合わせて一般名に変換
+// 商品名正規化ユーティリティ - ingredientsテーブルのoriginalNameと照らし合わせて一般名に変換
 import type { Ingredient } from '../types';
 
 /**
@@ -12,7 +12,7 @@ export interface NameNormalizationResult {
 }
 
 /**
- * 商品名をingredientsテーブルのoriginal_nameと照らし合わせて一般名に変換する関数
+ * 商品名をingredientsテーブルのoriginalNameと照らし合わせて一般名に変換する関数
  * @param originalName - 元の商品名（レシートから読み取った名前）
  * @param ingredients - ingredientsテーブルの食材マスタデータ
  * @returns NameNormalizationResult - 正規化結果
@@ -31,7 +31,7 @@ export const normalizeProductName = (
 
   // 完全一致で検索
   const exactMatch = ingredients.find(ingredient => 
-    ingredient.original_name === originalName
+    ingredient.originalName === originalName
   );
 
   if (exactMatch) {
@@ -45,13 +45,13 @@ export const normalizeProductName = (
 
   // 正規表現一致で検索（大文字小文字を無視）
   const regexMatch = ingredients.find(ingredient => {
-    if (!ingredient.original_name) return false;
+    if (!ingredient.originalName) return false;
     try {
-      const regex = new RegExp(ingredient.original_name, 'i');
+      const regex = new RegExp(ingredient.originalName, 'i');
       return regex.test(originalName);
     } catch {
       // 正規表現が無効な場合は文字列一致にフォールバック
-      return ingredient.original_name.toLowerCase().includes(originalName.toLowerCase());
+      return ingredient.originalName.toLowerCase().includes(originalName.toLowerCase());
     }
   });
 
@@ -64,15 +64,15 @@ export const normalizeProductName = (
     };
   }
 
-  // 逆向き正規表現一致で検索（商品名がoriginal_nameパターンに含まれる場合）
+  // 逆向き正規表現一致で検索（商品名がoriginalNameパターンに含まれる場合）
   const reverseRegexMatch = ingredients.find(ingredient => {
-    if (!ingredient.original_name) return false;
+    if (!ingredient.originalName) return false;
     try {
-      const regex = new RegExp(ingredient.original_name, 'i');
+      const regex = new RegExp(ingredient.originalName, 'i');
       return regex.test(originalName);
     } catch {
       // 正規表現が無効な場合は文字列一致にフォールバック
-      return originalName.toLowerCase().includes(ingredient.original_name.toLowerCase());
+      return originalName.toLowerCase().includes(ingredient.originalName.toLowerCase());
     }
   });
 

@@ -47,7 +47,7 @@ export const IngredientDialog = ({
   // 材料データをフォームに反映
   useEffect(() => {
     if (ingredient) {
-      setOriginalName(ingredient.original_name || '');
+      setOriginalName(ingredient.originalName || '');
       setName(ingredient.name);
       setCategory(ingredient.category);
       setDefaultUnit(ingredient.default_unit);
@@ -87,7 +87,7 @@ export const IngredientDialog = ({
         category,
         default_unit: defaultUnit.trim(),
         typical_price: typicalPrice ? parseFloat(typicalPrice) : undefined,
-        original_name: originalName.trim() || undefined
+        originalName: originalName.trim() || undefined
       });
       handleClose();
     } catch (error) {

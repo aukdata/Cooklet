@@ -132,21 +132,21 @@ export const useIngredients = () => {
     }
   };
 
-  // original_nameで食材を検索する関数（商品名を一般名に変換）
+  // originalNameで食材を検索する関数（商品名を一般名に変換）
   const findIngredientByOriginalName = useCallback((originalName: string): Ingredient | null => {
     if (!originalName) return null;
     
     // 完全一致で検索
     const exactMatch = ingredients.find(ingredient => 
-      ingredient.original_name === originalName
+      ingredient.originalName === originalName
     );
     
     if (exactMatch) return exactMatch;
     
     // 部分一致で検索（大文字小文字を無視）
     const partialMatch = ingredients.find(ingredient => 
-      ingredient.original_name && 
-      ingredient.original_name.toLowerCase().includes(originalName.toLowerCase())
+      ingredient.originalName && 
+      ingredient.originalName.toLowerCase().includes(originalName.toLowerCase())
     );
     
     return partialMatch || null;

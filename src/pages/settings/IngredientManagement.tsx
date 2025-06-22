@@ -231,35 +231,37 @@ export const IngredientManagement: React.FC = () => {
                       {getCategoryName(category)}
                       <span className="ml-2 text-sm text-gray-400">({categoryIngredients.length}件)</span>
                     </h4>
-                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                    <div className="space-y-2">
                       {categoryIngredients.map((ingredient) => (
                         <div
                           key={ingredient.id}
-                          className="bg-gray-50 p-4 rounded-lg border border-gray-200 hover:border-gray-300 transition-colors"
+                          className="bg-gray-50 p-3 rounded border border-gray-200 hover:border-gray-300 transition-colors"
                         >
-                          <div className="flex justify-between items-start mb-2">
-                            <div className="flex items-center space-x-2">
-                              <span className="text-lg">{getCategoryIcon(ingredient.category)}</span>
-                              <h5 className="font-medium text-gray-900">{ingredient.name}</h5>
+                          <div className="flex justify-between items-center">
+                            <div className="flex-1">
+                              <div className="flex items-center text-sm">
+                                {ingredient.originalName ? (
+                                  <span>
+                                    <span className="text-gray-500">{ingredient.originalName}</span>
+                                    <span className="text-gray-400 mx-2">→</span>
+                                    <span className="text-gray-900 font-medium">{ingredient.name}</span>
+                                  </span>
+                                ) : (
+                                  <span className="text-gray-900 font-medium">{ingredient.name}</span>
+                                )}
+                              </div>
+                              {ingredient.typical_price && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  ¥{ingredient.typical_price}
+                                </div>
+                              )}
                             </div>
                             <button
                               onClick={() => handleEditIngredient(ingredient)}
-                              className="text-indigo-600 hover:text-indigo-500 text-sm"
+                              className="text-indigo-600 hover:text-indigo-500 text-sm ml-4"
                             >
                               編集
                             </button>
-                          </div>
-                          <div className="text-sm text-gray-600 space-y-1">
-                            <div className="flex justify-between">
-                              <span>単位:</span>
-                              <span>{ingredient.default_unit}</span>
-                            </div>
-                            {ingredient.typical_price && (
-                              <div className="flex justify-between">
-                                <span>価格:</span>
-                                <span>{ingredient.typical_price}円</span>
-                              </div>
-                            )}
                           </div>
                         </div>
                       ))}
