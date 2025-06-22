@@ -16,7 +16,7 @@ export interface Ingredient {
   category: 'vegetables' | 'meat' | 'seasoning' | 'others'; // カテゴリ（野菜・肉・調味料・その他）
   default_unit: string; // デフォルト単位（g, 個, etc.）
   typical_price?: number; // 一般的な価格（任意）
-  originalName?: string; // 正規化前の商品名（商品名を一般名に変換するときに使用）
+  original_name: string; // 正規化前の商品名（商品名を一般名に変換するときに使用）
   created_at: string; // 作成日時
 }
 

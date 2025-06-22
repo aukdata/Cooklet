@@ -35,7 +35,7 @@ export const Recipes: React.FC = () => {
     recipe: SavedRecipe;
     date: string;
     mealType: '朝' | '昼' | '夜' | '間食';
-    existingMealPlan: any;
+    existingMealPlan: unknown;
   } | null>(null);
 
   // レシピ追加ボタンのハンドラー
@@ -404,7 +404,7 @@ export const Recipes: React.FC = () => {
       <ConfirmDialog
         isOpen={isReplaceConfirmDialogOpen}
         title="確認"
-        message={`${replacementData?.date}の${replacementData?.mealType}食には既に「${replacementData?.existingMealPlan?.memo || '献立'}」が設定されています。\n置き換えますか？`}
+        message={`${replacementData?.date}の${replacementData?.mealType}食には既に「${(replacementData?.existingMealPlan as {memo?: string})?.memo || '献立'}」が設定されています。\n置き換えますか？`}
         onConfirm={handleConfirmReplace}
         onCancel={handleCancelReplace}
         confirmText="置き換える"

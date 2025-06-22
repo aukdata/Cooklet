@@ -1,5 +1,29 @@
 // AI Provider抽象化のための型定義
 
+import type { FoodUnit } from "../../constants/units";
+
+// AI APIからの生データ用の型（部分的・不完全な状態）
+export interface RawRecipeData {
+  title?: string;
+  servings?: number;
+  ingredients?: Array<{
+    name?: string;
+    quantity?: string;
+    unit?: string;
+  }>;
+  confidence?: number;
+  isRecipeSite?: boolean;
+  suggestedTags?: Array<string>;
+}
+
+// AI APIからの生レシートデータ用の型
+export interface RawReceiptData {
+  items?: RawReceiptItem[];
+  storeName?: string;
+  date?: string;
+  confidence?: number;
+}
+
 // レシピ抽出結果のスキーマ
 export interface RecipeExtraction {
   title: string; // レシピ名
@@ -30,7 +54,7 @@ export interface AIProvider {
   extractRecipeFromHtml(html: string, url: string): Promise<RecipeExtraction>;
   
   // レシートテキストから構造化データを抽出
-  extractReceiptFromText(text: string): Promise<ReceiptExtraction>;
+  extractReceiptFromText(text: string): Promise<ReceiptResult>;
   
   // プロバイダー名を取得
   getProviderName(): string;
@@ -39,17 +63,30 @@ export interface AIProvider {
   getConfig(): AIProviderConfig;
 }
 
-// レシート抽出結果のスキーマ
-export interface ReceiptExtraction {
-  items: Array<{
-    name: string; // 一般名
-    nameOriginal?: string; // 元の名前（任意）
-    quantity: string; // 数量
-    price?: number; // 価格（任意）
-  }>;
-  storeName?: string; // 店舗名
-  date?: string; // 購入日
-  confidence: number; // 抽出結果の信頼度（0-1）
+// AI APIからの生データ用の型（部分的・不完全な状態）
+export interface RawReceiptItem {
+  name?: string;
+  quantity?: string;
+  price?: number;
+}
+
+export interface ReceiptItem {
+  originalName: string; // 元の商品名（OCR結果）
+  name: string; // 正規化された商品名
+  quantity: string;
+  unit: FoodUnit;
+  price?: number;
+}
+
+/**
+ * レシート読み取り結果（計算された合計金額付き）
+ */
+export interface ReceiptResult {
+  items: ReceiptItem[];
+  totalPrice?: number;
+  storeName?: string;
+  date?: string;
+  confidence?: number;
 }
 
 // レシピ抽出エラー

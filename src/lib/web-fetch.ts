@@ -47,7 +47,7 @@ export class WebFetcher {
       
       if (!response.ok) {
         // Netlify Functionsからのエラーレスポンスを詳細に処理
-        let errorData: any;
+        let errorData: unknown;
         try {
           errorData = await response.json();
         } catch {
@@ -55,7 +55,7 @@ export class WebFetcher {
         }
 
         throw new WebFetchError(
-          errorData.message || `HTTP Error: ${response.status} ${response.statusText}`,
+          (errorData as {message?: string}).message || `HTTP Error: ${response.status} ${response.statusText}`,
           normalizedUrl,
           response.status
         );

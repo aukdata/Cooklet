@@ -17,9 +17,11 @@ ingredientsテーブルのoriginal_nameと照らし合わせて商品名を一�
 **ReceiptItem**
 ```typescript
 interface ReceiptItem {
-  name: string;        // 商品名
-  quantity: string;    // 数量
-  price?: number;      // 価格（任意）
+  originalName: string;                    // 元の商品名（OCR結果、任意）
+  name: string;                            // 正規化された商品名
+  quantity: string;                        // 数量
+  price?: number;                          // 価格（任意）
+  normalizationResult?: NameNormalizationResult; // 正規化結果（任意）
 }
 ```
 

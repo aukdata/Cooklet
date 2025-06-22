@@ -21,6 +21,7 @@ export const FOOD_UNITS = [
   '箱',
   '束',
   '片',
+  '房',
  
   // 料理系
   '人前',

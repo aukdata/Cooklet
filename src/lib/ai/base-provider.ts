@@ -1,7 +1,9 @@
 // AI Provider抽象基底クラス
 
-import type { AIProvider, AIProviderConfig, RecipeExtraction, ReceiptExtraction } from './types';
+import { z } from 'zod';
+import type { AIProvider, AIProviderConfig, RecipeExtraction, ReceiptResult, ReceiptItem } from './types';
 import { RecipeExtractionError, ReceiptExtractionError } from './types';
+import type { FoodUnit } from '../../constants/units';
 
 // レシピ抽出用の統一プロンプト - レシピサイト判定とタグ提案機能付き
 export const RECIPE_EXTRACTION_PROMPT = `
@@ -50,10 +52,9 @@ export const RECIPE_EXTRACTION_PROMPT = `
 - ECサイト、企業サイト、一般的なWebページ：false
 
 注意事項：
-- ingredientsは配列で、各要素は必ずname、quantity、unitを持つオブジェクト
 - 材料が見つからない場合は空配列 [] を返す
 - 数量が不明な場合は quantity: "適量", unit: "" を設定
-- suggestedTagsは配列で、レシピサイトの場合のみ適切なタグを最大5個提案
+- suggestedTagsは、レシピサイトの場合のみ適切なタグを最大5個提案
 - confidenceは抽出情報の明確性に応じて設定（明確:0.8-1.0、やや明確:0.5-0.7、不明確:0.2-0.4）
 - レシピサイトでない場合は低いconfidenceを設定
 
@@ -77,7 +78,8 @@ export const RECEIPT_EXTRACTION_PROMPT = `
 商品抽出ルール：
 - 元商品名(original_name)：価格が記載されている行の商品名部分。元のテキストに含まれている文字列そのままで、変更してはならない。
 - 商品名(name)：価格が記載されている行の商品名部分。可能な限り特定の商品名でなく、一般名を用いる。途中で途切れていたり、一般名を含んでいなくても、明らかであれば推論により補完してよい。
-- 数量(quantity)：明記されていない場合は「1個」とする
+- 数量(quantity)：明記されていない場合は「1」とする
+- 単位(unit)：明記されていない場合は「個」とする
 - 価格(price)：商品行の最後にある数値（カンマ区切り対応）
 
 商品名の抽出パターン：
@@ -89,16 +91,16 @@ export const RECEIPT_EXTRACTION_PROMPT = `
 - 「ツインバック木綿」→ name: "木綿豆腐"（推論によって補完）
 
 数量の判定パターン：
-- 「玉ねぎ×2」→ quantity: "2個"
-- 「りんご 3個」→ quantity: "3個"
-- 「牛乳1L」→ quantity: "1本"
-- 「バナナ1房」→ quantity: "1房"
-- 数量記載なし→ quantity: "1個"
+- 「玉ねぎ×2」→ quantity: "2", unit: "個"
+- 「りんご 3個」→ quantity: "3", unit: "個"
+- 「牛乳1L」→ quantity: "1", unit: "L"
+- 「バナナ1房」→ quantity: "1", unit: "房"
+- 数量記載なし→ quantity: "1", unit: "個"
 
 価格パターン：
 - 「198円」「198」「¥198」→ price: 198
 - 「1,280円」「1,280」→ price: 1280
-- 価格不明→ price: 未設定
+- 価格不明→ price: 0
 
 店舗名の抽出：
 - レシート上部の店舗名を抽出
@@ -117,6 +119,34 @@ export const RECEIPT_EXTRACTION_PROMPT = `
 OCRテキスト:
 `;
 
+// レシピ抽出結果のバリデーションスキーマ
+const RecipeExtractionSchema = z.object({
+  title: z.string().optional().default('レシピ'),
+  servings: z.number().int().min(1).max(100).optional().default(2),
+  ingredients: z.array(z.object({
+    name: z.string().min(1, '材料名は必須です'),
+    quantity: z.union([z.string(), z.number()]).optional().default('適量'),
+    unit: z.string().optional().default('')
+  })).optional().default([]),
+  confidence: z.number().min(0).max(1).optional().default(0.5),
+  isRecipeSite: z.boolean().optional().default(false),
+  suggestedTags: z.array(z.string().min(1)).max(5).optional().default([])
+});
+
+// レシート抽出結果のバリデーションスキーマ
+const ReceiptExtractionSchema = z.object({
+  items: z.array(z.object({
+    name: z.string().min(1, '商品名は必須です'),
+    quantity: z.union([z.string(), z.number()]).optional().default('1'),
+    price: z.number().min(0).optional(),
+    unit: z.string().optional(),
+    originalName: z.string()
+  })),
+  storeName: z.string().optional(),
+  date: z.string().regex(/^\d{4}[-/]\d{1,2}[-/]\d{1,2}$/, '日付はYYYY-MM-DD または YYYY/MM/DD 形式で指定してください').optional(),
+  confidence: z.number().min(0).max(1).optional().default(0.5)
+});
+
 export abstract class BaseAIProvider implements AIProvider {
   protected config: AIProviderConfig;
 
@@ -128,7 +158,7 @@ export abstract class BaseAIProvider implements AIProvider {
   abstract extractRecipeFromHtml(html: string, url: string): Promise<RecipeExtraction>;
 
   // レシートテキストから構造化データを抽出（抽象メソッド）
-  abstract extractReceiptFromText(text: string): Promise<ReceiptExtraction>;
+  abstract extractReceiptFromText(text: string): Promise<ReceiptResult>;
 
   // プロバイダー名を取得
   getProviderName(): string {
@@ -166,7 +196,7 @@ export abstract class BaseAIProvider implements AIProvider {
   }
 
   // レスポンスからJSONを抽出（改良版）
-  protected extractJsonFromResponse(response: string): any {
+  protected extractJsonFromResponse(response: string): unknown {
     try {
       // レスポンスをクリーンアップ
       let cleanResponse = response.trim();
@@ -175,7 +205,7 @@ export abstract class BaseAIProvider implements AIProvider {
       if (cleanResponse.startsWith('{') && cleanResponse.endsWith('}')) {
         return JSON.parse(cleanResponse);
       }
-            
+      
       throw new Error('有効なJSON形式ではありません。');
       
     } catch (error) {
@@ -189,101 +219,80 @@ export abstract class BaseAIProvider implements AIProvider {
     }
   }
 
-  // 抽出結果を検証
-  protected validateExtractionResult(data: any, url: string): RecipeExtraction {
-    if (!data || typeof data !== 'object') {
+  protected validateExtractionResult(data: unknown, url: string): RecipeExtraction {
+    try {
+      const validatedData = RecipeExtractionSchema.parse(data);
+      
+      const ingredients = validatedData.ingredients.map((item) => ({
+        name: item.name.trim(),
+        quantity: typeof item.quantity === 'number' ? String(item.quantity) : item.quantity.trim(),
+        unit: item.unit.trim()
+      }));
+
+      return {
+        title: validatedData.title.trim() || 'レシピ',
+        servings: validatedData.servings,
+        ingredients,
+        extractedFrom: url,
+        confidence: validatedData.confidence,
+        isRecipeSite: validatedData.isRecipeSite,
+        suggestedTags: validatedData.suggestedTags.map(tag => tag.trim()).filter(tag => tag !== '')
+      };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errorMessages = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+        throw new RecipeExtractionError(
+          `レシピ抽出データの検証に失敗しました: ${errorMessages}`,
+          this.getProviderName(),
+          url,
+          error
+        );
+      }
       throw new RecipeExtractionError(
-        '無効な抽出結果です',
+        '予期しないエラーが発生しました',
         this.getProviderName(),
-        url
+        url,
+        error as Error
       );
     }
-
-    // 必須フィールドの検証
-    const isRecipeSite = typeof data.isRecipeSite === 'boolean' ? data.isRecipeSite : false;
-    const title = data.title || 'レシピ';
-    const servings = typeof data.servings === 'number' ? data.servings : 2;
-    const confidence = typeof data.confidence === 'number' ? 
-      Math.max(0, Math.min(1, data.confidence)) : 0.5;
-
-    // 材料リストの検証（単位対応）
-    let ingredients: Array<{name: string; quantity: string; unit: string}> = [];
-    if (Array.isArray(data.ingredients)) {
-      ingredients = data.ingredients
-        .filter((item: any) => item && typeof item === 'object' && item.name)
-        .map((item: any) => ({
-          name: String(item.name).trim(),
-          quantity: String(item.quantity || '適量').trim(),
-          unit: String(item.unit || '').trim()
-        }));
-    }
-
-    // タグリストの検証
-    let suggestedTags: string[] = [];
-    if (Array.isArray(data.suggestedTags)) {
-      suggestedTags = data.suggestedTags
-        .filter((tag: any) => typeof tag === 'string' && tag.trim())
-        .map((tag: any) => String(tag).trim())
-        .slice(0, 5); // 最大5個まで
-    }
-
-    return {
-      title,
-      servings,
-      ingredients,
-      extractedFrom: url,
-      confidence,
-      isRecipeSite,
-      suggestedTags
-    };
   }
 
-  // レシート抽出結果を検証
-  protected validateReceiptExtractionResult(data: any): ReceiptExtraction {
-    if (!data || typeof data !== 'object') {
+  protected validateReceiptExtractionResult(data: unknown): ReceiptResult {
+    try {
+      const validatedData = ReceiptExtractionSchema.parse(data);
+      
+      const items: ReceiptItem[] = validatedData.items.map((item) => {
+        const processedItem: ReceiptItem = {
+          originalName: item.originalName,
+          name: item.name.trim(),
+          quantity: typeof item.quantity === 'number' ? String(item.quantity) : item.quantity.trim(),
+          unit: (item.unit?.trim() || '個') as FoodUnit,
+          price: item.price || undefined
+        };
+        
+        return processedItem;
+      });
+
+      return {
+        items,
+        storeName: validatedData.storeName?.trim() || undefined,
+        date: validatedData.date?.trim() || undefined,
+        confidence: validatedData.confidence
+      };
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errorMessages = error.errors.map(err => `${err.path.join('.')}: ${err.message}`).join(', ');
+        throw new ReceiptExtractionError(
+          `レシート抽出データの検証に失敗しました: ${errorMessages}`,
+          this.getProviderName(),
+          error
+        );
+      }
       throw new ReceiptExtractionError(
-        '無効なレシート抽出結果です',
-        this.getProviderName()
+        '予期しないエラーが発生しました',
+        this.getProviderName(),
+        error as Error
       );
     }
-
-    // 信頼度の検証
-    const confidence = typeof data.confidence === 'number' ? 
-      Math.max(0, Math.min(1, data.confidence)) : 0.5;
-
-    // 商品リストの検証
-    let items: Array<{name: string; quantity: string; price?: number}> = [];
-    if (Array.isArray(data.items)) {
-      items = data.items
-        .filter((item: any) => item && typeof item === 'object' && item.name)
-        .map((item: any) => {
-          const processedItem: {name: string; quantity: string; price?: number} = {
-            name: String(item.name).trim(),
-            quantity: String(item.quantity || '1個').trim()
-          };
-          
-          // 価格が有効な数値の場合のみ追加
-          if (typeof item.price === 'number' && item.price > 0) {
-            processedItem.price = item.price;
-          }
-          
-          return processedItem;
-        });
-    }
-
-    // 店舗名の検証
-    const storeName = data.storeName && typeof data.storeName === 'string' ? 
-      String(data.storeName).trim() : undefined;
-
-    // 日付の検証
-    const date = data.date && typeof data.date === 'string' ? 
-      String(data.date).trim() : undefined;
-
-    return {
-      items,
-      storeName,
-      date,
-      confidence
-    };
   }
 }

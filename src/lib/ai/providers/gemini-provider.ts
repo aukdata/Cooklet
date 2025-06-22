@@ -2,7 +2,7 @@
 
 import { GoogleGenAI, Type } from '@google/genai';
 import { BaseAIProvider, RECIPE_EXTRACTION_PROMPT, RECEIPT_EXTRACTION_PROMPT } from '../base-provider';
-import type { AIProviderConfig, RecipeExtraction, ReceiptExtraction } from '../types';
+import type { AIProviderConfig, RecipeExtraction, ReceiptResult } from '../types';
 import { RecipeExtractionError, ReceiptExtractionError } from '../types';
 import { FOOD_UNITS } from '../../../constants/units';
 
@@ -44,7 +44,7 @@ export class GeminiProvider extends BaseAIProvider {
     }
   }
 
-  async extractReceiptFromText(text: string): Promise<ReceiptExtraction> {
+  async extractReceiptFromText(text: string): Promise<ReceiptResult> {
     try {
       // Gemini APIにリクエスト（レシート用）
       const response = await this.callGeminiAPIForReceipt(text);
@@ -183,11 +183,15 @@ export class GeminiProvider extends BaseAIProvider {
                     quantity: {
                       type: Type.STRING,
                     },
+                    unit: {
+                      type: Type.STRING,
+                      enum: FOOD_UNITS,
+                    },
                     price: {
                       type: Type.NUMBER,
                     },
                   },
-                  propertyOrdering: ["originalName", "name", "quantity", "price"],
+                  propertyOrdering: ["originalName", "name", "quantity", "unit", "price"],
                 },
               },
               storeName: {

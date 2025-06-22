@@ -2,32 +2,13 @@
 import { createVisionClient, OCRError } from '../lib/vision/vision-client';
 import type { OCRResult } from '../lib/vision/vision-client';
 import { AIProviderFactory } from '../lib/ai/provider-factory';
-import type { ReceiptExtraction } from '../lib/ai/types';
+import type { ReceiptItem, ReceiptResult } from '../lib/ai/types';
 import { ReceiptExtractionError } from '../lib/ai/types';
-import { normalizeReceiptItems, getNormalizationStats } from './nameNormalizer';
-import type { NameNormalizationResult } from './nameNormalizer';
+import { normalizeReceiptItems } from './nameNormalizer';
 import type { Ingredient } from '../types';
 
-/**
- * レシート読み取り結果の型定義（互換性のため保持）
- */
-export interface ReceiptItem {
-  name: string;
-  quantity: string;
-  price?: number;
-  normalizationResult?: NameNormalizationResult; // 商品名正規化結果（任意）
-}
-
-/**
- * レシート読み取り結果（計算された合計金額付き）
- */
-export interface ReceiptResult {
-  items: ReceiptItem[];
-  totalPrice?: number;
-  storeName?: string;
-  date?: string;
-  confidence?: number;
-}
+// 型のre-export（Shopping.tsxから利用するため）
+export type { ReceiptItem, ReceiptResult } from '../lib/ai/types';
 
 /**
  * レシート商品リストから合計金額を計算
@@ -66,7 +47,7 @@ export const readReceiptFromImage = async (
     
     // Step 2: Gemini AI でテキストを構造化
     const aiProvider = AIProviderFactory.createFromEnvironment();
-    const receiptData: ReceiptExtraction = await aiProvider.extractReceiptFromText(ocrResult.fullText);
+    const receiptData: ReceiptResult = await aiProvider.extractReceiptFromText(ocrResult.fullText);
     
     // Gemini構造化結果をコンソールに出力（デバッグ用）
     console.log('=== Gemini構造化結果 ===');
@@ -77,33 +58,16 @@ export const readReceiptFromImage = async (
     console.log('AI信頼度:', receiptData.confidence);
     
     // Step 3: 商品名正規化処理（ingredientsテーブルとの照らし合わせ）
-    let normalizedItems: ReceiptItem[] = receiptData.items;
+    let normalizedItems = receiptData.items;
+
     if (ingredients && ingredients.length > 0) {
-      const normalizedWithResult = normalizeReceiptItems(receiptData.items, ingredients);
-      
-      // 正規化統計をコンソールに出力
-      const stats = getNormalizationStats(normalizedWithResult.map(item => item.normalizationResult));
-      console.log('=== 商品名正規化結果 ===');
-      console.log(`正規化対象: ${stats.total}件`);
-      console.log(`正規化成功: ${stats.normalized}件`);
-      console.log(`未変更: ${stats.unchanged}件`);
-      console.log(`正規化率: ${(stats.normalizationRate * 100).toFixed(1)}%`);
-      
-      // 正規化された商品詳細
-      normalizedWithResult.forEach((item, index) => {
-        if (item.normalizationResult.isNormalized) {
-          console.log(`${index + 1}: "${item.normalizationResult.originalName}" → "${item.name}"`);
-        }
-      });
-      console.log('========================');
-      
-      // ReceiptItem型に変換（normalizationResultを追加）
-      normalizedItems = normalizedWithResult.map(item => ({
-        name: item.name,
-        quantity: item.quantity,
-        price: item.price,
-        normalizationResult: item.normalizationResult
-      }));
+      const results = normalizeReceiptItems(receiptData.items, ingredients);
+
+      normalizedItems = results.map(result => (
+        result.item
+      ));
+
+      // ここにそのうち単位換算処理を追加
     }
     
     // Step 4: 合計金額を計算

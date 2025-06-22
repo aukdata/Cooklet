@@ -4,7 +4,7 @@ import { type StockItem } from '../../hooks/useStockItems';
 import { QuantityInput } from '../../components/common/QuantityInput';
 import { NameQuantityUnitInput } from '../../components/common/NameQuantityUnitInput';
 import { useToast } from '../../hooks/useToast.tsx';
-import { readReceiptFromImage, validateImageFile, type ReceiptResult } from '../../utils/receiptReader';
+import { readReceiptFromImage, validateImageFile, type ReceiptItem, type ReceiptResult } from '../../utils/receiptReader';
 import { type FoodUnit } from '../../constants/units';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
@@ -52,13 +52,7 @@ export const Shopping: React.FC = () => {
   // レシート読み取り関連の状態
   const [isReadingReceipt, setIsReadingReceipt] = useState(false);
   const [receiptResult, setReceiptResult] = useState<ReceiptResult | null>(null);
-  const [editingReceiptItems, setEditingReceiptItems] = useState<Array<{
-    name: string;
-    quantity: string;
-    unit: FoodUnit;
-    price?: number;
-    normalizationResult?: any;
-  }>>([]);
+  const [editingReceiptItems, setEditingReceiptItems] = useState<Array<ReceiptItem>>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // 全選択状態の管理
@@ -181,7 +175,7 @@ export const Shopping: React.FC = () => {
       const result = await generateShoppingList(7);
       
       if (result.itemsAdded > 0) {
-        showSuccess(`買い物リストを作成しました！\n追加されたアイテム: ${result.itemsAdded}件\nスキップされたアイテム: ${result.itemsSkipped}件`);
+        showSuccess(`買い物リストを作成しました！`);
       } else {
         showInfo('追加する必要のある食材はありませんでした');
       }
@@ -197,7 +191,7 @@ export const Shopping: React.FC = () => {
       const result = await generateShoppingList(3);
       
       if (result.itemsAdded > 0) {
-        showSuccess(`買い物リストを作成しました！\n追加されたアイテム: ${result.itemsAdded}件\nスキップされたアイテム: ${result.itemsSkipped}件`);
+        showSuccess(`買い物リストを作成しました！`);
       } else {
         showInfo('追加する必要のある食材はありませんでした');
       }
@@ -227,22 +221,22 @@ export const Shopping: React.FC = () => {
       // レシート読み取り結果を状態に保存し、編集可能にする
       setReceiptResult(result);
       
-          // 編集用のアイテムリストを初期化（nameが空欄のものを除外し、quantityを分解してunit付きに）
+      // 編集用のアイテムリストを初期化（nameが空欄のものを除外し、quantityを分解してunit付きに）
       const editableItems = result.items
-        .filter(item => item.name && item.name.trim()) // nameが空欄のものを除外
-        .map(item => {
+        .filter((item: ReceiptItem) => item.name && item.name.trim()) // nameが空欄のものを除外
+        .map((item: ReceiptItem) => {
           const { quantity, unit } = parseQuantityAndUnit(item.quantity || '');
           return {
+            originalName: item.originalName,
             name: item.name,
             quantity,
             unit: unit as FoodUnit,
-            price: item.price,
-            normalizationResult: item.normalizationResult
+            price: item.price
           };
         });
       setEditingReceiptItems(editableItems);
       
-      showSuccess(`レシートから${result.items.length}件のアイテムを読み取りました。内容を確認してください。`);
+      showSuccess(`レシートから${result.items.length}件のアイテムを読み取りました。`);
     } catch (err) {
       console.error('レシート読み取りに失敗しました:', err);
       showError('レシート読み取りに失敗しました');
@@ -297,7 +291,7 @@ export const Shopping: React.FC = () => {
       for (const item of editingReceiptItems) {
         if (item.name.trim()) {
           // 1. まず食材マスタに登録されているかチェック
-          const originalNameForSearch = item.normalizationResult?.originalName || item.name;
+          const originalNameForSearch = item.originalName || item.name;
           const existingIngredient = ingredients.find(ing => 
             ing.name === item.name || 
             (ing.originalName && new RegExp(ing.originalName, 'i').test(originalNameForSearch))
@@ -325,7 +319,7 @@ export const Shopping: React.FC = () => {
                 category,
                 default_unit: item.unit !== '-' ? item.unit : '個',
                 typical_price: item.price,
-                originalName: originalNameForSearch !== item.name ? originalNameForSearch : undefined
+                original_name: originalNameForSearch !== item.name ? originalNameForSearch : item.name
               });
               registeredCount++;
             } catch (err) {
@@ -527,9 +521,9 @@ export const Shopping: React.FC = () => {
                       </div>
                       
                       <div className="text-xs text-gray-500">
-                        {item.normalizationResult?.isNormalized && (
+                        {item.originalName && item.originalName !== item.name && (
                           <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                            「{item.normalizationResult.originalName}」から正規化
+                            「{item.originalName}」から正規化
                           </span>
                         )}
                         {item.price && (

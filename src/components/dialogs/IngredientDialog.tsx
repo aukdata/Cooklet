@@ -87,7 +87,7 @@ export const IngredientDialog = ({
         category,
         default_unit: defaultUnit.trim(),
         typical_price: typicalPrice ? parseFloat(typicalPrice) : undefined,
-        originalName: originalName.trim() || undefined
+        original_name: originalName.trim() || name.trim()
       });
       handleClose();
     } catch (error) {
