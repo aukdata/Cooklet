@@ -16,13 +16,15 @@ export interface RawRecipeData {
   suggestedTags?: Array<string>;
 }
 
-// AI APIからの生レシートデータ用の型
-export interface RawReceiptData {
-  items?: RawReceiptItem[];
-  storeName?: string;
-  date?: string;
-  confidence?: number;
-}
+// 生レシート項目型（ReceiptItemから必須フィールドを除去し、部分的にする）
+export type RawReceiptItem = Partial<Omit<ReceiptItem, 'name'>> & {
+  name?: string; // 正規化された商品名は任意（後で処理）
+};
+
+// AI APIからの生レシートデータ用の型（ReceiptResultから必須フィールドを除去）
+export type RawReceiptData = Partial<Omit<ReceiptResult, 'items'>> & {
+  items?: RawReceiptItem[]; // 生レシート項目の配列
+};
 
 // レシピ抽出結果のスキーマ
 export interface RecipeExtraction {
@@ -61,13 +63,6 @@ export interface AIProvider {
   
   // 設定を取得
   getConfig(): AIProviderConfig;
-}
-
-// AI APIからの生データ用の型（部分的・不完全な状態）
-export interface RawReceiptItem {
-  name?: string;
-  quantity?: string;
-  price?: number;
 }
 
 export interface ReceiptItem {

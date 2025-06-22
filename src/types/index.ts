@@ -64,14 +64,14 @@ export interface DatabaseRecipeIngredient {
 
 // 献立計画情報を表すインターフェース（CLAUDE.md仕様書に準拠）
 export interface MealPlan {
-  id: string; // 献立ID（UUID）
+  id: string; // 献立ID（UUID） 
   userId: string; // ユーザーID
   date: string; // 予定日
   mealType: MealType; // 食事タイプ（日本語）
   recipeUrl?: string; // レシピURL（任意）
   ingredients: { name: string; quantity: string }[]; // 食材リスト
   memo?: string; // メモ（任意）
-  consumedStatus?: 'pending' | 'completed' | 'stored'; // 消費状態（未完了・完食・作り置き）
+  consumedStatus: 'pending' | 'completed' | 'stored'; // 消費状態（未完了・完食・作り置き）
   createdAt: string; // 作成日時
   updatedAt: string; // 更新日時
 }
