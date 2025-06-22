@@ -12,7 +12,7 @@ interface IngredientDialogProps {
   /** 編集対象の材料（新規作成時はundefined） */
   ingredient?: Ingredient;
   /** 材料保存時のコールバック */
-  onSave: (ingredient: Omit<Ingredient, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
+  onSave: (ingredient: Omit<Ingredient, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
   /** 材料削除時のコールバック */
   onDelete?: (id: number) => Promise<void>;
 }
@@ -50,8 +50,8 @@ export const IngredientDialog = ({
       setOriginalName(ingredient.originalName || '');
       setName(ingredient.name);
       setCategory(ingredient.category);
-      setDefaultUnit(ingredient.default_unit);
-      setTypicalPrice(ingredient.typical_price ? ingredient.typical_price.toString() : '');
+      setDefaultUnit(ingredient.defaultUnit);
+      setTypicalPrice(ingredient.typicalPrice ? ingredient.typicalPrice.toString() : '');
     } else {
       // 新規作成時は初期化
       setOriginalName('');
@@ -85,9 +85,9 @@ export const IngredientDialog = ({
       await onSave({
         name: name.trim(),
         category,
-        default_unit: defaultUnit.trim(),
-        typical_price: typicalPrice ? parseFloat(typicalPrice) : undefined,
-        original_name: originalName.trim() || name.trim()
+        defaultUnit: defaultUnit.trim(),
+        typicalPrice: typicalPrice ? parseFloat(typicalPrice) : undefined,
+        originalName: originalName.trim() || name.trim()
       });
       handleClose();
     } catch (error) {

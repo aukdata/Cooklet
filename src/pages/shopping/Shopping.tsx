@@ -317,9 +317,9 @@ export const Shopping: React.FC = () => {
               await addIngredient({
                 name: item.name,
                 category,
-                default_unit: item.unit !== '-' ? item.unit : '個',
-                typical_price: item.price,
-                original_name: originalNameForSearch !== item.name ? originalNameForSearch : item.name
+                defaultUnit: item.unit !== '-' ? item.unit : '個',
+                typicalPrice: item.price,
+                originalName: originalNameForSearch !== item.name ? originalNameForSearch : item.name
               });
               registeredCount++;
             } catch (err) {

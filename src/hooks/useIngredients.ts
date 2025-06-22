@@ -47,7 +47,7 @@ export const useIngredients = () => {
   const { markAsUpdated } = useTabRefresh(fetchIngredients, 5);
 
   // 新しい食材をマスタに追加する関数
-  const addIngredient = async (ingredient: Omit<Ingredient, 'id' | 'user_id' | 'created_at'>) => {
+  const addIngredient = async (ingredient: Omit<Ingredient, 'id' | 'userId' | 'createdAt'>) => {
     if (!user) throw new Error('ユーザーが認証されていません');
 
     try {

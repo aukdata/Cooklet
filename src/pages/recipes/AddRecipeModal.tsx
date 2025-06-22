@@ -88,7 +88,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onClose, onSucce
     const newIngredient: RecipeIngredientForm = {
       ingredient_id: parseInt(ingredientForm.ingredient_id),
       quantity: parseFloat(ingredientForm.quantity),
-      unit: ingredientForm.unit || ingredient.default_unit,
+      unit: ingredientForm.unit || ingredient.defaultUnit,
       is_optional: ingredientForm.is_optional,
     };
 
@@ -247,7 +247,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onClose, onSucce
                       setIngredientForm(prev => ({
                         ...prev,
                         ingredient_id: e.target.value,
-                        unit: ingredient?.default_unit || '',
+                        unit: ingredient?.defaultUnit || '',
                       }));
                     }}
                     className="border border-gray-300 rounded px-2 py-1 text-sm"

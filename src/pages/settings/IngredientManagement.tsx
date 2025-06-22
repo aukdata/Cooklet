@@ -34,7 +34,7 @@ export const IngredientManagement: React.FC = () => {
       const matchesCategory = categoryName.includes(query) || ingredient.category.toLowerCase().includes(query);
       
       // 単位での検索
-      const matchesUnit = ingredient.default_unit.toLowerCase().includes(query);
+      const matchesUnit = ingredient.defaultUnit.toLowerCase().includes(query);
       
       return matchesName || matchesCategory || matchesUnit;
     });
@@ -80,7 +80,7 @@ export const IngredientManagement: React.FC = () => {
   };
 
   // 材料保存処理
-  const handleSaveIngredient = async (ingredientData: Omit<Ingredient, 'id' | 'user_id' | 'created_at'>) => {
+  const handleSaveIngredient = async (ingredientData: Omit<Ingredient, 'id' | 'userId' | 'createdAt'>) => {
     try {
       if (editingIngredient) {
         // 編集モード
@@ -250,9 +250,9 @@ export const IngredientManagement: React.FC = () => {
                                   <span className="text-gray-900 font-medium">{ingredient.name}</span>
                                 )}
                               </div>
-                              {ingredient.typical_price && (
+                              {ingredient.typicalPrice && (
                                 <div className="text-xs text-gray-500 mt-1">
-                                  ¥{ingredient.typical_price}
+                                  ¥{ingredient.typicalPrice}
                                 </div>
                               )}
                             </div>

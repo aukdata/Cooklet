@@ -74,9 +74,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 id: supabaseUser.id,
                 email: supabaseUser.email || '',
                 name: undefined,
-                google_id: undefined,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                googleId: undefined,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
               };
             }
             
@@ -88,9 +88,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               id: supabaseUser.id,
               email: supabaseUser.email || '',
               name: undefined,
-              google_id: undefined,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+              googleId: undefined,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
             };
           }
         }
@@ -101,9 +101,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             id: supabaseUser.id,
             email: supabaseUser.email || '',
             name: undefined,
-            google_id: undefined,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
+            googleId: undefined,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           };
         }
         return null;
@@ -118,9 +118,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         id: supabaseUser.id,
         email: supabaseUser.email || '',
         name: undefined,
-        google_id: undefined,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        googleId: undefined,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
     }
   };
