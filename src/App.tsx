@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DialogProvider } from './contexts/DialogContext'
 import { NavigationProvider } from './contexts/NavigationContext'
-import { ToastProvider } from './hooks/useToast.tsx'
+import { ToastProvider, useToast } from './hooks/useToast.tsx'
 import { Login } from './pages/auth/Login'
 import { MainLayout } from './components/layout/MainLayout'
 import { NotificationManager } from './components/NotificationManager'
@@ -11,6 +11,7 @@ import { ConfirmDialog } from './components/dialogs/ConfirmDialog'
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth()
+  const { showSuccess } = useToast()
   
   // PWA更新通知用の状態管理
   const [isPWAUpdateDialogOpen, setIsPWAUpdateDialogOpen] = useState(false)
@@ -60,7 +61,12 @@ const AppContent: React.FC = () => {
           // 既存のService Workerがアクティブになった場合の処理
           registration.addEventListener('controllerchange', () => {
             console.log('[PWA] Service Workerが更新されました - リロードします');
-            window.location.reload();
+            // 更新完了をトースト通知で表示
+            showSuccess('🎉 アプリが更新されました！最新機能をお使いいただけます。');
+            // 少し待ってからリロード（トーストが表示されるまで）
+            setTimeout(() => {
+              window.location.reload();
+            }, 1500);
           });
           
           // Service Workerからのメッセージ受信
@@ -69,7 +75,8 @@ const AppContent: React.FC = () => {
             
             if (event.data && event.data.type === 'SW_UPDATED') {
               console.log('[PWA] Service Worker更新完了:', event.data.version);
-              // 必要に応じて追加の処理をここに記述
+              // Service Worker更新完了をトースト通知で表示
+              showSuccess('✨ Service Workerが更新されました！');
             }
           });
           

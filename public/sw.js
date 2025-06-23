@@ -326,6 +326,19 @@ self.addEventListener('message', event => {
   
   if (event.data && event.data.type === 'SKIP_WAITING') {
     console.log('[SW] 新しいバージョンに更新中...');
+    
+    // 全クライアントに更新完了を通知
+    self.clients.matchAll().then(clients => {
+      const version = CACHE_NAME.split('-')[1] || '不明'; // 'cooklet-v1.0.0' から 'v1.0.0' を抽出
+      clients.forEach(client => {
+        client.postMessage({
+          type: 'SW_UPDATED',
+          version: version,
+          timestamp: new Date().toISOString()
+        });
+      });
+    });
+    
     self.skipWaiting();
   }
   
