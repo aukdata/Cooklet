@@ -232,6 +232,89 @@ const handleDelete = () => {
 - 非同期処理対応（保存・削除時のローディング状態）
 - 材料データベースとの完全CRUD対応
 
+### AddToMealPlanDialog.tsx
+レシピから献立追加ダイアログコンポーネント - GitHub issue #31対応
+
+#### 機能
+- レシピを指定した日付・食事タイプで献立に追加
+- 日付選択（デフォルトは今日）
+- 食事タイプ選択（朝・昼・夜）
+- シンプルな2項目入力フォーム
+
+#### Props
+- `isOpen`: ダイアログの表示状態
+- `recipe`: 追加するレシピ（SavedRecipe型）
+- `onClose`: ダイアログを閉じるコールバック
+- `onAdd`: 献立追加時のコールバック関数
+
+#### 使用例
+```typescript
+<AddToMealPlanDialog
+  isOpen={isAddDialogOpen}
+  recipe={selectedRecipe}
+  onClose={() => setIsAddDialogOpen(false)}
+  onAdd={(date, mealType) => handleAddToMealPlan(date, mealType)}
+/>
+```
+
+### MealPlanDialog.tsx
+献立ダイアログコンポーネント - CLAUDE.md仕様書準拠の献立編集機能
+
+#### 機能
+- 日付・食事タイプ・レシピ・人数・メモの編集
+- レシピ選択（コンボボックス形式）
+- 新規作成・編集両対応
+- 削除機能付き（編集時）
+- フォームバリデーション
+
+#### Props
+- `isOpen`: ダイアログの表示状態
+- `onClose`: ダイアログを閉じるコールバック
+- `onSave`: 献立保存時のコールバック
+- `onDelete?`: 献立削除時のコールバック（編集時のみ）
+- `initialData?`: 初期データ（編集時）
+- `isEditing?`: 編集モードフラグ
+
+#### 使用例
+```typescript
+<MealPlanDialog
+  isOpen={isMealPlanDialogOpen}
+  onClose={() => setIsMealPlanDialogOpen(false)}
+  onSave={(mealPlan) => handleSaveMealPlan(mealPlan)}
+  onDelete={handleDeleteMealPlan}
+  initialData={editingMealPlan}
+  isEditing={!!editingMealPlan}
+/>
+```
+
+### ShoppingItemDialog.tsx
+買い物リストアイテム編集ダイアログコンポーネント - CLAUDE.md仕様書5.6.4準拠
+
+#### 機能
+- 買い物アイテムの名前・数量の編集
+- 新規作成・編集両対応
+- 削除機能付き（編集時のみ）
+- BaseDialogベースの統一デザイン
+- 非同期処理対応（保存・削除時のローディング状態）
+
+#### Props
+- `isOpen`: ダイアログの表示状態
+- `onClose`: ダイアログを閉じるコールバック
+- `onSave`: アイテム保存時のコールバック
+- `onDelete?`: アイテム削除時のコールバック（編集時のみ）
+- `initialData?`: 初期データ（編集時）
+
+#### 使用例
+```typescript
+<ShoppingItemDialog
+  isOpen={isShoppingDialogOpen}
+  onClose={() => setIsShoppingDialogOpen(false)}
+  onSave={(item) => handleSaveShoppingItem(item)}
+  onDelete={handleDeleteShoppingItem}
+  initialData={editingShoppingItem}
+/>
+```
+
 ### index.ts
 エクスポート管理ファイル
 

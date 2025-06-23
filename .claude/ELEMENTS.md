@@ -1,226 +1,240 @@
-# Cooklet プロジェクト要素一覧
+# Cooklet - 要素定義リスト
 
-## 目的
-この文書は、新しい機能を追加する際に既存の型・コンポーネント・関数を再利用するためのリファレンスです。
-**新要素を作成する前に、必ずこの一覧を確認し、既存要素での実現可能性を検討してください。**
+このファイルは、Cookletアプリで使用可能な型、コンポーネント、関数をまとめたリストです。
+新機能を追加する際は、既存要素を最大限活用し、必要な場合のみ新しい要素を追加してください。
 
-## 使用方法
-1. 機能実装前にこの文書で既存要素を確認
-2. 既存要素で要件を満たせる場合は再利用
-3. 新要素が必要な場合のみ作成し、必ずこの文書に追加
+## 主要データ型（types/index.ts）
 
----
+### ユーザー・認証関連
+- `User` - ユーザー情報（id, email, name, google_id, 作成日時等）
+- `Ingredient` - 食材マスタ情報（id, user_id, name, category, default_unit, typical_price, original_name等）
 
-## 1. TypeScript型定義
+### 在庫・食材関連
+- `StockItem` - 食材在庫情報（id, user_id, name, quantity, best_before, storage_location, is_homemade等）
+- `Recipe` - レシピ情報（id, user_id, name, external_url, cooking_time, servings等）
+- `DatabaseRecipeIngredient` - レシピで使用する食材情報（recipe_id, ingredient_id, quantity, unit, is_optional）
+- `SavedRecipe` - レシピ保存（id, user_id, title, url, servings, tags等）
 
-### 基本データ型 (src/types/index.ts)
+### 献立・買い物関連
+- `MealPlan` - 献立計画（id, user_id, date, meal_type, recipe_url, ingredients, memo等）
+- `ShoppingListItem` - 買い物リスト項目（id, user_id, name, quantity, checked, added_from等）
+- `CostRecord` - コスト記録（id, user_id, date, description, amount, is_eating_out等）
 
-#### ユーザー・認証
-- `User` - ユーザー情報（id, email, name, google_id, 作成日時）
+### 追加データ型
+- `MealType` - 食事タイプ（'朝食' | '昼食' | '夕食' | '間食'）
 
-#### 食材・在庫管理
-- `Ingredient` - 食材マスタ（id, user_id, name, category, default_unit, typical_price, original_name, conversion_quantity, conversion_unit）
-- `StockItem` - 在庫アイテム（id, user_id, name, quantity, best_before, storage_location, is_homemade）
+## UI共通コンポーネント
 
-#### 献立・レシピ管理
-- `MealPlan` - 献立計画（id, user_id, date, meal_type, recipe_url, ingredients, memo, consumed_status）
-- `Recipe` - レシピ情報（id, user_id, name, external_url, cooking_time, servings, estimated_cost）
-- `SavedRecipe` - レシピ保存（id, user_id, title, url, servings, tags）
-- `DatabaseRecipeIngredient` - レシピ食材（recipe_id, ingredient_id, quantity, unit, is_optional）
+### 共通入力コンポーネント（components/common/）
 
-#### 買い物・コスト管理
-- `ShoppingListItem` - 買い物リスト（id, user_id, name, quantity, checked, added_from）
-- `CostRecord` - コスト記録（id, user_id, date, description, amount, is_eating_out）
+#### NameQuantityUnitInput.tsx
+- `NameQuantityUnitInput` - 名前・数量・単位の統合入力コンポーネント
+  - Props: name, quantity, unit, onNameChange, onQuantityChange, onUnitChange, disabled?, placeholders?, className?
+  - 3列グリッドレイアウト
+  - レシート読み取り結果編集などで使用
 
-### レシピ専用型 (src/types/recipe.ts)
-- `RecipeIngredient` - レシピ材料（name, quantity）
-- `RecipeFormData` - レシピフォーム用データ
-- `CreateRecipeData` - レシピ作成用（IDと作成日時を除く）
-- `UpdateRecipeData` - レシピ更新用（部分更新可能）
+#### QuantityInput.tsx
+- `QuantityInput` - 数値と単位を分離した入力コンポーネント
+  - Props: value, onChange, placeholder?, className?, disabled?
+  - parseQuantity/formatQuantity関数との連携
+  - 在庫ダイアログ・買い物リストで使用
 
----
+### UIコンポーネント（components/ui/）
 
-## 2. UIコンポーネント
+#### BaseDialog.tsx
+- `BaseDialog` - 全ダイアログで共通のUI構造を提供する基盤コンポーネント
+  - Props: isOpen, onClose, title, icon, children, size?, showDelete?, onSave?, onDelete?
+  - サイズバリエーション（sm/md/lg）
+  - 3段階ボタン配置（削除・キャンセル・保存）
 
-### 2.1 基本UIコンポーネント (src/components/ui)
+### FormField.tsx
+- `FormField` - 統一されたラベル付きフィールドコンポーネント
+  - Props: label, icon?, children, required?, error?
+- `TextInput` - テキスト入力フィールド
+- `TextArea` - テキストエリアフィールド
+- `NumberInput` - 数値入力フィールド
 
-#### ダイアログ関連
-- `BaseDialog` - 全ダイアログの基盤（isOpen, onClose, title, icon, size, 3段階ボタン配置）
-
-#### ボタン関連
-- `Button` - 基本ボタン（variant: primary, secondary, edit, delete, add）
-- `EditButton` - 編集ボタン（統一デザイン）
-- `AddButton` - 追加ボタン（統一デザイン）
-- `DeleteButton` - 削除ボタン（統一デザイン）
-
-#### フォーム関連
-- `FormField` - ラベル付きフィールド（エラーメッセージ表示付き）
-- `TextInput` - テキスト入力
-- `TextArea` - テキストエリア
-- `NumberInput` - 数値入力
-- `DateInput` - 日付入力（クイック設定ボタン付き）
-- `IngredientsEditor` - 食材リスト編集（追加・編集・削除・バリデーション）
-
-#### フィードバック関連
-- `Toast` / `ToastContainer` - 通知メッセージ表示
-
-### 2.2 専用ダイアログ (src/components/dialogs)
-
-#### 機能別ダイアログ
-- `MealPlanEditDialog` - 献立編集（レシピ選択、食材リスト編集）
-- `RecipeDialog` - レシピ編集（AI食材抽出、タグ管理）
-- `StockDialog` - 在庫編集（賞味期限、保存場所、単位選択）
-- `CostDialog` - コスト記録（自炊/外食区別、数値バリデーション）
-- `ConfirmDialog` - 削除確認（カスタマイズ可能メッセージ）
-
-### 2.3 レイアウトコンポーネント (src/components/layout)
-
-#### レイアウト管理
-- `MainLayout` - メインレイアウト（タブ管理、認証状態管理、設定画面表示）
-- `TabNavigation` - 下部タブナビゲーション（6タブ構成）
-
-### 2.4 共通コンポーネント (src/components/common)
-
-#### 特殊入力
-- `QuantityInput` - 数量入力（単位選択統合）
-- `ErrorBoundary` - Reactエラーバウンダリー
-
----
-
-## 3. カスタムフック
-
-### 3.1 データ管理フック (src/hooks)
-
-#### CRUD操作フック
-- `useMealPlans` - 献立計画CRUD（消費状態管理、タブ切り替え時更新）
-- `useRecipes` - レシピCRUD（材料情報JSONB管理、AI抽出結果保存）
-- `useStockItems` - 在庫CRUD（賞味期限管理、作り置きフラグ管理）
-- `useShoppingList` - 買い物リストCRUD（チェック状態、手動/自動区別）
-- `useCostRecords` - コスト記録CRUD（自炊/外食区別、月別集計）
-- `useIngredients` - 食材マスタCRUD（ユーザー認証対応）
-
-### 3.2 機能特化フック
-
-#### 自動化機能
-- `useAutoShoppingList` - 買い物リスト自動生成（献立→在庫突合→買い物リスト）
-- `useRecipeExtraction` - レシピURL食材自動抽出（AI連携）
-
-#### システム機能
-- `useTabRefresh` - タブ切り替え時データ更新チェック（5分間隔）
-- `useToast` - トースト通知管理
-- `useConfirmDialog` - 確認ダイアログ表示制御
-- `useCache` - データキャッシュ管理
-- `useBuildInfo` - ビルド情報取得
-
----
-
-## 4. ユーティリティ関数
-
-### 4.1 日付関連ユーティリティ (src/components/ui/DateInput.tsx)
-- `getTodayString()` - 今日の日付文字列取得
+### DateInput.tsx
+- `DateInput` - クイック設定ボタン付きの統一日付入力コンポーネント
+  - Props: value, onChange, showQuickButtons?, disabled?
+- `getTodayString()` - 今日の日付取得
 - `getDateAfterDays(days)` - 指定日数後の日付取得
-- `getDaysDifference(date1, date2)` - 日付間の日数差計算
+- `getDaysDifference(date1, date2)` - 日付差分計算
 
-### 4.2 食材・在庫関連ユーティリティ (src/components/ui/IngredientsEditor.tsx)
-- `validateIngredients(ingredients)` - 食材リストバリデーション
-- `cleanIngredients(ingredients)` - 食材リストクリーンアップ
-- `normalizeIngredients(ingredients)` - 食材リスト正規化
+### IngredientsEditor.tsx
+- `IngredientsEditor` - 食材リストの追加・編集・削除機能を統一したコンポーネント
+  - Props: ingredients, onChange, disabled?, maxItems?, addButtonText?
+- `validateIngredients(ingredients)` - 食材リストのバリデーション
+- `cleanIngredients(ingredients)` - 空の項目を除去
+- `normalizeIngredients(ingredients)` - 食材リストの正規化
 
-### 4.3 買い物リスト生成ユーティリティ (src/utils/autoShoppingList.ts)
+### Button.tsx
+- `Button` - 基本的なボタンコンポーネント
+  - Props: onClick, children, variant?, size?, disabled?, className?
+  - バリアント: 'primary' | 'secondary' | 'edit' | 'delete' | 'add'
+- `EditButton` - 編集用の専用ボタン
+- `AddButton` - 追加用の専用ボタン
+- `DeleteButton` - 削除用の専用ボタン
+
+### Toast.tsx & ToastContainer.tsx
+- `Toast` - 個別トースト表示コンポーネント
+  - Props: message, type, onClose, id
+  - タイプ: 'success' | 'error' | 'info'
+  - 自動消去機能（5秒後）
+- `ToastContainer` - 複数トースト管理コンポーネント
+  - Props: toasts, onRemoveToast
+  - 画面右上に固定表示
+  - アニメーション対応
+- `ToastProvider` - アプリ全体のトースト管理Context Provider（useToast.tsxで提供）
+  - showToast、showSuccess、showError、showInfo関数を提供
+
+## ダイアログコンポーネント（components/dialogs/）
+
+### 主要ダイアログ
+- `MealPlanEditDialog` - 献立編集ダイアログ（日付・食事タイプ・レシピ・人数・メモの編集）
+- `MealPlanDialog` - 献立ダイアログ（CLAUDE.md仕様書準拠の献立編集機能）
+- `ManualMealDialog` - 手動献立入力ダイアログ（料理名・レシピURL・人数・メモの入力）
+- `AddToMealPlanDialog` - レシピから献立追加ダイアログ（GitHub issue #31対応、日付・食事タイプ選択）
+- `RecipeDetailDialog` - レシピ詳細表示ダイアログ（基本情報表示・編集・削除アクション）
+- `RecipeDialog` - レシピ編集ダイアログ（レシピ名・URL・人数・食材・タグの編集）
+- `StockDialog` - 在庫編集ダイアログ（食材名・数量・単位・賞味期限・保存場所・作り置きフラグ）
+- `CostDialog` - コスト記録ダイアログ（日付・内容・金額・自炊/外食フラグ・メモ）
+- `ShoppingItemDialog` - 買い物リストアイテム編集ダイアログ（名前・数量の編集、削除機能付き）
+- `ConfirmDialog` - 削除確認ダイアログ（汎用的な確認ダイアログ）
+- `IngredientDialog` - 材料編集ダイアログ（材料名・カテゴリ・デフォルト単位・価格）
+
+### 共通仕様
+- `useConfirmDialog` - 確認ダイアログフック
+
+## レイアウトコンポーネント（components/layout/）
+
+- `MainLayout` - アプリケーションのメインレイアウト（ヘッダー、コンテンツエリア、タブナビゲーション）
+- `TabNavigation` - 下部固定のタブナビゲーション（6つのタブ: summary, meal-plans, shopping, recipes, stock, cost）
+
+## カスタムフック（hooks/）
+
+### データ管理フック
+- `useStockItems` - 在庫管理機能（stockItems, loading, error, addStockItem, updateStockItem, deleteStockItem, refetch）
+- `useRecipes` - レシピ管理機能（recipes, loading, error, addRecipe, updateRecipe, deleteRecipe, refetch）
+- `useMealPlans` - 献立計画管理機能（mealPlans, loading, error, addMealPlan, updateMealPlan, deleteMealPlan, refetch）
+- `useShoppingList` - 買い物リスト管理機能（shoppingList, loading, error, addShoppingItem, updateShoppingItem, deleteShoppingItem, toggleShoppingItem）
+- `useCostRecords` - コスト記録管理機能（costRecords, loading, error, addCostRecord, updateCostRecord, deleteCostRecord, refetch）
+- `useIngredients` - 食材マスタ管理機能（ingredients, loading, error, addIngredient, updateIngredient, deleteIngredient, findIngredientByOriginalName, refetch）
+
+### 機能特化フック
+- `useRecipeExtraction` - レシピURLからの食材自動抽出機能（extractIngredients, loading, error）
+- `useAutoShoppingList` - 献立からの買い物リスト自動生成機能（generateShoppingList, loading, error）
+- `useNotificationSettings` - 通知設定管理機能（settings, loading, error, updateSettings, enableNotifications, disableNotifications, updateExpiryDays, requestNotificationPermission）
+- `useExpiryNotifications` - 賞味期限チェックと通知管理機能（checkExpiryItems, sendNotification, checkAndNotify, loading）
+
+### ユーティリティフック
+- `useCache` - キャッシュ機能
+- `useConfirmDialog` - 確認ダイアログ管理
+- `useBuildInfo` - ビルド情報取得
+- `useTabRefresh` - タブ切り替え時の更新チェック機能
+- `useToast` - トースト通知管理
+
+## コンテキスト（contexts/）
+
+- `AuthContext` - ユーザー認証状態の管理（user, supabaseUser, session, loading, signIn, signUp, signOut）
+- `DialogContext` - ダイアログ表示状態の管理（isDialogOpen, setIsDialogOpen）
+- `NavigationContext` - アプリ内ナビゲーションの管理（activeTab, setActiveTab, navigate）
+
+## ページコンポーネント（pages/）
+
+### 主要ページ
+- `Summary` - サマリーページ（今日の献立・在庫アラート・今月の出費表示）
+- `MealPlans` - 献立計画ページ（7日間カレンダー表示・献立追加編集機能）
+- `Shopping` - 買い物リストページ（アイテム管理・レシート読み取り機能）
+- `Recipes` - レシピ管理ページ（レシピ一覧・追加・編集・削除機能）
+- `Stock` - 在庫管理ページ（在庫一覧・追加・編集・削除・期限管理）
+- `Cost` - コスト管理ページ（月間サマリー・支出履歴・月別推移）
+
+### 認証・設定ページ
+- `Login` - ログイン・新規登録ページ
+- `Settings` - ユーザ設定画面（プロフィール・材料設定・ログアウト）
+- `IngredientManagement` - 材料マスタ管理画面
+
+## サービス層（services/）
+
+### notificationService.ts
+- `MorningNotificationSettings` - 朝の通知設定型定義（enabled, time）
+- `NotificationService` - 通知機能の一元管理クラス
+  - `scheduleMorningNotification(settings, userId)` - 朝の定期通知スケジュール設定
+  - `sendMorningNotification()` - 朝の通知送信（プライベートメソッド）
+  - `clearMorningNotifications()` - スケジュール済み通知のクリア
+  - `requestNotificationPermission()` - ブラウザ通知権限要求
+
+### shoppingListGeneration.ts
+- `ShoppingListGenerationResult` - 買い物リスト生成結果型定義
+- `generateShoppingListFromMealPlans(mealPlans, stockItems, existingShoppingItems)` - 献立から買い物リスト自動生成
+- `generateShoppingListForPeriod(startDate, endDate, ...)` - 指定期間の買い物リスト生成
+- `generateWeeklyShoppingList(...)` - 今週（日〜土）の買い物リスト生成
+- `generateShoppingListForNextDays(days, ...)` - 次のN日分の買い物リスト生成
+- `normalizeQuantity(quantity)` - 数量文字列正規化
 - `normalizeIngredientName(name)` - 食材名正規化
-- `extractQuantity(text)` - テキストから数量抽出
-- `checkIngredientStock(name, quantity, stock)` - 在庫充足チェック
-- `extractIngredientsFromMealPlans(plans, start, end)` - 献立から食材抽出
-- `findMissingIngredients(required, stock)` - 不足食材特定
-- `generateShoppingListFromMealPlans(plans, stock, existing, days)` - メイン生成関数
+- `findMatchingStock(ingredientName, stockItems)` - 食材名から在庫検索
+- `isStockSufficient(requiredQuantity, stockQuantity)` - 在庫充足性チェック
+- `aggregateIngredientsFromMealPlans(mealPlans)` - 複数献立からの食材集計
 
-### 4.4 数量・単位関連ユーティリティ (src/constants/units.ts)
-- `parseQuantity(text)` - テキストから数量パース
-- `formatQuantity(value, unit)` - 数量フォーマット
+## ライブラリ・ユーティリティ（lib/, utils/）
 
----
+### AI・OCR関連
+- `AIProvider` - AI Provider抽象化インターフェース（extractRecipeFromHtml, extractReceiptFromText）
+- `VisionClient` - Google Vision APIを使用するOCRクライアント（extractTextFromImage）
+- `WebFetcher` - Webサイトからコンテンツを取得するクライアント（fetchWebsite）
 
-## 5. 定数・設定
+### ユーティリティ関数
+- `readReceiptFromImage(file, ingredients)` - レシート画像読み取り（OCR + AI構造化 + 商品名正規化）
+- `normalizeProductName(originalName, ingredients)` - 商品名正規化
+- `validateImageFile(file)` - 画像ファイル妥当性チェック
+- `calculateTotalPrice(items)` - レシートアイテムから合計金額計算
 
-### 5.1 食材単位定義 (src/constants/units.ts)
-- `FOOD_UNITS` - 食材単位一覧（g, kg, ml, L, 個, 本, 包等）
-- `FoodUnit` - 食材単位型定義
+### データベース
+- `supabase` - Supabaseクライアント
 
-### 5.2 Supabaseクライアント (src/lib/supabase.ts)
-- `supabase` - Supabaseクライアントインスタンス
+## 定数・設定（constants/）
 
-### 5.3 Web取得クライアント (src/lib/web-fetch.ts)
-- `WebFetcher` - Webサイト取得クラス（Netlify Functionsプロキシ使用）
-- `WebFetchError` - Web取得専用エラークラス
-- `FetchedWebsite` - 取得結果型定義
+### units.ts
+- `FOOD_UNITS` - 食材単位一覧（23種類の定義済み単位）
+  - 重量系: g, kg
+  - 容量系: mL, L, cc, 合
+  - 個数系: 個, 本, 枚, 袋, 缶, パック, 箱, 束, 片, 房
+  - 料理系: 人前, カップ, 大さじ, 小さじ, 杯
+  - その他: - (単位なし)
+- `FoodUnit` - FOOD_UNITSの型定義（リテラル型による型安全性確保）
+- `parseQuantity(quantity: string)` - 文字列から数値と単位を分離する関数
+  - 戻り値: { amount: string; unit: FoodUnit }
+  - 分数・定型表現（適量、お好み等）対応
+- `formatQuantity(amount: string, unit: FoodUnit)` - 数値と単位を結合して文字列生成
 
----
+## 使用指針
 
-## 6. AI連携要素 (src/lib/ai)
+### 新機能追加時
+1. 既存の型・コンポーネント・フックを最優先で使用
+2. 必要な場合のみ新しい要素を作成
+3. 新しい要素はこのファイルに必ず追加
+4. 統一されたデザインシステムを維持
 
-### 6.1 AI型定義 (src/lib/ai/types.ts)
-- `RecipeExtraction` - レシピ抽出結果型
-- `AIProviderConfig` - AIプロバイダー設定型
-- `AIProvider` - AIプロバイダーインターフェース
-- `RecipeExtractionError` - レシピ抽出エラークラス
+### 編集・削除ボタン
+- 必ず共通のButtonコンポーネントを使用
+- 削除ボタンはダイアログ内でのみ使用
+- 独自のボタンスタイルは作成禁止
 
-### 6.2 AIプロバイダー管理
-- `ProviderFactory` - AIプロバイダー選択・生成（src/lib/ai/provider-factory.ts）
-- `GeminiProvider` - Google Gemini AI連携（src/lib/ai/providers/gemini-provider.ts）
+### データ管理
+- 全てのデータ操作は対応するカスタムフックを使用
+- useTabRefresh機能によりタブ切り替え時の更新チェック機能が統一
+- RLSポリシーによるユーザー認証とセキュリティを確保
 
----
+### UI設計
+- BaseDialogベースの統一ダイアログデザイン
+- FormFieldによる統一フォーム要素
+- 絵文字アイコンの使用（Material Iconsではない）
+- レスポンシブデザイン対応
 
-## 7. コンテキスト (src/contexts)
+### エラーハンドリング
+- 日本語エラーメッセージの統一
+- 専用エラークラスの使用（RecipeExtractionError, ReceiptExtractionError, OCRError, WebFetchError）
+- loading状態の適切な管理
 
-### 7.1 認証管理
-- `useAuth` / `AuthProvider` - 認証状態管理（ユーザープロフィール、セッション管理）
-
-### 7.2 UI状態管理
-- `useDialog` / `DialogProvider` - グローバルダイアログ管理
-
----
-
-## 8. サービス層 (src/services)
-
-### 8.1 買い物リスト生成サービス (src/services/shoppingListGeneration.ts)
-- `generateShoppingListFromMealPlans` - 献立から買い物リスト生成
-- `generateWeeklyShoppingList` - 週間買い物リスト生成
-- `generateShoppingListForNextDays` - 指定日数分買い物リスト生成
-
----
-
-## 新要素追加ガイドライン
-
-### 追加前チェックリスト
-1. ✅ 既存の型で要件を満たせないか確認
-2. ✅ 既存のコンポーネントで実現できないか確認
-3. ✅ 既存のフックで機能を提供できないか確認
-4. ✅ 既存のユーティリティ関数で処理できないか確認
-
-### 新要素作成時の必須事項
-1. **型安全性**: `any`型は絶対使用禁止、厳密な型定義を作成
-2. **命名規則**: 既存パターンに従った命名
-3. **日本語コメント**: すべての要素に説明コメントを追加
-4. **ドキュメント更新**: この文書に新要素を必ず追加
-5. **テスト**: 基本的な動作確認を実施
-
-### 新要素追加後の作業
-1. **ELEMENTS.md更新**: 新要素の詳細情報を追加
-2. **関連CLAUDE.md更新**: 該当ディレクトリのドキュメント更新
-3. **DEVELOPMENT_LOG.md記録**: 追加の経緯と使用方法を記録
-
----
-
-## 重要な注意事項
-
-### 再利用優先の原則
-- **新規作成は最後の手段**: 既存要素での実現可能性を必ず検討
-- **統一性の維持**: UIデザイン、エラーハンドリング、命名規則の一貫性
-- **型安全性の徹底**: TypeScript型システムを最大限活用
-
-### CLAUDE.md仕様書準拠
-- **全要素**: CLAUDE.md仕様書の設計原則に従って作成
-- **データベース**: 型定義とデータベーススキーマの整合性維持
-- **UI/UX**: .claude/UI.mdの設計ルールに従った実装
-
-この文書を活用することで、効率的で一貫性のある開発を推進し、コードベースの品質を維持できます。
+この要素定義リストを参考に、統一性を保ちながら機能を開発してください。

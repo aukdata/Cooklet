@@ -1,5 +1,68 @@
 # Cooklet 開発ログ
 
+## 2025-06-22
+
+### 【最新】食材マスタと在庫管理システムの大幅改善完了
+
+#### 実装内容
+- **材料編集ダイアログの単位入力をコンボボックスに変更**
+  - 手動入力からFOOD_UNITS（23種類）からの選択式に変更
+  - UI/UXの統一性向上と入力エラー防止
+
+- **在庫管理関連の型統一とプロパティ名camelCase化**
+  - 全ての型定義をcamelCaseに一貫して変更
+  - original_name → originalName
+  - conversion_quantity → conversionQuantity  
+  - conversion_unit → conversionUnit
+  - データベーススキーマとアプリケーション層の分離明確化
+
+- **食材マスタ機能拡張**
+  - originalNameプロパティ: レシート読み取り時の商品名正規化用
+  - conversionQuantityプロパティ: 1個当たりの数量管理
+  - conversionUnitプロパティ: 1個当たりの単位管理
+  - 商品名の自動正規化精度向上
+
+- **新規アイテム追加ダイアログ実装**
+  - 買い物リストへの手動アイテム追加機能
+  - 名前・数量・単位の統合入力UI
+
+#### 技術改善
+- **バリデーション強化**: nameとdefaultUnitのnullチェック追加
+- **型安全性向上**: MealType型定義の一貫性確保（'朝' | '昼' | '夜' | '間食'）
+- **データ整合性**: RawReceiptItem型削除、ReceiptItem型のoriginalNameプロパティ追加
+- **コンポーネント統一**: NameQuantityUnitInputとQuantityInputコンポーネント追加
+
+#### 新規作成コンポーネント・ファイル
+- `src/components/common/NameQuantityUnitInput.tsx`: 名前・数量・単位統合入力コンポーネント
+- `src/components/common/QuantityInput.tsx`: 数値・単位分離入力コンポーネント  
+- `src/components/common/CLAUDE.md`: 共通コンポーネントドキュメント
+- `src/constants/CLAUDE.md`: 定数・単位管理ドキュメント
+- `src/services/CLAUDE.md`: サービス層ドキュメント
+
+#### データベース更新影響
+```sql
+-- 食材マスタテーブル構造（最新）
+ingredients (
+  id: SERIAL PRIMARY KEY,
+  user_id: UUID REFERENCES auth.users(id),
+  name: TEXT NOT NULL,
+  category: TEXT CHECK (category IN ('vegetables', 'meat', 'seasoning', 'others')),
+  default_unit: TEXT NOT NULL,
+  typical_price: DECIMAL(10,2),
+  original_name: TEXT NOT NULL,           -- 新規追加
+  conversion_quantity: TEXT,              -- 新規追加  
+  conversion_unit: TEXT,                  -- 新規追加
+  created_at: TIMESTAMP DEFAULT NOW()
+)
+```
+
+#### 引き継ぎ事項
+1. **型定義完全統一**: TypeScript側は全てcamelCase、DB側はsnake_case
+2. **単位管理システム完成**: FOOD_UNITS（23種類）による厳密な単位管理
+3. **商品名正規化高精度化**: originalNameプロパティでマッチング精度向上
+4. **共通コンポーネント利用推進**: NameQuantityUnitInput, QuantityInputの活用
+5. **ドキュメント体系整備**: 各ディレクトリのCLAUDE.md完備
+
 ## 2025-06-21
 
 ### 【最新】レシートOCR機能のNetlify Functions TypeScript化完了
