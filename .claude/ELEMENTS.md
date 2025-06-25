@@ -177,6 +177,13 @@
 - `isStockSufficient(requiredQuantity, stockQuantity)` - 在庫充足性チェック
 - `aggregateIngredientsFromMealPlans(mealPlans)` - 複数献立からの食材集計
 
+### mealPlanGeneration.ts
+- `MealGenerationSettings` - 献立生成設定の型定義（在庫・レシピ・食材マスタ・日数・食事タイプ）
+- `MealGenerationResult` - 献立生成結果の型定義（生成献立・使用食材・警告メッセージ）
+- `generateMealPlan(settings)` - 献立自動生成関数（現在は仮実装でログ出力のみ）
+- `getMealTypeFromIndex(index)` - 食事タイプインデックスから日本語表記に変換
+- `getGenerationDates(days)` - 生成期間の日付配列を取得
+
 ## ライブラリ・ユーティリティ（lib/, utils/）
 
 ### AI・OCR関連

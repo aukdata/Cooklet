@@ -3,7 +3,10 @@ import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog'
 import { useMealPlans, type MealPlan } from '../../hooks';
 import { type MealType } from '../../types';
 import { useStockItems } from '../../hooks/useStockItems';
+import { useRecipes } from '../../hooks/useRecipes';
+import { useIngredients } from '../../hooks/useIngredients';
 import { useToast } from '../../hooks/useToast.tsx';
+import { generateMealPlan, type MealGenerationSettings } from '../../utils/mealPlanGeneration';
 
 
 // カレンダー画面コンポーネント - 週間表示・献立追加機能付き
@@ -67,7 +70,13 @@ export const MealPlans: React.FC = () => {
   const { mealPlans, loading, error, saveMealPlan, deleteMealPlan, updateMealPlanStatus, getMealPlansForDate, getMealPlan } = useMealPlans();
   
   // 在庫データの操作（作り置き機能用）
-  const { addStockItem } = useStockItems();
+  const { stockItems, addStockItem } = useStockItems();
+  
+  // レシピデータの取得（献立生成用）
+  const { recipes } = useRecipes();
+  
+  // 食材マスタデータの取得（献立生成用）
+  const { ingredients } = useIngredients();
 
   // 週の範囲を表示用にフォーマット
   const weekRange = `${weekDates[0].getMonth() + 1}/${weekDates[0].getDate()} - ${weekDates[6].getMonth() + 1}/${weekDates[6].getDate()}`;
@@ -180,6 +189,54 @@ export const MealPlans: React.FC = () => {
   const handleCloseConsumedDialog = () => {
     setIsConsumedDialogOpen(false);
     setProcessingMeal(null);
+  };
+
+  // 今日の献立提案処理
+  const handleTodayMealSuggestion = async () => {
+    try {
+      const settings: MealGenerationSettings = {
+        stockItems,
+        recipes,
+        ingredients,
+        days: 1, // 今日1日分
+        mealTypes: [true, true, true] // 朝昼夜すべて
+      };
+      
+      const result = await generateMealPlan(settings);
+      
+      if (result.warnings.length > 0) {
+        showInfo(result.warnings.join(', '));
+      } else {
+        showSuccess('今日の献立を提案しました！');
+      }
+    } catch (err) {
+      console.error('献立提案に失敗しました:', err);
+      showError('献立提案に失敗しました');
+    }
+  };
+
+  // 週間献立提案処理
+  const handleWeeklyMealSuggestion = async () => {
+    try {
+      const settings: MealGenerationSettings = {
+        stockItems,
+        recipes,
+        ingredients,
+        days: 7, // 7日分
+        mealTypes: [true, true, true] // 朝昼夜すべて
+      };
+      
+      const result = await generateMealPlan(settings);
+      
+      if (result.warnings.length > 0) {
+        showInfo(result.warnings.join(', '));
+      } else {
+        showSuccess('週間献立を提案しました！');
+      }
+    } catch (err) {
+      console.error('週間献立提案に失敗しました:', err);
+      showError('週間献立提案に失敗しました');
+    }
   };
 
   // 週間サマリーデータ
@@ -543,13 +600,13 @@ export const MealPlans: React.FC = () => {
           </p>
           <div className="flex gap-2">
             <button 
-              onClick={() => showInfo('献立の提案機能は今後実装予定です')}
+              onClick={handleTodayMealSuggestion}
               className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
             >
               💡 今日の献立を提案
             </button>
             <button 
-              onClick={() => showInfo('週間提案機能は今後実装予定です')}
+              onClick={handleWeeklyMealSuggestion}
               className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
             >
               📅 週間献立を提案

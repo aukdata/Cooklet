@@ -7,7 +7,7 @@ import { NameQuantityUnitInput } from '../../components/common/NameQuantityUnitI
 import { ShoppingItemDialog } from '../../components/dialogs/ShoppingItemDialog';
 import { useToast } from '../../hooks/useToast.tsx';
 import { readReceiptFromImage, validateImageFile, type ReceiptItem, type ReceiptResult } from '../../utils/receiptReader';
-import { type FoodUnit } from '../../constants/units';
+import { type FoodUnit, parseQuantity } from '../../constants/units';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
 export const Shopping: React.FC = () => {
@@ -224,7 +224,9 @@ export const Shopping: React.FC = () => {
       const editableItems = result.items
         .filter((item: ReceiptItem) => item.name && item.name.trim()) // nameが空欄のものを除外
         .map((item: ReceiptItem) => {
-          const { quantity, unit } = parseQuantityAndUnit(item.quantity || '');
+          const parsed = parseQuantity(item.quantity || '');
+          const quantity = parsed.amount;
+          const unit = parsed.unit;
           return {
             originalName: item.originalName,
             name: item.name,
@@ -254,21 +256,6 @@ export const Shopping: React.FC = () => {
     fileInputRef.current?.click();
   };
 
-  // quantityとunitを分解する関数
-  const parseQuantityAndUnit = (quantityString: string): { quantity: string; unit: string } => {
-    if (!quantityString) return { quantity: '', unit: '' };
-    
-    // 数字部分と単位部分を分離（例: "2個" -> quantity: "2", unit: "個"）
-    const match = quantityString.match(/^(\d*\.?\d*)\s*(.*)$/);
-    if (match) {
-      return {
-        quantity: match[1] || '',
-        unit: match[2] || ''
-      };
-    }
-    
-    return { quantity: quantityString, unit: '' };
-  };
 
   // レシート読み取り結果のアイテムを編集する関数
   const handleEditReceiptItem = (index: number, field: 'name' | 'quantity' | 'unit', value: string) => {
