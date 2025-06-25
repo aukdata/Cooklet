@@ -33,20 +33,20 @@ export const Stock: React.FC = () => {
   const { showError } = useToast();
 
   // 賞味期限が間近かどうかを判定（3日以内）
-  const isExpiringSoon = (bestBefore?: string) => {
-    if (!bestBefore) return false;
+  const isExpiringSoon = (best_before?: string) => {
+    if (!best_before) return false;
     const today = new Date();
-    const expiry = new Date(bestBefore);
+    const expiry = new Date(best_before);
     const diffTime = expiry.getTime() - today.getTime();
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays <= 3 && diffDays > 0;
   };
 
   // 賞味期限が切れているかどうかを判定
-  const isExpired = (bestBefore?: string) => {
-    if (!bestBefore) return false;
+  const isExpired = (best_before?: string) => {
+    if (!best_before) return false;
     const today = new Date();
-    const expiry = new Date(bestBefore);
+    const expiry = new Date(best_before);
     return expiry < today;
   };
 
@@ -109,12 +109,12 @@ export const Stock: React.FC = () => {
   // 検索フィルタリング
   const filteredStockItems = stockItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLocation = selectedLocation === '全て' || item.storageLocation === selectedLocation;
+    const matchesLocation = selectedLocation === '全て' || item.storage_location === selectedLocation;
     return matchesSearch && matchesLocation;
   });
 
   // 全保存場所を取得
-  const allLocations = ['全て', ...Array.from(new Set(stockItems.map(item => item.storageLocation).filter(Boolean)))];
+  const allLocations = ['全て', ...Array.from(new Set(stockItems.map(item => item.storage_location).filter(Boolean)))];
 
   // ローディング状態の表示
   if (loading) {
@@ -213,25 +213,25 @@ export const Stock: React.FC = () => {
                     </div>
                     <div className="flex items-center">
                       <span className="mr-1">🏠</span>
-                      保存場所: {item.storageLocation || '不明'}
+                      保存場所: {item.storage_location || '不明'}
                     </div>
 
                     {/* 賞味期限 */}
-                    {item.bestBefore && (
+                    {item.best_before && (
                       <div className="flex items-center">
                         <span className="mr-1">📅</span>
-                        賞味期限: {new Date(item.bestBefore).toLocaleDateString('ja-JP')}
-                        {isExpired(item.bestBefore) && (
+                        賞味期限: {new Date(item.best_before).toLocaleDateString('ja-JP')}
+                        {isExpired(item.best_before) && (
                           <span className="ml-2 text-red-600 text-xs font-medium">期限切れ</span>
                         )}
-                        {isExpiringSoon(item.bestBefore) && !isExpired(item.bestBefore) && (
+                        {isExpiringSoon(item.best_before) && !isExpired(item.best_before) && (
                           <span className="ml-2 text-yellow-600 text-xs font-medium">期限間近</span>
                         )}
                       </div>
                     )}
 
                     {/* 作り置きフラグ */}
-                    {item.isHomemade && (
+                    {item.is_homemade && (
                       <div className="flex items-center">
                         <span className="mr-1">🍱</span>
                         <span className="text-orange-600 text-xs font-medium">作り置き</span>

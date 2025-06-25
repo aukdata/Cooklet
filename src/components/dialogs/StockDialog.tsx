@@ -5,6 +5,15 @@ import { useToast } from '../../hooks/useToast.tsx';
 import { BaseDialog } from '../ui/BaseDialog';
 import { ConfirmDialog } from './ConfirmDialog';
 
+// フォーム用の在庫データ型（UI表示用のcamelCase）
+interface StockFormData {
+  name: string;
+  quantity: string;
+  bestBefore?: string;
+  storageLocation?: string;
+  isHomemade: boolean;
+}
+
 // 在庫編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface StockDialogProps {
   isOpen: boolean; // ダイアログの表示状態
@@ -30,8 +39,8 @@ export const StockDialog: React.FC<StockDialogProps> = ({
 }) => {
   const { showError } = useToast();
 
-  // フォームデータの状態管理（StockItem型に合わせて調整）
-  const [formData, setFormData] = useState<Partial<StockItem>>({
+  // フォームデータの状態管理（UI用のcamelCase形式）
+  const [formData, setFormData] = useState<StockFormData>({
     name: '',
     quantity: '',
     bestBefore: '',
@@ -47,15 +56,15 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   const oneWeekLater = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
 
-  // initialDataが変更されたときにフォームデータを更新
+  // initialDataが変更されたときにフォームデータを更新（snake_case → camelCase変換）
   useEffect(() => {
     if (initialData) {
       setFormData({
         name: initialData.name || '',
         quantity: initialData.quantity || '',
-        bestBefore: initialData.bestBefore || '',
-        storageLocation: initialData.storageLocation || '冷蔵庫',
-        isHomemade: initialData.isHomemade || false
+        bestBefore: initialData.best_before || '',
+        storageLocation: initialData.storage_location || '冷蔵庫',
+        isHomemade: initialData.is_homemade || false
       });
     } else {
       // 新規作成時はフォームをリセット
@@ -69,7 +78,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
     }
   }, [initialData]);
 
-  // フォーム送信ハンドラ
+  // フォーム送信ハンドラ（camelCase → snake_case変換）
   const handleSave = () => {
     if (!formData.name?.trim()) {
       showError('食材名を入力してください');
@@ -79,7 +88,21 @@ export const StockDialog: React.FC<StockDialogProps> = ({
       showError('数量を入力してください');
       return;
     }
-    onSave(formData as StockItem);
+    
+    // フォームデータをStockItem形式に変換
+    const stockData: StockItem = {
+      id: initialData?.id || '',
+      user_id: initialData?.user_id || '',
+      name: formData.name,
+      quantity: formData.quantity,
+      best_before: formData.bestBefore || undefined,
+      storage_location: formData.storageLocation || undefined,
+      is_homemade: formData.isHomemade,
+      created_at: initialData?.created_at || '',
+      updated_at: initialData?.updated_at || ''
+    };
+    
+    onSave(stockData);
   };
 
   // 削除確認ハンドラ

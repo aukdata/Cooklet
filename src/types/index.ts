@@ -26,16 +26,16 @@ export interface Ingredient {
 }
 
 // 在庫アイテム情報を表すインターフェース（CLAUDE.md仕様書に準拠）
-export interface StockItem {
+export interface StockItem extends Record<string, unknown> {
   id: string; // 在庫ID（UUID）
-  userId: string; // 所有ユーザーID
+  user_id: string; // 所有ユーザーID（DB形式）
   name: string; // 食材名
   quantity: string; // 数量（文字列形式）
-  bestBefore?: string; // 賞味期限（任意）
-  storageLocation?: string; // 保存場所（任意）
-  isHomemade: boolean; // 作り置きフラグ
-  createdAt: string; // 作成日時
-  updatedAt: string; // 更新日時
+  best_before?: string; // 賞味期限（任意、DB形式）
+  storage_location?: string; // 保存場所（任意、DB形式）
+  is_homemade: boolean; // 作り置きフラグ（DB形式）
+  created_at: string; // 作成日時（DB形式）
+  updated_at: string; // 更新日時（DB形式）
 }
 
 // レシピ情報を表すインターフェース
@@ -65,39 +65,39 @@ export interface DatabaseRecipeIngredient {
 }
 
 // 献立計画情報を表すインターフェース（CLAUDE.md仕様書に準拠）
-export interface MealPlan {
+export interface MealPlan extends Record<string, unknown> {
   id: string; // 献立ID（UUID） 
-  userId: string; // ユーザーID
+  user_id: string; // ユーザーID（DB形式）
   date: string; // 予定日
-  mealType: MealType; // 食事タイプ（日本語）
-  recipeUrl?: string; // レシピURL（任意）
+  meal_type: MealType; // 食事タイプ（日本語、DB形式）
+  recipe_url?: string; // レシピURL（任意、DB形式）
   ingredients: { name: string; quantity: string }[]; // 食材リスト
   memo?: string; // メモ（任意）
-  consumedStatus: 'pending' | 'completed' | 'stored'; // 消費状態（未完了・完食・作り置き）
-  createdAt: string; // 作成日時
-  updatedAt: string; // 更新日時
+  consumed_status: 'pending' | 'completed' | 'stored'; // 消費状態（未完了・完食・作り置き、DB形式）
+  created_at: string; // 作成日時（DB形式）
+  updated_at: string; // 更新日時（DB形式）
 }
 
 // 買い物リストアイテム情報を表すインターフェース（CLAUDE.md仕様書に準拠）
-export interface ShoppingListItem {
+export interface ShoppingListItem extends Record<string, unknown> {
   id: string; // 買い物リストID（UUID）
-  userId: string; // ユーザーID
+  user_id: string; // ユーザーID（DB形式）
   name: string; // 食材名
   quantity?: string; // 数量（任意）
   checked: boolean; // 完了フラグ
-  addedFrom: 'manual' | 'auto'; // 追加方法（手動・自動）
-  createdAt: string; // 作成日時
+  added_from: 'manual' | 'auto'; // 追加方法（手動・自動、DB形式）
+  created_at: string; // 作成日時（DB形式）
 }
 
 // コスト記録情報を表すインターフェース（CLAUDE.md仕様書で追加）
-export interface CostRecord {
-  id: string; // コスト記録ID（UUID）
-  userId: string; // ユーザーID
+export interface CostRecord extends Record<string, unknown> {
+  id?: string; // コスト記録ID（UUID）
+  user_id?: string; // ユーザーID
   date: string; // 日付
-  description: string; // 内容説明
+  description?: string; // 内容説明
   amount: number; // 金額
-  isEatingOut: boolean; // 外食フラグ
-  createdAt: string; // 作成日時
+  is_eating_out: boolean; // 外食フラグ
+  created_at?: string; // 作成日時
 }
 
 // レシピ保存情報を表すインターフェース（CLAUDE.md仕様書で追加）

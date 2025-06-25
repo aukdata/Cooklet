@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast.tsx';
 import { useBuildInfo } from '../../hooks/useBuildInfo';
 import { useNotificationSettings } from '../../hooks/useNotificationSettings';
-import { notificationService } from '../../services/notificationService';
+import { NotificationSettings } from '../../components/settings/NotificationSettings';
 import { EditButton } from '../../components/ui/Button';
 
 // ユーザ設定画面コンポーネント - issue #11対応（画面化）
@@ -19,8 +19,6 @@ export const Settings: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [morningNotificationTime, setMorningNotificationTime] = useState('08:00');
-  const [morningNotificationEnabled, setMorningNotificationEnabled] = useState(false);
 
   // supabaseUserの変更を監視してdisplayNameを同期
   useEffect(() => {
@@ -28,42 +26,6 @@ export const Settings: React.FC = () => {
     setDisplayName(fullName);
   }, [supabaseUser]);
 
-  // 朝の通知設定を読み込み
-  useEffect(() => {
-    if (supabaseUser?.id) {
-      const loadMorningSettings = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('users')
-            .select('notification_enabled, notification_time')
-            .eq('id', supabaseUser.id)
-            .single();
-
-          if (error) {
-            console.warn('朝の通知設定の取得に失敗:', error);
-            return;
-          }
-
-          if (data) {
-            setMorningNotificationEnabled(data.notification_enabled || false);
-            setMorningNotificationTime(data.notification_time || '08:00');
-            
-            // 有効な場合は通知をスケジュール
-            if (data.notification_enabled) {
-              notificationService.scheduleMorningNotification({
-                enabled: true,
-                time: data.notification_time || '08:00'
-              }, supabaseUser.id);
-            }
-          }
-        } catch (error) {
-          console.error('朝の通知設定読み込みエラー:', error);
-        }
-      };
-
-      loadMorningSettings();
-    }
-  }, [supabaseUser?.id]);
 
   // ユーザ名保存処理（Supabaseのuser_metadata更新）
   const handleSaveName = async () => {
@@ -155,104 +117,6 @@ export const Settings: React.FC = () => {
     }
   };
 
-  // 朝の通知設定の有効化
-  const handleEnableMorningNotification = async () => {
-    try {
-      // 通知権限を確認・要求
-      const hasPermission = await notificationService.requestNotificationPermission();
-      if (!hasPermission) {
-        showError('通知権限が拒否されました。ブラウザの設定から通知を許可してください。');
-        return;
-      }
-
-      // データベースに保存
-      const { error } = await supabase
-        .from('users')
-        .update({
-          notification_enabled: true,
-          notification_time: morningNotificationTime
-        })
-        .eq('id', supabaseUser?.id);
-
-      if (error) {
-        console.error('朝の通知設定の保存に失敗:', error);
-        showError('朝の通知設定の保存に失敗しました');
-        return;
-      }
-
-      setMorningNotificationEnabled(true);
-      
-      // 通知をスケジュール
-      notificationService.scheduleMorningNotification({
-        enabled: true,
-        time: morningNotificationTime
-      }, supabaseUser?.id || '');
-
-      showSuccess('朝の通知を有効にしました');
-    } catch (error) {
-      console.error('朝の通知有効化エラー:', error);
-      showError('朝の通知の有効化に失敗しました');
-    }
-  };
-
-  // 朝の通知設定の無効化
-  const handleDisableMorningNotification = async () => {
-    try {
-      // データベースに保存
-      const { error } = await supabase
-        .from('users')
-        .update({ notification_enabled: false })
-        .eq('id', supabaseUser?.id);
-
-      if (error) {
-        console.error('朝の通知設定の保存に失敗:', error);
-        showError('朝の通知設定の保存に失敗しました');
-        return;
-      }
-
-      setMorningNotificationEnabled(false);
-      
-      // 通知スケジュールをクリア
-      notificationService.clearMorningNotifications();
-
-      showSuccess('朝の通知を無効にしました');
-    } catch (error) {
-      console.error('朝の通知無効化エラー:', error);
-      showError('朝の通知の無効化に失敗しました');
-    }
-  };
-
-  // 朝の通知時間の変更
-  const handleMorningTimeChange = async (time: string) => {
-    try {
-      // データベースに保存
-      const { error } = await supabase
-        .from('users')
-        .update({ notification_time: time })
-        .eq('id', supabaseUser?.id);
-
-      if (error) {
-        console.error('朝の通知時間の保存に失敗:', error);
-        showError('朝の通知時間の保存に失敗しました');
-        return;
-      }
-
-      setMorningNotificationTime(time);
-      
-      // 有効な場合は再スケジュール
-      if (morningNotificationEnabled) {
-        notificationService.scheduleMorningNotification({
-          enabled: true,
-          time: time
-        }, supabaseUser?.id || '');
-      }
-
-      showSuccess(`朝の通知時間を${time}に設定しました`);
-    } catch (error) {
-      console.error('朝の通知時間変更エラー:', error);
-      showError('朝の通知時間の変更に失敗しました');
-    }
-  };
 
   return (
     <div className="p-4">
@@ -438,49 +302,6 @@ export const Settings: React.FC = () => {
             </div>
           )}
 
-          {/* 朝の通知設定 */}
-          <div className="border-t pt-4">
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm font-medium text-gray-900">毎朝の通知</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  指定した時間に期限の近い食材をお知らせします
-                </p>
-              </div>
-              <div className="flex items-center">
-                <button
-                  onClick={morningNotificationEnabled ? handleDisableMorningNotification : handleEnableMorningNotification}
-                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-600 focus:ring-offset-2 ${
-                    morningNotificationEnabled ? 'bg-indigo-600' : 'bg-gray-200'
-                  }`}
-                >
-                  <span
-                    className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
-                      morningNotificationEnabled ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-            </div>
-            
-            {/* 朝の通知時間設定 */}
-            {morningNotificationEnabled && (
-              <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                <label className="block text-sm font-medium text-gray-900 mb-2">
-                  通知時間
-                </label>
-                <input
-                  type="time"
-                  value={morningNotificationTime}
-                  onChange={(e) => handleMorningTimeChange(e.target.value)}
-                  className="block w-32 rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
-                />
-                <p className="text-xs text-blue-700 mt-2">
-                  毎日 {morningNotificationTime} に期限の近い食材をお知らせします
-                </p>
-              </div>
-            )}
-          </div>
 
           {/* ブラウザ通知権限の説明 */}
           {!notificationSettings.notification_enabled && (
@@ -501,6 +322,9 @@ export const Settings: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* 朝の通知設定 */}
+      <NotificationSettings supabaseUser={supabaseUser} />
 
       {/* アプリ情報セクション */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">

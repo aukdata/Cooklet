@@ -1,7 +1,6 @@
 // 献立から買い物リスト自動生成のユーティリティ（CLAUDE.md仕様書準拠）
 
-import { type MealPlan } from '../hooks/useMealPlans';
-import { type StockItem } from '../types/index';
+import { type MealPlan, type StockItem } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 
 // 食材名の正規化（類似食材をマッチングするため）
@@ -71,7 +70,7 @@ export const extractIngredientsFromMealPlans = (
   
   // 各献立から食材を抽出
   relevantMealPlans.forEach(plan => {
-    plan.ingredients.forEach(ingredient => {
+    plan.ingredients.forEach((ingredient: { name: string; quantity: string }) => {
       const { name, quantity } = extractQuantity(ingredient.name);
       const normalizedName = normalizeIngredientName(name);
       const source = `${plan.date}${plan.meal_type}`;

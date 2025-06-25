@@ -3,24 +3,10 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useCache, CacheConfig } from './useCache';
 import { useTabRefresh } from './useTabRefresh';
-import { type MealType } from '../types';
+import { type MealType, type MealPlan } from '../types';
 
 // 献立消費状態の型定義
 export type MealPlanConsumedStatus = 'pending' | 'completed' | 'stored';
-
-// 献立データの型定義（CLAUDE.md仕様書準拠）
-export interface MealPlan {
-  id?: string;
-  user_id?: string;
-  date: string;
-  meal_type: MealType;
-  recipe_url?: string;
-  ingredients: { name: string; quantity: string }[];
-  memo?: string;
-  consumed_status?: MealPlanConsumedStatus; // 消費状態（未完了・完了・作り置き）
-  created_at?: string;
-  updated_at?: string;
-}
 
 // useMealPlansフック - Supabase meal_plansテーブルとの連携（キャッシュ対応）
 export const useMealPlans = () => {
@@ -208,9 +194,9 @@ export const useMealPlans = () => {
   };
 
   // 指定日・食事タイプの献立を取得
-  const getMealPlan = (date: Date, mealType: MealType) => {
+  const getMealPlan = (date: Date, mealType: MealType): MealPlan | null => {
     const dateStr = date.toISOString().split('T')[0];
-    return (mealPlans || []).find(plan => plan.date === dateStr && plan.meal_type === mealType);
+    return (mealPlans || []).find(plan => plan.date === dateStr && plan.meal_type === mealType) || null;
   };
 
   // レシピURLに基づいて最後に調理された日付を取得（issue #31対応）

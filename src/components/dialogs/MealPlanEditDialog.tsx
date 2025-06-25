@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { type MealPlan } from '../../hooks';
-import { type MealType } from '../../types';
+import { type MealPlan, type MealType } from '../../types';
 import { useRecipes } from '../../hooks/useRecipes';
 import { BaseDialog } from '../ui/BaseDialog';
 import { IngredientsEditor, type Ingredient } from '../ui/IngredientsEditor';
@@ -159,12 +158,16 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   // 保存処理
   const handleSave = () => {
     const mealPlan: MealPlan = {
-      id: initialData?.id,
+      id: initialData?.id || '',
+      user_id: initialData?.user_id || '',
       date: selectedDate,
       meal_type: mealType,
       recipe_url: (selectedRecipeId === 'manual' || selectedRecipeId === '') ? (manualRecipeUrl || undefined) : selectedRecipe?.url,
       ingredients: ingredients.filter(ing => ing.name.trim() !== ''),
-      memo: manualRecipeName.trim() || memo.trim() || undefined
+      memo: manualRecipeName.trim() || memo.trim() || undefined,
+      consumed_status: initialData?.consumed_status || 'pending',
+      created_at: initialData?.created_at || '',
+      updated_at: initialData?.updated_at || ''
     };
 
     onSave(mealPlan);

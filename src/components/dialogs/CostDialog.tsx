@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { type CostRecord } from '../../hooks';
+import { type CostRecord } from '../../types';
 import { useToast } from '../../hooks/useToast.tsx';
 import { ConfirmDialog } from './ConfirmDialog';
 
@@ -85,7 +85,7 @@ export const CostDialog: React.FC<CostDialogProps> = ({
 
   // 今日の日付を設定
   const setToday = () => {
-    setFormData(prev => ({ ...prev, date: today }));
+    setFormData((prev: CostRecord) => ({ ...prev, date: today }));
   };
 
   // ダイアログが閉じている場合は何も表示しない
@@ -118,7 +118,7 @@ export const CostDialog: React.FC<CostDialogProps> = ({
               <input
                 type="date"
                 value={formData.date}
-                onChange={(e) => setFormData(prev => ({ ...prev, date: e.target.value }))}
+                onChange={(e) => setFormData((prev: CostRecord) => ({ ...prev, date: e.target.value }))}
                 className="flex-1 border border-gray-300 rounded px-3 py-2"
                 required
               />
@@ -140,7 +140,7 @@ export const CostDialog: React.FC<CostDialogProps> = ({
             <input
               type="text"
               value={formData.description || ''}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+              onChange={(e) => setFormData((prev: CostRecord) => ({ ...prev, description: e.target.value }))}
               placeholder="昼食 - 牛丼"
               className="w-full border border-gray-300 rounded px-3 py-2"
               required
@@ -177,7 +177,7 @@ export const CostDialog: React.FC<CostDialogProps> = ({
                   type="radio"
                   name="meal_type"
                   checked={!formData.is_eating_out}
-                  onChange={() => setFormData(prev => ({ ...prev, is_eating_out: false }))}
+                  onChange={() => setFormData((prev: CostRecord) => ({ ...prev, is_eating_out: false }))}
                   className="mr-2"
                 />
                 <span className="text-sm flex items-center">
@@ -190,7 +190,7 @@ export const CostDialog: React.FC<CostDialogProps> = ({
                   type="radio"
                   name="meal_type"
                   checked={formData.is_eating_out}
-                  onChange={() => setFormData(prev => ({ ...prev, is_eating_out: true }))}
+                  onChange={() => setFormData((prev: CostRecord) => ({ ...prev, is_eating_out: true }))}
                   className="mr-2"
                 />
                 <span className="text-sm flex items-center">

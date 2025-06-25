@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
-import { useMealPlans, type MealPlan } from '../../hooks';
-import { type MealType } from '../../types';
+import { MealPlanDetail } from '../../components/meal-plans/MealPlanDetail';
+import { useMealPlans } from '../../hooks';
+import { type MealPlan, type MealType } from '../../types';
 import { useStockItems } from '../../hooks/useStockItems';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useIngredients } from '../../hooks/useIngredients';
@@ -382,184 +383,61 @@ export const MealPlans: React.FC = () => {
 
         <div className="space-y-3">
           {/* 朝食 */}
-          {(() => {
-            const breakfastPlan = getMealPlan(selectedDate, '朝');
-            const isCompleted = breakfastPlan?.consumed_status === 'completed';
-            const isStored = breakfastPlan?.consumed_status === 'stored';
-            const isDone = isCompleted || isStored;
-            
-            return (
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center mb-1">
-                    <span className="mr-2">🌅</span>
-                    <span className="font-medium">朝食:</span>
-                    <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
-                      {breakfastPlan ? (breakfastPlan.memo || '朝食メニュー') : '［未設定］'}
-                    </span>
-                    {isDone && breakfastPlan && (
-                      <button 
-                        onClick={() => handleStatusClick(breakfastPlan)}
-                        className="ml-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 px-1 py-0.5 rounded cursor-pointer"
-                        title="ステータスを変更"
-                      >
-                        ✅ {isCompleted ? '完食' : '作り置き'}
-                      </button>
-                    )}
-                  </div>
-                  {breakfastPlan && (
-                    <div className={`ml-6 text-sm text-gray-600 ${isDone ? 'opacity-50' : ''}`}>
-                      📋 材料: {breakfastPlan.ingredients.map(ing => ing.name).join(', ')}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  {breakfastPlan?.recipe_url && (
-                    <button 
-                      onClick={() => window.open(breakfastPlan.recipe_url, '_blank')}
-                      className="text-sm text-blue-600 hover:text-blue-500"
-                    >
-                      🌐 レシピ
-                    </button>
-                  )}
-                  {breakfastPlan && !isDone && (
-                    <button 
-                      onClick={() => handleCookedClick(breakfastPlan)}
-                      className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded"
-                    >
-                      🍽️ 食べた
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => breakfastPlan ? handleEditMeal(breakfastPlan) : handleAddMeal(selectedDate, '朝')}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
-                  >
-                    {breakfastPlan ? '編集' : '+ 追加'}
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
+          <MealPlanDetail
+            mealType="朝"
+            mealPlan={getMealPlan(selectedDate, '朝')}
+            onAddMeal={() => handleAddMeal(selectedDate, '朝')}
+            onEditMeal={() => {
+              const plan = getMealPlan(selectedDate, '朝');
+              if (plan) handleEditMeal(plan);
+            }}
+            onCookedClick={() => {
+              const plan = getMealPlan(selectedDate, '朝');
+              if (plan) handleCookedClick(plan);
+            }}
+            onStatusClick={() => {
+              const plan = getMealPlan(selectedDate, '朝');
+              if (plan) handleStatusClick(plan);
+            }}
+          />
 
           {/* 昼食 */}
-          {(() => {
-            const lunchPlan = getMealPlan(selectedDate, '昼');
-            const isCompleted = lunchPlan?.consumed_status === 'completed';
-            const isStored = lunchPlan?.consumed_status === 'stored';
-            const isDone = isCompleted || isStored;
-            
-            return (
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center mb-1">
-                    <span className="mr-2">🌞</span>
-                    <span className="font-medium">昼食:</span>
-                    <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
-                      {lunchPlan ? (lunchPlan.memo || '昼食メニュー') : '［未設定］'}
-                    </span>
-                    {isDone && lunchPlan && (
-                      <button 
-                        onClick={() => handleStatusClick(lunchPlan)}
-                        className="ml-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 px-1 py-0.5 rounded cursor-pointer"
-                        title="ステータスを変更"
-                      >
-                        ✅ {isCompleted ? '完食' : '作り置き'}
-                      </button>
-                    )}
-                  </div>
-                  {lunchPlan && (
-                    <div className={`ml-6 text-sm text-gray-600 ${isDone ? 'opacity-50' : ''}`}>
-                      📋 材料: {lunchPlan.ingredients.map(ing => ing.name).join(', ')}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  {lunchPlan?.recipe_url && (
-                    <button 
-                      onClick={() => window.open(lunchPlan.recipe_url, '_blank')}
-                      className="text-sm text-blue-600 hover:text-blue-500"
-                    >
-                      🌐 レシピ
-                    </button>
-                  )}
-                  {lunchPlan && !isDone && (
-                    <button 
-                      onClick={() => handleCookedClick(lunchPlan)}
-                      className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded"
-                    >
-                      🍽️ 食べた
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => lunchPlan ? handleEditMeal(lunchPlan) : handleAddMeal(selectedDate, '昼')}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
-                  >
-                    {lunchPlan ? '編集' : '+ 追加'}
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
+          <MealPlanDetail
+            mealType="昼"
+            mealPlan={getMealPlan(selectedDate, '昼')}
+            onAddMeal={() => handleAddMeal(selectedDate, '昼')}
+            onEditMeal={() => {
+              const plan = getMealPlan(selectedDate, '昼');
+              if (plan) handleEditMeal(plan);
+            }}
+            onCookedClick={() => {
+              const plan = getMealPlan(selectedDate, '昼');
+              if (plan) handleCookedClick(plan);
+            }}
+            onStatusClick={() => {
+              const plan = getMealPlan(selectedDate, '昼');
+              if (plan) handleStatusClick(plan);
+            }}
+          />
 
           {/* 夕食 */}
-          {(() => {
-            const dinnerPlan = getMealPlan(selectedDate, '夜');
-            const isCompleted = dinnerPlan?.consumed_status === 'completed';
-            const isStored = dinnerPlan?.consumed_status === 'stored';
-            const isDone = isCompleted || isStored;
-            
-            return (
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center mb-1">
-                    <span className="mr-2">🌙</span>
-                    <span className="font-medium">夕食:</span>
-                    <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
-                      {dinnerPlan ? (dinnerPlan.memo || '夕食メニュー') : '［未設定］'}
-                    </span>
-                    {isDone && dinnerPlan && (
-                      <button 
-                        onClick={() => handleStatusClick(dinnerPlan)}
-                        className="ml-2 text-sm bg-green-100 hover:bg-green-200 text-green-700 px-1 py-0.5 rounded cursor-pointer"
-                        title="ステータスを変更"
-                      >
-                        ✅ {isCompleted ? '完食' : '作り置き'}
-                      </button>
-                    )}
-                  </div>
-                  {dinnerPlan && (
-                    <div className={`ml-6 text-sm text-gray-600 ${isDone ? 'opacity-50' : ''}`}>
-                      📋 材料: {dinnerPlan.ingredients.map(ing => ing.name).join(', ')}
-                    </div>
-                  )}
-                </div>
-                <div className="flex flex-col gap-2">
-                  {dinnerPlan?.recipe_url && (
-                    <button 
-                      onClick={() => window.open(dinnerPlan.recipe_url, '_blank')}
-                      className="text-sm text-blue-600 hover:text-blue-500"
-                    >
-                      🌐 レシピ
-                    </button>
-                  )}
-                  {dinnerPlan && !isDone && (
-                    <button 
-                      onClick={() => handleCookedClick(dinnerPlan)}
-                      className="text-sm bg-green-100 hover:bg-green-200 text-green-700 px-2 py-1 rounded"
-                    >
-                      🍽️ 食べた
-                    </button>
-                  )}
-                  <button 
-                    onClick={() => dinnerPlan ? handleEditMeal(dinnerPlan) : handleAddMeal(selectedDate, '夜')}
-                    className="text-sm bg-gray-100 hover:bg-gray-200 px-2 py-1 rounded"
-                  >
-                    {dinnerPlan ? '編集' : '+ 追加'}
-                  </button>
-                </div>
-              </div>
-            );
-          })()}
+          <MealPlanDetail
+            mealType="夜"
+            mealPlan={getMealPlan(selectedDate, '夜')}
+            onAddMeal={() => handleAddMeal(selectedDate, '夜')}
+            onEditMeal={() => {
+              const plan = getMealPlan(selectedDate, '夜');
+              if (plan) handleEditMeal(plan);
+            }}
+            onCookedClick={() => {
+              const plan = getMealPlan(selectedDate, '夜');
+              if (plan) handleCookedClick(plan);
+            }}
+            onStatusClick={() => {
+              const plan = getMealPlan(selectedDate, '夜');
+              if (plan) handleStatusClick(plan);
+            }}
+          />
         </div>
       </div>
 

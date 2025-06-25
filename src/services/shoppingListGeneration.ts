@@ -1,8 +1,7 @@
 // 買い物リスト自動生成サービス - CLAUDE.md仕様書に準拠
 // 献立から買い物リストを自動生成し、在庫との突合を行う機能
 
-import { type MealPlan } from '../hooks/useMealPlans';
-import { type StockItem } from '../types/index';
+import { type MealPlan, type StockItem } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 
 export interface ShoppingListGenerationResult {
@@ -79,7 +78,7 @@ const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, s
   const aggregatedIngredients = new Map<string, string>();
   
   mealPlans.forEach(plan => {
-    plan.ingredients.forEach(ingredient => {
+    plan.ingredients.forEach((ingredient: { name: string; quantity: string }) => {
       const normalizedName = normalizeIngredientName(ingredient.name);
       
       if (aggregatedIngredients.has(normalizedName)) {
@@ -142,7 +141,7 @@ export const generateShoppingListFromMealPlans = async (
       // 元の食材名を復元（最初に見つかった名前を使用）
       let originalName = normalizedName;
       for (const plan of mealPlans) {
-        const found = plan.ingredients.find(ing => 
+        const found = plan.ingredients.find((ing: { name: string; quantity: string }) => 
           normalizeIngredientName(ing.name) === normalizedName
         );
         if (found) {

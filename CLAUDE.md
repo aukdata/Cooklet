@@ -114,3 +114,4 @@
 - **開発計画**: `.claude/DEVELOPMENT_PLAN.md`
 - **開発ログ**: `.claude/DEVELOPMENT_LOG.md`
 - **要素定義**: `.claude/ELEMENTS.md`
+- **コーディングルール**: `.claude/CODING.md`

@@ -21,6 +21,7 @@ export interface NameQuantityUnitInputProps {
   placeholders?: {
     name?: string;
     quantity?: string;
+    unit?: string;
   };
   /** カスタムクラス名 */
   className?: string;

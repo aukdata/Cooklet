@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { useCostRecords, type CostRecord } from '../../hooks';
+import { useCostRecords } from '../../hooks';
+import { type CostRecord } from '../../types';
 import { CostDialog } from '../../components/dialogs';
 import { EditButton } from '../../components/ui/Button';
 import { useToast } from '../../hooks/useToast.tsx';

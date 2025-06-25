@@ -1,153 +1,46 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
-import { useTabRefresh } from './useTabRefresh';
+import { useDataHook } from './useDataHook';
 import type { StockItem } from '../types/index';
 
-// useStockItemsフック - Supabase stock_itemsテーブルとの連携
+// useStockItemsフック - 汎用データフックを使用した在庫管理
 export const useStockItems = () => {
-  const [stockItems, setStockItems] = useState<StockItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
-
-  // 在庫データを取得
-  const fetchStockItems = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .from('stock_items')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('best_before', { ascending: true })
-        .order('created_at', { ascending: false });
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      setStockItems(data || []);
-    } catch (err) {
-      console.error('在庫データの取得に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '在庫データの取得に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  const {
+    data: stockItems,
+    loading,
+    error,
+    addData,
+    updateData,
+    deleteData,
+    refetch
+  } = useDataHook<StockItem>({
+    tableName: 'stock_items',
+    orderBy: [
+      { column: 'best_before', ascending: true },
+      { column: 'created_at', ascending: false }
+    ]
+  }, {
+    fetch: '在庫データの取得に失敗しました',
+    add: '在庫の追加に失敗しました',
+    update: '在庫の更新に失敗しました',
+    delete: '在庫の削除に失敗しました'
+  });
 
   // 在庫を追加
-  const addStockItem = async (stockItem: Omit<StockItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) throw new Error('ユーザーが認証されていません');
-
-    try {
-      setError(null);
-
-      const { data, error: insertError } = await supabase
-        .from('stock_items')
-        .insert([
-          {
-            user_id: user.id,
-            name: stockItem.name,
-            quantity: stockItem.quantity,
-            best_before: stockItem.bestBefore,
-            storage_location: stockItem.storageLocation,
-            is_homemade: stockItem.isHomemade
-          }
-        ])
-        .select()
-        .single();
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      // ローカル状態を更新
-      setStockItems(prev => [...prev, data]);
-      markAsUpdated(); // データ変更後に更新時刻をマーク
-      return data;
-    } catch (err) {
-      console.error('在庫の追加に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '在庫の追加に失敗しました');
-      throw err;
-    }
+  const addStockItem = async (stockItem: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
+    return await addData(stockItem);
   };
 
   // 在庫を更新
-  const updateStockItem = async (id: string, updates: Partial<Omit<StockItem, 'id' | 'userId' | 'createdAt'>>) => {
-    if (!user) throw new Error('ユーザーが認証されていません');
-
-    try {
-      setError(null);
-
-      // camelCaseをsnake_caseに変換
-      const dbUpdates: Record<string, unknown> = {
-        updated_at: new Date().toISOString()
-      };
-      
-      if (updates.name !== undefined) dbUpdates.name = updates.name;
-      if (updates.quantity !== undefined) dbUpdates.quantity = updates.quantity;
-      if (updates.bestBefore !== undefined) dbUpdates.best_before = updates.bestBefore;
-      if (updates.storageLocation !== undefined) dbUpdates.storage_location = updates.storageLocation;
-      if (updates.isHomemade !== undefined) dbUpdates.is_homemade = updates.isHomemade;
-
-      const { data, error: updateError } = await supabase
-        .from('stock_items')
-        .update(dbUpdates)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      // ローカル状態を更新
-      setStockItems(prev => 
-        prev.map(item => item.id === id ? data : item)
-      );
-      markAsUpdated(); // データ変更後に更新時刻をマーク
-      return data;
-    } catch (err) {
-      console.error('在庫の更新に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '在庫の更新に失敗しました');
-      throw err;
-    }
+  const updateStockItem = async (id: string, updates: Partial<Omit<StockItem, 'id' | 'user_id' | 'created_at'>>) => {
+    return await updateData(id, updates);
   };
 
   // 在庫を削除
   const deleteStockItem = async (id: string) => {
-    if (!user) throw new Error('ユーザーが認証されていません');
-
-    try {
-      setError(null);
-
-      const { error: deleteError } = await supabase
-        .from('stock_items')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      // ローカル状態を更新
-      setStockItems(prev => prev.filter(item => item.id !== id));
-      markAsUpdated(); // データ変更後に更新時刻をマーク
-    } catch (err) {
-      console.error('在庫の削除に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '在庫の削除に失敗しました');
-      throw err;
-    }
+    return await deleteData(id);
   };
 
-  // 在庫を保存（追加または更新）
-  const saveStockItem = async (stockItem: StockItem) => {
+  // 在庫を追加または更新（既存在庫があれば更新、なければ追加）
+  const saveStockItem = async (stockItem: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'> & { id?: string }) => {
     if (stockItem.id) {
       return await updateStockItem(stockItem.id, stockItem);
     } else {
@@ -155,11 +48,11 @@ export const useStockItems = () => {
     }
   };
 
-  // 賞味期限切れの在庫を取得
+  // 期限切れの在庫を取得
   const getExpiredItems = () => {
     const today = new Date().toISOString().split('T')[0];
     return stockItems.filter(item => 
-      item.bestBefore && item.bestBefore < today
+      item.best_before && item.best_before < today
     );
   };
 
@@ -171,15 +64,15 @@ export const useStockItems = () => {
     const today = new Date().toISOString().split('T')[0];
     
     return stockItems.filter(item => 
-      item.bestBefore && 
-      item.bestBefore >= today && 
-      item.bestBefore <= targetDateStr
+      item.best_before && 
+      item.best_before >= today && 
+      item.best_before <= targetDateStr
     );
   };
 
   // 保存場所別の在庫を取得
   const getItemsByLocation = (location: string) => {
-    return stockItems.filter(item => item.storageLocation === location);
+    return stockItems.filter(item => item.storage_location === location);
   };
 
   // 在庫名での検索
@@ -188,14 +81,6 @@ export const useStockItems = () => {
       item.name.toLowerCase().includes(query.toLowerCase())
     );
   };
-
-  // 初回データ取得
-  useEffect(() => {
-    fetchStockItems();
-  }, [fetchStockItems]);
-
-  // タブ切り替え時の更新チェック機能（5分間隔）
-  const { markAsUpdated } = useTabRefresh(fetchStockItems, 5);
 
   return {
     stockItems,
@@ -209,6 +94,6 @@ export const useStockItems = () => {
     getExpiringItems,
     getItemsByLocation,
     searchItems,
-    refetch: fetchStockItems
+    refetch
   };
 };
