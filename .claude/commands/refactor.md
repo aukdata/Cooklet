@@ -4,11 +4,13 @@ You are responsible for refactoring the codebase to improve readability, modular
 Avoid superficial adjustments — your changes should aim for structural clarity and long-term maintainability.
 After completing the refactoring, run pnpm run build:netlify to confirm successful compilation.
 Then, report the summary to the user in Japanese.
+Think harder.
 
 Note: The goal is not only to simplify the code, but also to clarify responsibilities and improve extensibility.
 
 ## Phase 1: Identify and Refactor Complex Structures
 
+- Make sure to read the documents before proceeding.
 - Identify large or deeply nested functions, components, or classes.
 - Split them into smaller, focused units with clearly defined responsibilities.
 - Extract logic into reusable functions or modules when appropriate.
@@ -25,6 +27,7 @@ Note: The goal is not only to simplify the code, but also to clarify responsibil
 
 - Run `similarity-ts src` to detect duplications.
 - Unify the duplications if needed.
+- If modification of the specification to unify is needed, report to the user.
 
 ## Phase 4: Confirm Behavior and Build
 
