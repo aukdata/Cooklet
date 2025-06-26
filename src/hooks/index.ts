@@ -29,3 +29,6 @@ export { useExpiryNotifications, type ExpiryItem, type ExpiryNotificationResult 
 
 // 食材マスタ管理フック
 export { useIngredients } from './useIngredients';
+
+// 献立カレンダー管理フック
+export { useMealPlanCalendar } from './useMealPlanCalendar';

@@ -102,6 +102,7 @@
 - `ShoppingItemDialog` - 買い物リストアイテム編集ダイアログ（名前・数量の編集、削除機能付き）
 - `ConfirmDialog` - 削除確認ダイアログ（汎用的な確認ダイアログ）
 - `IngredientDialog` - 材料編集ダイアログ（材料名・カテゴリ・デフォルト単位・価格）
+- `CookedDialog` - 「作った！」ダイアログ（献立完了時の状態選択、完食・作り置き選択）
 
 ### 共通仕様
 - `useConfirmDialog` - 確認ダイアログフック
@@ -110,6 +111,15 @@
 
 - `MainLayout` - アプリケーションのメインレイアウト（ヘッダー、コンテンツエリア、タブナビゲーション）
 - `TabNavigation` - 下部固定のタブナビゲーション（6つのタブ: summary, meal-plans, shopping, recipes, stock, cost）
+
+## 献立関連コンポーネント（components/meal-plans/）
+
+- `MealPlanDetail` - 個別の献立詳細表示コンポーネント（食事タイプごとの献立表示・編集・状態変更）
+- `WeeklyNavigation` - 週間ナビゲーションコンポーネント（ヘッダー表示・週間移動・今日ボタン）
+- `MealPlanCalendar` - 献立カレンダーコンポーネント（週間日付表示・献立有無インジケーター・日付選択）
+- `MealPlanDayDetail` - 選択日の献立詳細表示コンポーネント（朝昼夜の献立統合表示）
+- `MealPlanSuggestion` - 献立提案コンポーネント（週間サマリー・AI献立生成ボタン）
+- `CookedDialog` - 「作った！」ダイアログコンポーネント（完食・作り置き選択・在庫自動追加）
 
 ## カスタムフック（hooks/）
 
@@ -133,6 +143,7 @@
 - `useBuildInfo` - ビルド情報取得
 - `useTabRefresh` - タブ切り替え時の更新チェック機能
 - `useToast` - トースト通知管理
+- `useMealPlanCalendar` - 献立カレンダー状態管理（週間ナビゲーション・日付選択・週計算）
 
 ## コンテキスト（contexts/）
 
@@ -192,10 +203,32 @@
 - `WebFetcher` - Webサイトからコンテンツを取得するクライアント（fetchWebsite）
 
 ### ユーティリティ関数
+
+### レシート・画像処理
 - `readReceiptFromImage(file, ingredients)` - レシート画像読み取り（OCR + AI構造化 + 商品名正規化）
 - `normalizeProductName(originalName, ingredients)` - 商品名正規化
 - `validateImageFile(file)` - 画像ファイル妥当性チェック
 - `calculateTotalPrice(items)` - レシートアイテムから合計金額計算
+
+### 日付フォーマット（utils/dateFormatters.ts）
+- `formatDateToJapanese(date)` - 日付を「MM月DD日」形式でフォーマット
+- `formatDateToSlash(date)` - 日付を「MM/DD」形式でフォーマット
+- `formatDateToISO(date)` - 日付を「YYYY-MM-DD」形式でフォーマット
+- `formatDateRange(startDate, endDate)` - 2つの日付の範囲を「MM/DD - MM/DD」形式でフォーマット
+- `isToday(date)` - 日付が今日かどうかを判定
+- `isYesterday(date)` - 日付が昨日かどうかを判定
+- `isTomorrow(date)` - 日付が明日かどうかを判定
+- `addDays(date, days)` - 日付に日数を加算
+- `getDaysDifference(date1, date2)` - 2つの日付の差分（日数）を計算
+- `formatRelativeDate(date)` - 相対的な日付表示を生成（今日・昨日・明日・MM月DD日）
+
+### エラーハンドリング（utils/errorHandlers.ts）
+- `ErrorType` - エラー種別の型定義（network | validation | auth | server | unknown）
+- `ErrorInfo` - エラー情報の型定義
+- `classifyError(error)` - エラーを分類し、ユーザーフレンドリーなメッセージを生成
+- `handleAsyncOperation(operation, onError?, onSuccess?)` - 非同期操作の統一エラーハンドリング
+- `createAsyncHandler(showToast)` - React向けの非同期操作フック
+- `getJapaneseErrorMessage(error)` - エラーメッセージを日本語に変換
 
 ### データベース
 - `supabase` - Supabaseクライアント
