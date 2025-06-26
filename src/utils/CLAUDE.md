@@ -5,6 +5,47 @@
 
 ## ファイル構成
 
+### mealPlanGeneration.ts
+**PLAN.md準拠の在庫活用献立自動生成アルゴリズム実装ファイル**
+
+#### 概要
+在庫から自動で献立を生成するアルゴリズム。期限の近い食材を優先的に使用し、購入が必要な食材の種類を最小化する。
+
+#### 実装内容
+
+**主要関数**
+- `generateMealPlanAlgorithm()`: PLAN.mdアルゴリズムの完全実装
+- `generateMealPlan()`: メインAPI（Cookletデータ構造との統合）
+
+**アルゴリズム特徴**
+- **期限優先**: 賞味期限の近い食材を優先的に使用
+- **購入コスト最小化**: 必要な購入食材の種類を最小化
+- **スコアベース選択**: alpha（購入コスト重み）、beta（期限重み）による最適化
+- **ランダム性対応**: temperature パラメータによるバラエティ
+
+**型定義**
+- `MealGenerationSettings`: 献立生成設定
+- `MealGenerationResult`: 生成結果（献立+買い物リスト）
+- `PurchaseUnit`: 購入単位情報
+- `InventoryItem`: アルゴリズム内部用在庫
+- `RecipeData`: アルゴリズム内部用レシピ
+- `ShoppingItem`: 買い物リスト項目
+
+#### パラメータ説明
+- **days**: 生成日数（1-14日）
+- **mealTypes**: [朝, 昼, 夜]の生成フラグ
+- **alpha**: 購入コスト重み（大きいほど購入を避ける）
+- **beta**: 期限重み（大きいほど期限近い食材を優先）
+- **temperature**: ランダム性（0.0=常に同じ結果、1.0=バラエティ豊か）
+
+#### データ統合
+- **在庫情報**: StockItemからInventoryItemに変換
+- **レシピ情報**: SavedRecipe.ingredientsを解析・活用
+- **食材マスタ**: 購入単位情報として活用
+- **結果保存**: 生成献立をMealPlanとして保存、買い物リストをShoppingListItemとして追加
+
+## ファイル構成
+
 ### receiptReader.ts
 レシート読み取り機能の実装ファイル。Google Vision APIとGemini AIを組み合わせた高精度レシート解析。
 ingredientsテーブルのoriginal_nameと照らし合わせて商品名を一般名に自動変換。

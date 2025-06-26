@@ -85,12 +85,264 @@ const badExample = (data: unknown) => {
 };
 ```
 
+### unknown型の適切な使用ガイドライン
+
+#### unknown型を使用すべき場面
+```typescript
+// ✅ 外部APIからの予測不可能なレスポンス
+interface APIResponse {
+  status: string;
+  data: unknown; // 構造が事前に分からない外部データ
+}
+
+// ✅ ジェネリックな処理で型が確定できない場合
+function processData<T>(data: unknown): T {
+  // 型ガードで安全性を確保
+  if (typeof data === 'object' && data !== null) {
+    return data as T;
+  }
+  throw new Error('Invalid data format');
+}
+
+// ✅ 動的コンテンツや設定値
+interface Configuration {
+  settings: Record<string, unknown>; // 動的な設定値
+}
+```
+
+#### unknown型を避けるべき場面
+```typescript
+// ❌ 他の型で表現可能な場合
+interface BadExample {
+  name: unknown; // string で十分
+  count: unknown; // number で十分
+  options: unknown; // 具体的な型定義が可能
+}
+
+// ✅ 適切な型定義
+interface GoodExample {
+  name: string;
+  count: number;
+  options: { [key: string]: string | number | boolean };
+}
+```
+
+### 型アサーション（as）の安全な使用法
+
+#### 推奨パターン：型ガード + アサーション
+```typescript
+// ✅ 型ガードで安全性を確保してからアサーション
+function processUser(data: unknown): User {
+  // 型ガード関数の使用
+  if (isUser(data)) {
+    return data; // 型ガードが成功すればアサーション不要
+  }
+  throw new Error('Invalid user data');
+}
+
+// 型ガード関数の実装
+function isUser(data: unknown): data is User {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
+    'name' in data &&
+    typeof (data as any).id === 'string' &&
+    typeof (data as any).name === 'string'
+  );
+}
+
+// ✅ オブジェクトの形状チェック後のアサーション
+function safeParseJSON(json: string): unknown {
+  try {
+    const parsed = JSON.parse(json);
+    // 基本的な形状チェック
+    if (typeof parsed === 'object' && parsed !== null) {
+      return parsed;
+    }
+    throw new Error('Parsed data is not an object');
+  } catch {
+    throw new Error('Invalid JSON format');
+  }
+}
+```
+
+#### 禁止パターン：直接アサーション
+```typescript
+// ❌ 型チェックなしの直接アサーション（危険）
+function badProcess(data: unknown): User {
+  return data as User; // 実行時エラーの可能性
+}
+
+// ❌ 複雑な型への直接アサーション
+const userData = response.data as { user: { profile: { settings: any } } };
+```
+
+### 型定義ベストプラクティス
+
+#### 1. Union型の活用
+```typescript
+// ✅ 明確な状態管理
+type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+
+// ✅ タグ付きUnion型でより安全に
+type ApiState = 
+  | { status: 'loading' }
+  | { status: 'success'; data: User[] }
+  | { status: 'error'; error: string };
+```
+
+#### 2. 厳密なオブジェクト型定義
+```typescript
+// ✅ 明確なプロパティ定義
+interface StrictConfig {
+  apiUrl: string;
+  timeout: number;
+  retries: number;
+  features: {
+    logging: boolean;
+    analytics: boolean;
+  };
+}
+
+// ❌ 曖昧な定義
+interface LooseConfig {
+  [key: string]: unknown; // 何でも許可してしまう
+}
+```
+
+#### 3. 型ガード関数の活用
+```typescript
+// ✅ 再利用可能な型ガード関数
+export function isString(value: unknown): value is string {
+  return typeof value === 'string';
+}
+
+export function isNonEmpty<T>(value: T | null | undefined): value is T {
+  return value !== null && value !== undefined;
+}
+
+export function hasProperty<T extends string>(
+  obj: unknown,
+  prop: T
+): obj is Record<T, unknown> {
+  return typeof obj === 'object' && obj !== null && prop in obj;
+}
+```
+
+### Cookletプロジェクトでの実装例
+
+#### 外部API連携での型安全な処理
+```typescript
+// ✅ Google Vision API レスポンスの安全な処理
+interface VisionAPIResponse {
+  status: string;
+  textAnnotations: unknown; // APIの仕様変更に対応
+}
+
+function processOCRResult(response: unknown): string[] {
+  // 型ガードでAPIレスポンスの妥当性を確認
+  if (
+    typeof response === 'object' &&
+    response !== null &&
+    'textAnnotations' in response
+  ) {
+    const annotations = (response as VisionAPIResponse).textAnnotations;
+    if (Array.isArray(annotations)) {
+      return annotations
+        .filter((item): item is { description: string } => 
+          typeof item === 'object' && 
+          item !== null && 
+          'description' in item &&
+          typeof (item as any).description === 'string'
+        )
+        .map(item => item.description);
+    }
+  }
+  throw new Error('Invalid OCR response format');
+}
+```
+
+#### データベース連携での型変換
+```typescript
+// ✅ Supabaseからのデータの安全な変換
+function transformStockItem(dbData: unknown): StockItem {
+  // データベースからの生データをチェック
+  if (!isValidStockItemData(dbData)) {
+    throw new Error('Invalid stock item data from database');
+  }
+  
+  // 型ガード成功後は安全にアクセス可能
+  return {
+    id: dbData.id,
+    user_id: dbData.user_id,
+    name: dbData.name,
+    quantity: dbData.quantity,
+    best_before: dbData.best_before,
+    storage_location: dbData.storage_location,
+    is_homemade: dbData.is_homemade,
+    created_at: dbData.created_at,
+    updated_at: dbData.updated_at
+  };
+}
+
+function isValidStockItemData(data: unknown): data is {
+  id: string;
+  user_id: string;
+  name: string;
+  quantity: string;
+  best_before?: string;
+  storage_location?: string;
+  is_homemade: boolean;
+  created_at: string;
+  updated_at: string;
+} {
+  return (
+    typeof data === 'object' &&
+    data !== null &&
+    'id' in data &&
+    'user_id' in data &&
+    'name' in data &&
+    typeof (data as any).id === 'string' &&
+    typeof (data as any).user_id === 'string' &&
+    typeof (data as any).name === 'string'
+    // 他の必須フィールドもチェック
+  );
+}
+```
+
+#### 汎用データフックでの型安全性
+```typescript
+// ✅ useDataHookでの安全な型処理
+export const useDataHook = <T extends Record<string, unknown> & { id?: string }>(
+  config: TableConfig,
+  errorMessages: ErrorMessages
+) => {
+  const setData = (fetchedData: unknown) => {
+    // データベースからの応答を安全に変換
+    if (Array.isArray(fetchedData)) {
+      const validatedData = fetchedData.filter((item): item is T => 
+        typeof item === 'object' && 
+        item !== null && 
+        'id' in item
+      );
+      setData(validatedData);
+    } else {
+      setData([]);
+    }
+  };
+};
+```
+
 ### 型定義コメント規則
 - **日本語コメント**: 各フィールドに日本語の説明を必須記載
 - **DB形式明記**: データベースフィールドは`（DB形式）`を付記
 - **任意フィールド**: オプショナルフィールドは`（任意、...）`で説明
 - **unknown型制限**: 他の型やその組み合わせで表現できない場合のみ使用可
 - **型アサーション制限**: `as`は必要な場合のみ使用、型ガードで安全性を確保
+- **型ガード推奨**: 複雑な型チェックは専用の型ガード関数を作成
+- **外部API対応**: APIレスポンスは必ず型ガードで検証してから使用
+- **データベース連携**: DBからのデータも型ガードで安全性を確保
 
 ## 4. React コンポーネント
 
@@ -349,8 +601,20 @@ pnpm run lint && pnpm run build:netlify
 ### 品質保証ルール
 - **oxlint抑制コメント禁止**: 根本的な問題解決を重視
 - **any型完全禁止**: 型安全性を最優先
+- **unknown型適切使用**: 外部APIや予測不可能なデータのみに限定
+- **型アサーション安全化**: 必ず型ガードと組み合わせて使用
+- **型ガード関数推奨**: 複雑な型チェックは再利用可能な関数として実装
 - **必須型注釈**: 変数定義時の型記載を必須化
 - **自動品質チェック**: Git hooksによる品質管理の自動化
+
+### TypeScript型安全性チェックリスト
+- ✅ `any`型を使用していない
+- ✅ `unknown`型は外部データまたは動的データのみに使用
+- ✅ 型アサーション（`as`）の前に型ガードを実装
+- ✅ 外部APIレスポンスに対して適切な型ガードを実装
+- ✅ データベースからのデータに対して型検証を実装
+- ✅ すべての関数パラメータと戻り値に型注釈を記載
+- ✅ インターフェースの各プロパティに日本語コメントを記載
 
 ## 10. パッケージ管理
 
@@ -369,10 +633,15 @@ pnpm run lint && pnpm run build:netlify
 
 Cookletのコーディングルールは以下の価値観に基づいています：
 
-1. **型安全性最優先** - any型禁止、厳格な型チェック
-2. **可読性重視** - 日本語コメント、明確な命名規則
-3. **保守性確保** - モジュラー設計、統一されたパターン
-4. **品質保証** - 自動化されたlint・build チェック
-5. **開発効率** - 一貫したコーディングスタイル、再利用可能な設計
+1. **型安全性最優先** - any型禁止、unknown型の適切な使用、型ガードによる安全性確保
+2. **可読性重視** - 日本語コメント、明確な命名規則、型の意図を明示
+3. **保守性確保** - モジュラー設計、統一されたパターン、型による自己文書化
+4. **品質保証** - 自動化されたlint・build チェック、型安全性チェックリスト
+5. **開発効率** - 一貫したコーディングスタイル、再利用可能な設計、型による開発支援
+6. **実行時安全性** - 外部データの型ガード、エラーハンドリングの徹底
 
-これらのルールに従うことで、高品質で保守しやすいコードベースを維持できます。
+## 型安全性の重要性
+
+Cookletでは、外部API（Google Vision API、Supabase等）やユーザー入力データを多く扱うため、特に型安全性を重視しています。`unknown`型と型ガードの適切な組み合わせにより、実行時エラーを防止し、信頼性の高いアプリケーションを実現しています。
+
+これらのルールに従うことで、高品質で保守しやすく、実行時にも安全なコードベースを維持できます。
