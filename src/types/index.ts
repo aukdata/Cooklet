@@ -101,6 +101,7 @@ export interface CostRecord extends Record<string, unknown> {
 }
 
 // レシピ保存情報を表すインターフェース（CLAUDE.md仕様書で追加）
+// 注意: この型は後方互換性のため残していますが、新しいコードでは src/types/recipe.ts の SavedRecipe を使用してください
 export interface SavedRecipe {
   id: string; // レシピID（UUID）
   userId: string; // ユーザーID
@@ -108,6 +109,7 @@ export interface SavedRecipe {
   url: string; // レシピURL
   servings: number; // 何人前
   tags: string[]; // タグ
+  ingredients: { name: string; quantity: string }[]; // 食材リスト
   createdAt: string; // 作成日時
 }
 

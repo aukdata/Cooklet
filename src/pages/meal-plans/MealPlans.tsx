@@ -174,10 +174,42 @@ export const MealPlans: React.FC = () => {
       
       const result = await generateMealPlan(settings);
       
+      // 生成された献立を献立計画に保存
+      const today = selectedDate.toISOString().split('T')[0];
+      const mealTypesArray: MealType[] = ['朝', '昼', '夜'];
+      
+      for (const mealPlanItem of result.mealPlan) {
+        const mealTypeIndex = (mealPlanItem.mealNumber - 1) % 3; // 0, 1, 2
+        const mealType = mealTypesArray[mealTypeIndex];
+        
+        // 該当するレシピの詳細を検索
+        const matchedRecipe = recipes.find(recipe => recipe.title === mealPlanItem.recipe);
+        
+        if (matchedRecipe) {
+          const newMealPlan: MealPlan = {
+            id: '',
+            user_id: '',
+            date: today,
+            meal_type: mealType,
+            recipe_url: matchedRecipe.url,
+            ingredients: matchedRecipe.ingredients.map(ing => ({
+              name: ing.name,
+              quantity: ing.quantity
+            })),
+            memo: `AI生成: ${matchedRecipe.title}`,
+            consumed_status: 'pending',
+            created_at: '',
+            updated_at: ''
+          };
+          
+          await saveMealPlan(newMealPlan);
+        }
+      }
+      
       if (result.warnings.length > 0) {
         showInfo(result.warnings.join(', '));
       } else {
-        showSuccess('今日の献立を提案しました！');
+        showSuccess(`今日の献立を${result.mealPlan.length}件生成しました！`);
       }
     } catch (err) {
       console.error('献立提案に失敗しました:', err);
@@ -198,10 +230,48 @@ export const MealPlans: React.FC = () => {
       
       const result = await generateMealPlan(settings);
       
+      // 生成された献立を献立計画に保存
+      const mealTypesArray: MealType[] = ['朝', '昼', '夜'];
+      const startDate = new Date(currentWeekStart);
+      
+      for (const mealPlanItem of result.mealPlan) {
+        // 食事番号から日付と食事タイプを計算
+        const dayIndex = Math.floor((mealPlanItem.mealNumber - 1) / 3); // 0-6日目
+        const mealTypeIndex = (mealPlanItem.mealNumber - 1) % 3; // 0, 1, 2
+        
+        const mealDate = new Date(startDate);
+        mealDate.setDate(startDate.getDate() + dayIndex);
+        const dateStr = mealDate.toISOString().split('T')[0];
+        const mealType = mealTypesArray[mealTypeIndex];
+        
+        // 該当するレシピの詳細を検索
+        const matchedRecipe = recipes.find(recipe => recipe.title === mealPlanItem.recipe);
+        
+        if (matchedRecipe) {
+          const newMealPlan: MealPlan = {
+            id: '',
+            user_id: '',
+            date: dateStr,
+            meal_type: mealType,
+            recipe_url: matchedRecipe.url,
+            ingredients: matchedRecipe.ingredients.map(ing => ({
+              name: ing.name,
+              quantity: ing.quantity
+            })),
+            memo: `AI生成: ${matchedRecipe.title}`,
+            consumed_status: 'pending',
+            created_at: '',
+            updated_at: ''
+          };
+          
+          await saveMealPlan(newMealPlan);
+        }
+      }
+      
       if (result.warnings.length > 0) {
         showInfo(result.warnings.join(', '));
       } else {
-        showSuccess('週間献立を提案しました！');
+        showSuccess(`週間献立を${result.mealPlan.length}件生成しました！`);
       }
     } catch (err) {
       console.error('週間献立提案に失敗しました:', err);
