@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
-import { MealPlanDetail } from '../../components/meal-plans/MealPlanDetail';
+import { WeeklyNavigation } from '../../components/meal-plans/WeeklyNavigation';
+import { MealPlanCalendar } from '../../components/meal-plans/MealPlanCalendar';
+import { MealPlanDayDetail } from '../../components/meal-plans/MealPlanDayDetail';
+import { MealPlanSuggestion } from '../../components/meal-plans/MealPlanSuggestion';
+import { CookedDialog } from '../../components/meal-plans/CookedDialog';
 import { useMealPlans } from '../../hooks';
+import { useMealPlanCalendar } from '../../hooks/useMealPlanCalendar';
 import { type MealPlan, type MealType } from '../../types';
 import { useStockItems } from '../../hooks/useStockItems';
 import { useRecipes } from '../../hooks/useRecipes';
@@ -9,20 +14,22 @@ import { useIngredients } from '../../hooks/useIngredients';
 import { useToast } from '../../hooks/useToast.tsx';
 import { generateMealPlan, type MealGenerationSettings } from '../../utils/mealPlanGeneration';
 
-
 // カレンダー画面コンポーネント - 週間表示・献立追加機能付き
 export const MealPlans: React.FC = () => {
   const { showInfo, showSuccess, showError } = useToast();
 
-  // 選択された日付（今日がデフォルト）
-  const [selectedDate, setSelectedDate] = useState(new Date());
-  
-  // 現在表示している週の開始日（今日基準）
-  const [currentWeekStart, setCurrentWeekStart] = useState(() => {
-    const today = new Date();
-    // 今日を開始日として設定
-    return today;
-  });
+  // 週間カレンダー状態管理
+  const {
+    selectedDate,
+    setSelectedDate,
+    currentWeekStart,
+    weekDates,
+    weekRange,
+    isCurrentWeek,
+    goToPreviousWeek,
+    goToNextWeek,
+    goToThisWeek
+  } = useMealPlanCalendar();
   
   // ダイアログの表示状態
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -31,41 +38,6 @@ export const MealPlans: React.FC = () => {
   // 作った選択ダイアログの状態
   const [isConsumedDialogOpen, setIsConsumedDialogOpen] = useState(false);
   const [processingMeal, setProcessingMeal] = useState<MealPlan | null>(null);
-
-  // 指定した週の開始日から7日分の日付を取得
-  const getWeekDates = (weekStart: Date) => {
-    const dates = [];
-    
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + i);
-      dates.push(date);
-    }
-    return dates;
-  };
-
-  // 先週に移動
-  const goToPreviousWeek = () => {
-    const prevWeek = new Date(currentWeekStart);
-    prevWeek.setDate(currentWeekStart.getDate() - 7);
-    setCurrentWeekStart(prevWeek);
-  };
-
-  // 来週に移動
-  const goToNextWeek = () => {
-    const nextWeek = new Date(currentWeekStart);
-    nextWeek.setDate(currentWeekStart.getDate() + 7);
-    setCurrentWeekStart(nextWeek);
-  };
-
-  // 今日を基準にした週に戻る
-  const goToThisWeek = () => {
-    const today = new Date();
-    setCurrentWeekStart(today);
-  };
-
-  const weekDates = getWeekDates(currentWeekStart);
-  const today = new Date();
 
   // 献立データの取得（Supabase連携）
   const { mealPlans, loading, error, saveMealPlan, deleteMealPlan, updateMealPlanStatus, getMealPlansForDate, getMealPlan } = useMealPlans();
@@ -78,15 +50,6 @@ export const MealPlans: React.FC = () => {
   
   // 食材マスタデータの取得（献立生成用）
   const { ingredients } = useIngredients();
-
-  // 週の範囲を表示用にフォーマット
-  const weekRange = `${weekDates[0].getMonth() + 1}/${weekDates[0].getDate()} - ${weekDates[6].getMonth() + 1}/${weekDates[6].getDate()}`;
-  
-  // 今日を基準とした週かどうかを判定
-  const isCurrentWeek = () => {
-    const today = new Date();
-    return currentWeekStart.toDateString() === today.toDateString();
-  };
 
 
   // 献立追加ボタンクリック処理
@@ -247,16 +210,6 @@ export const MealPlans: React.FC = () => {
     budget: 1200
   };
 
-  // 日付選択ハンドラ
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-  };
-
-  // 日付が今日かどうかチェック
-  const isToday = (date: Date) => {
-    return date.toDateString() === today.toDateString();
-  };
-
   // ステータス変更ハンドラ
   const handleStatusClick = async (mealPlan: MealPlan) => {
     if (!mealPlan?.id) return;
@@ -286,212 +239,43 @@ export const MealPlans: React.FC = () => {
 
   return (
     <div className="p-4">
-      {/* ヘッダー */}
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <h2 className="text-lg font-semibold flex items-center">
-            <span className="mr-2">📅</span>
-            献立カレンダー
-          </h2>
-          <div className="text-sm text-gray-600 mt-1">
-            {weekRange}
-            {loading && <span className="ml-2">読み込み中...</span>}
-            {error && <span className="ml-2 text-red-500">エラー: {error}</span>}
-          </div>
-        </div>
-      </div>
-
       {/* 週間ナビゲーション */}
-      <div className="flex justify-between items-center mb-4">
-        <button
-          onClick={goToPreviousWeek}
-          className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-        >
-          <span className="mr-1">‹</span>
-          前週
-        </button>
-        
-        <div className="flex items-center space-x-2">
-          {!isCurrentWeek() && (
-            <button
-              onClick={goToThisWeek}
-              className="px-3 py-2 text-sm bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors"
-            >
-              今日
-            </button>
-          )}
-          <span className="text-sm text-gray-500">
-            {isCurrentWeek() ? '今日' : ''}
-          </span>
-        </div>
-        
-        <button
-          onClick={goToNextWeek}
-          className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-        >
-          次週
-          <span className="ml-1">›</span>
-        </button>
-      </div>
+      <WeeklyNavigation
+        currentWeekStart={currentWeekStart}
+        weekRange={weekRange}
+        onPreviousWeek={goToPreviousWeek}
+        onNextWeek={goToNextWeek}
+        onThisWeek={goToThisWeek}
+        isCurrentWeek={isCurrentWeek}
+        loading={loading}
+        error={error}
+      />
 
       {/* カレンダービュー */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
-        {/* 日付と食事アイコン */}
-        <div className="grid grid-cols-7 gap-2">
-          {weekDates.map((date) => {
-            const dayMeals = getMealPlansForDate(date);
-            const mealCount = dayMeals.length;
-            const isSelected = date.toDateString() === selectedDate.toDateString();
-            
-            // 曜日を取得
-            const dayOfWeek = ['日', '月', '火', '水', '木', '金', '土'][date.getDay()];
-            
-            return (
-              <button
-                key={date.toDateString()}
-                onClick={() => handleDateSelect(date)}
-                className={`p-2 text-center rounded border transition-colors ${
-                  isSelected 
-                    ? 'bg-indigo-100 border-indigo-300' 
-                    : 'border-gray-200 hover:bg-gray-50'
-                } ${isToday(date) ? 'ring-2 ring-blue-300' : ''}`}
-              >
-                <div className="text-xs text-gray-500 mb-1">{dayOfWeek}</div>
-                <div className={`font-medium ${isToday(date) ? 'text-blue-600' : 'text-gray-900'}`}>
-                  {date.getDate()}
-                </div>
-                <div className="flex justify-center mt-1">
-                  {mealCount > 0 ? (
-                    <div className="w-2 h-2 bg-gray-400 rounded-full"></div>
-                  ) : (
-                    <div className="w-2 h-2"></div>
-                  )}
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      <MealPlanCalendar
+        weekDates={weekDates}
+        selectedDate={selectedDate}
+        onDateSelect={setSelectedDate}
+        getMealPlansForDate={getMealPlansForDate}
+      />
 
       {/* 選択日の詳細 */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
-        <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-          <span className="mr-2">📅</span>
-          {selectedDate.getMonth() + 1}月{selectedDate.getDate()}日
-          {isToday(selectedDate) && ' (今日)'}
-        </h3>
+      <MealPlanDayDetail
+        selectedDate={selectedDate}
+        getMealPlan={getMealPlan}
+        onAddMeal={handleAddMeal}
+        onEditMeal={handleEditMeal}
+        onCookedClick={handleCookedClick}
+        onStatusClick={handleStatusClick}
+      />
 
-        <div className="space-y-3">
-          {/* 朝食 */}
-          <MealPlanDetail
-            mealType="朝"
-            mealPlan={getMealPlan(selectedDate, '朝')}
-            onAddMeal={() => handleAddMeal(selectedDate, '朝')}
-            onEditMeal={() => {
-              const plan = getMealPlan(selectedDate, '朝');
-              if (plan) handleEditMeal(plan);
-            }}
-            onCookedClick={() => {
-              const plan = getMealPlan(selectedDate, '朝');
-              if (plan) handleCookedClick(plan);
-            }}
-            onStatusClick={() => {
-              const plan = getMealPlan(selectedDate, '朝');
-              if (plan) handleStatusClick(plan);
-            }}
-          />
-
-          {/* 昼食 */}
-          <MealPlanDetail
-            mealType="昼"
-            mealPlan={getMealPlan(selectedDate, '昼')}
-            onAddMeal={() => handleAddMeal(selectedDate, '昼')}
-            onEditMeal={() => {
-              const plan = getMealPlan(selectedDate, '昼');
-              if (plan) handleEditMeal(plan);
-            }}
-            onCookedClick={() => {
-              const plan = getMealPlan(selectedDate, '昼');
-              if (plan) handleCookedClick(plan);
-            }}
-            onStatusClick={() => {
-              const plan = getMealPlan(selectedDate, '昼');
-              if (plan) handleStatusClick(plan);
-            }}
-          />
-
-          {/* 夕食 */}
-          <MealPlanDetail
-            mealType="夜"
-            mealPlan={getMealPlan(selectedDate, '夜')}
-            onAddMeal={() => handleAddMeal(selectedDate, '夜')}
-            onEditMeal={() => {
-              const plan = getMealPlan(selectedDate, '夜');
-              if (plan) handleEditMeal(plan);
-            }}
-            onCookedClick={() => {
-              const plan = getMealPlan(selectedDate, '夜');
-              if (plan) handleCookedClick(plan);
-            }}
-            onStatusClick={() => {
-              const plan = getMealPlan(selectedDate, '夜');
-              if (plan) handleStatusClick(plan);
-            }}
-          />
-        </div>
-      </div>
-
-      {/* 週間サマリー */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
-        <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-          <span className="mr-2">📊</span>
-          今週の予定 ({weekRange})
-        </h3>
-        
-        <div className="flex justify-between items-center text-sm">
-          <div className="flex items-center space-x-4">
-            <span className="flex items-center">
-              <span className="mr-1">🏠</span>
-              自炊: {weeklySummary.cooking}回
-            </span>
-            <span className="flex items-center">
-              <span className="mr-1">🍽️</span>
-              外食: {weeklySummary.eating_out}回
-            </span>
-          </div>
-          <div className="flex items-center">
-            <span className="mr-1">💰</span>
-            予算: ¥{weeklySummary.budget.toLocaleString()}
-          </div>
-        </div>
-      </div>
-
-      {/* 献立の提案ボタン */}
-      <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
-        <h3 className="font-medium text-gray-900 mb-3 flex items-center">
-          <span className="mr-2">💡</span>
-          献立の提案
-        </h3>
-        <div className="space-y-3">
-          <p className="text-sm text-gray-600">
-            在庫の食材や栄養バランスを考慮した献立を提案します
-          </p>
-          <div className="flex gap-2">
-            <button 
-              onClick={handleTodayMealSuggestion}
-              className="flex-1 bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700 transition-colors"
-            >
-              💡 今日の献立を提案
-            </button>
-            <button 
-              onClick={handleWeeklyMealSuggestion}
-              className="flex-1 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-colors"
-            >
-              📅 週間献立を提案
-            </button>
-          </div>
-        </div>
-      </div>
+      {/* 献立提案と週間サマリー */}
+      <MealPlanSuggestion
+        onTodayMealSuggestion={handleTodayMealSuggestion}
+        onWeeklyMealSuggestion={handleWeeklyMealSuggestion}
+        weeklySummary={weeklySummary}
+        weekRange={weekRange}
+      />
 
       {/* 献立編集ダイアログ */}
       <MealPlanEditDialog
@@ -510,56 +294,13 @@ export const MealPlans: React.FC = () => {
       />
 
       {/* 完食・作り置き選択ダイアログ */}
-      {isConsumedDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold flex items-center">
-                <span className="mr-2">🍽️</span>
-                作った！
-              </h2>
-              <button
-                onClick={handleCloseConsumedDialog}
-                className="text-gray-400 hover:text-gray-600 text-xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-3">
-                「{processingMeal?.memo}」を作りました！<br/>
-                どうしますか？
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={handleCompleted}
-                className="w-full px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center justify-center"
-              >
-                <span className="mr-2">✅</span>
-                完食しました
-              </button>
-              
-              <button
-                onClick={handleStoreMade}
-                className="w-full px-4 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center justify-center"
-              >
-                <span className="mr-2">🥡</span>
-                作り置きにします
-              </button>
-              
-              <button
-                onClick={handleCloseConsumedDialog}
-                className="w-full px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                キャンセル
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CookedDialog
+        isOpen={isConsumedDialogOpen}
+        processingMeal={processingMeal}
+        onCompleted={handleCompleted}
+        onStoreMade={handleStoreMade}
+        onClose={handleCloseConsumedDialog}
+      />
     </div>
   );
 };
