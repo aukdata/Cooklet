@@ -15,6 +15,9 @@
 - 手動入力モードとレシピ選択モード
 - 動的な食材リスト編集
 - フォームバリデーション
+- **食材自動設定**: レシピ選択時にSavedRecipe.ingredientsから食材データを自動読み込み
+- **数量比例調整**: 人数変更時に食材の数量を自動的に比例計算で調整
+- **数量解析**: parseQuantity/formatQuantity関数による数値・単位の正確な処理
 
 #### 使用例
 ```typescript
@@ -33,9 +36,12 @@
 - 新規追加選択時もコンボボックスは表示維持
 - レシピ絞り込み機能（検索テキストボックス付き）
 - 部分一致によるリアルタイムフィルタリング
-- レシピ選択時の食材自動設定
+- **レシピ選択時の食材自動設定**: レシピの実際の食材データを自動読み込み
+- **人数変更時の数量自動調整**: 人数変更時に食材の数量を比例計算で自動調整
+- **数量解析機能**: parseQuantity関数による数値・単位分離と比例計算
 - 手動入力時の食材リスト編集機能
 - 検索結果件数の表示
+- レシピの元人数に基づく正確な数量調整
 
 ### ManualMealDialog.tsx
 手動献立入力ダイアログコンポーネント - CLAUDE.md仕様書 5.6.3に準拠
@@ -240,12 +246,13 @@ const handleDelete = () => {
 - 日付選択（デフォルトは今日）
 - 食事タイプ選択（朝・昼・夜）
 - シンプルな2項目入力フォーム
+- レシピの材料データを献立にコピー
 
 #### Props
 - `isOpen`: ダイアログの表示状態
 - `recipe`: 追加するレシピ（SavedRecipe型）
 - `onClose`: ダイアログを閉じるコールバック
-- `onAdd`: 献立追加時のコールバック関数
+- `onAdd`: 献立追加時のコールバック関数（レシピ情報も含む）
 
 #### 使用例
 ```typescript
@@ -253,9 +260,13 @@ const handleDelete = () => {
   isOpen={isAddDialogOpen}
   recipe={selectedRecipe}
   onClose={() => setIsAddDialogOpen(false)}
-  onAdd={(date, mealType) => handleAddToMealPlan(date, mealType)}
+  onAdd={(date, mealType, recipe) => handleAddToMealPlan(date, mealType, recipe)}
 />
 ```
+
+#### 最新の実装特徴
+- **材料データコピー**: レシピのingredients配列を献立に自動コピー
+- **レシピ情報付加**: onAddコールバックにrecipe引数を追加
 
 ### MealPlanDialog.tsx
 献立ダイアログコンポーネント - CLAUDE.md仕様書準拠の献立編集機能
@@ -263,9 +274,16 @@ const handleDelete = () => {
 #### 機能
 - 日付・食事タイプ・レシピ・人数・メモの編集
 - レシピ選択（コンボボックス形式）
+- レシピ選択時の食材自動設定機能
+- 食材編集機能（IngredientsEditorコンポーネント使用）
 - 新規作成・編集両対応
 - 削除機能付き（編集時）
 - フォームバリデーション
+
+#### 最新の実装特徴
+- **食材自動設定**: レシピ選択時にingredients配列を自動コピー
+- **材料編集**: IngredientsEditorによる食材の追加・編集・削除
+- **手動入力対応**: 手動入力時は材料をクリアして新規編集可能
 
 #### Props
 - `isOpen`: ダイアログの表示状態
@@ -330,6 +348,12 @@ const handleDelete = () => {
 - **カード型ダイアログ**: 白背景・角丸・シャドウ
 - **レスポンシブ対応**: モバイルファーストデザイン
 - **絵文字アイコン**: Material Iconsではなく絵文字使用
+
+### z-index階層管理
+- **BaseDialog・各種ダイアログ**: `z-[100]`（基本レベル）
+- **ConfirmDialog**: `z-[110]`（確認ダイアログ）
+- **ToastContainer**: `z-[120]`（最上位）
+- **TabNavigation**: `z-[90]`（ダイアログより下）
 
 ### 操作性
 - **キーボード対応**: Enterキーでの送信、Escapeキーでの閉じる操作（今後実装）

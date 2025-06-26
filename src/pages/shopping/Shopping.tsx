@@ -163,7 +163,17 @@ export const Shopping: React.FC = () => {
   // 今週の買い物リストを自動作成
   const handleGenerateWeeklyList = async () => {
     try {
+      console.log('🔍 [Debug] 今週分自動生成開始');
+      console.log('🔍 [Debug] 献立データ:', _mealPlans);
+      console.log('🔍 [Debug] 在庫データ:', _stockItems);
+      console.log('🔍 [Debug] 既存買い物リスト:', getUncompletedItems());
+      
       const result = await generateShoppingList(7);
+      
+      console.log('🔍 [Debug] 生成結果:', result);
+      console.log('🔍 [Debug] result.itemsAdded:', result.itemsAdded);
+      console.log('🔍 [Debug] result.totalRequired:', result.totalRequired);
+      console.log('🔍 [Debug] result.itemsSkipped:', result.itemsSkipped);
       
       if (result.itemsAdded > 0) {
         showSuccess(`買い物リストを作成しました！`);
@@ -171,7 +181,7 @@ export const Shopping: React.FC = () => {
         showInfo('追加する必要のある食材はありませんでした');
       }
     } catch (err) {
-      console.error('買い物リスト作成に失敗しました:', err);
+      console.error('❌ [Debug] 買い物リスト作成エラー:', err);
       showError('作成に失敗しました');
     }
   };
@@ -179,7 +189,17 @@ export const Shopping: React.FC = () => {
   // 次の3日分の買い物リストを自動作成
   const handleGenerateNext3Days = async () => {
     try {
+      console.log('🔍 [Debug] 3日分自動生成開始');
+      console.log('🔍 [Debug] 献立データ:', _mealPlans);
+      console.log('🔍 [Debug] 在庫データ:', _stockItems);
+      console.log('🔍 [Debug] 既存買い物リスト:', getUncompletedItems());
+      
       const result = await generateShoppingList(3);
+      
+      console.log('🔍 [Debug] 生成結果:', result);
+      console.log('🔍 [Debug] result.itemsAdded:', result.itemsAdded);
+      console.log('🔍 [Debug] result.totalRequired:', result.totalRequired);
+      console.log('🔍 [Debug] result.itemsSkipped:', result.itemsSkipped);
       
       if (result.itemsAdded > 0) {
         showSuccess(`買い物リストを作成しました！`);
@@ -187,7 +207,7 @@ export const Shopping: React.FC = () => {
         showInfo('追加する必要のある食材はありませんでした');
       }
     } catch (err) {
-      console.error('買い物リスト作成に失敗しました:', err);
+      console.error('❌ [Debug] 買い物リスト作成エラー:', err);
       showError('作成に失敗しました');
     }
   };

@@ -69,9 +69,12 @@ export const MealPlans: React.FC = () => {
   const handleSaveMeal = async (newMealPlan: MealPlan) => {
     try {
       await saveMealPlan(newMealPlan);
+      // 保存成功時にダイアログを閉じる
+      handleCloseDialog();
+      showSuccess('献立を保存しました');
     } catch (err) {
       console.error('献立の保存に失敗しました:', err);
-      // TODO: エラートースト表示
+      showError('献立の保存に失敗しました');
     }
   };
 
@@ -87,10 +90,13 @@ export const MealPlans: React.FC = () => {
       
       if (mealPlan?.id) {
         await deleteMealPlan(mealPlan.id);
+        // 削除成功時にダイアログを閉じる
+        handleCloseDialog();
+        showSuccess('献立を削除しました');
       }
     } catch (err) {
       console.error('献立の削除に失敗しました:', err);
-      // TODO: エラートースト表示
+      showError('献立の削除に失敗しました');
     }
   };
 

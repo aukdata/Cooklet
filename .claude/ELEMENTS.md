@@ -91,7 +91,7 @@
 ## ダイアログコンポーネント（components/dialogs/）
 
 ### 主要ダイアログ
-- `MealPlanEditDialog` - 献立編集ダイアログ（日付・食事タイプ・レシピ・人数・メモの編集）
+- `MealPlanEditDialog` - 献立編集ダイアログ（日付・食事タイプ・レシピ・人数・メモの編集、レシピ選択時の食材自動設定、人数変更時の数量自動調整機能付き）
 - `MealPlanDialog` - 献立ダイアログ（CLAUDE.md仕様書準拠の献立編集機能）
 - `ManualMealDialog` - 手動献立入力ダイアログ（料理名・レシピURL・人数・メモの入力）
 - `AddToMealPlanDialog` - レシピから献立追加ダイアログ（GitHub issue #31対応、日付・食事タイプ選択）
@@ -276,5 +276,45 @@
 - 日本語エラーメッセージの統一
 - 専用エラークラスの使用（RecipeExtractionError, ReceiptExtractionError, OCRError, WebFetchError）
 - loading状態の適切な管理
+
+## ダイアログ開発ベストプラクティス（2025-06-26確立）
+
+### 状態管理パターン
+```typescript
+// ✅ 必須実装: 保存・削除時のダイアログ閉じ処理
+const handleSave = async (data: FormData) => {
+  try {
+    await saveData(data);
+    setIsDialogOpen(false); // 🔑 重要: 成功時に必ずダイアログを閉じる
+    setEditingItem(null);
+    showSuccess('保存しました');
+  } catch (err) {
+    showError('保存に失敗しました');
+    // エラー時はダイアログを開いたまま
+  }
+};
+```
+
+### ダイアログ遷移パターン
+```typescript
+// ✅ 重複防止: 前のダイアログを閉じてから新しいダイアログを開く
+const handleEdit = (item: Item) => {
+  setIsDetailDialogOpen(false); // 前のダイアログを閉じる
+  setSelectedItem(undefined);
+  setEditingItem(item);
+  setIsEditDialogOpen(true);
+};
+```
+
+### z-index階層管理（厳守）
+- **TabNavigation**: `z-[90]` （最下位）
+- **BaseDialog系**: `z-[100]` （基本レベル）
+- **ConfirmDialog**: `z-[110]` （確認ダイアログ）
+- **ToastContainer**: `z-[120]` （最上位）
+
+### 重要な修正履歴
+- **2025-06-26**: MealPlans.tsxの保存ボタン2回押し問題を修正
+- **原因**: `handleSaveMeal`で保存後のダイアログ閉じ処理が抜けていた
+- **対策**: 全ての保存・削除処理で成功時の状態クリアを必須化
 
 この要素定義リストを参考に、統一性を保ちながら機能を開発してください。

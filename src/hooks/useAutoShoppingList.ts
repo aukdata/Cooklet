@@ -51,11 +51,16 @@ export const useAutoShoppingList = () => {
       let itemsSkipped = 0;
       const details: AutoGenerationResult['details'] = [];
 
+      console.log('🔍 [Debug] 生成されたアイテム:', result.generatedItems);
+      console.log('🔍 [Debug] 生成されたアイテム数:', result.generatedItems.length);
+
       // 各アイテムを買い物リストに追加
       for (const item of result.generatedItems) {
+        console.log('🔍 [Debug] アイテム追加試行:', item);
         try {
           await addShoppingItem(item);
           itemsAdded++;
+          console.log(`✅ [Debug] アイテム追加成功: ${item.name}`);
           details.push({
             name: item.name,
             quantity: item.quantity || '適量',
@@ -63,7 +68,7 @@ export const useAutoShoppingList = () => {
             action: 'added'
           });
         } catch (err) {
-          console.warn(`アイテムの追加に失敗: ${item.name}`, err);
+          console.warn(`❌ [Debug] アイテムの追加に失敗: ${item.name}`, err);
           itemsSkipped++;
           details.push({
             name: item.name,
@@ -73,6 +78,8 @@ export const useAutoShoppingList = () => {
           });
         }
       }
+      
+      console.log('🔍 [Debug] 最終結果 - 追加成功:', itemsAdded, '失敗:', itemsSkipped);
 
       const autoResult: AutoGenerationResult = {
         itemsAdded,

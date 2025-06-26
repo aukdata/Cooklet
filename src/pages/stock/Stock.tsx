@@ -30,7 +30,7 @@ export const Stock: React.FC = () => {
     deleteStockItem
   } = useStockItems();
 
-  const { showError } = useToast();
+  const { showError, showSuccess } = useToast();
 
   // 賞味期限が間近かどうかを判定（3日以内）
   const isExpiringSoon = (best_before?: string) => {
@@ -62,11 +62,6 @@ export const Stock: React.FC = () => {
     setShowStockDialog(true);
   };
 
-  // 在庫削除ハンドラー
-  const handleDeleteStock = (stock: StockItem) => {
-    setDeletingStock(stock);
-    setShowDeleteDialog(true);
-  };
 
   // 在庫保存ハンドラー
   const handleSaveStock = async (stockData: StockItem) => {
@@ -88,13 +83,28 @@ export const Stock: React.FC = () => {
 
   // 在庫削除確認ハンドラー
   const handleConfirmDelete = async () => {
-    if (!deletingStock?.id) return;
+    console.log('🗑️ [Stock] handleConfirmDelete called for:', deletingStock?.name);
+    
+    if (!deletingStock?.id) {
+      console.warn('⚠️ [Stock] No deletingStock.id, returning early');
+      return;
+    }
+    
+    // 期限切れ一括削除の場合
+    if (deletingStock.id === 'bulk-delete') {
+      await handleConfirmExpiredDelete();
+      return;
+    }
     
     try {
+      console.log('🚀 [Stock] Calling deleteStockItem...');
       await deleteStockItem(deletingStock.id);
+      console.log('✅ [Stock] deleteStockItem completed, clearing dialog state...');
       setShowDeleteDialog(false);
       setDeletingStock(undefined);
+      console.log('✅ [Stock] handleConfirmDelete completed successfully');
     } catch (err) {
+      console.error('❌ [Stock] handleConfirmDelete failed:', err);
       console.error('在庫の削除に失敗しました:', err);
       showError('在庫の削除に失敗しました');
     }
@@ -106,6 +116,49 @@ export const Stock: React.FC = () => {
     setDeletingStock(undefined);
   };
 
+  // 期限切れ食材の一括削除ハンドラー
+  const handleDeleteExpiredItems = () => {
+    const expiredItems = stockItems.filter(item => isExpired(item.best_before));
+    if (expiredItems.length === 0) {
+      showError('期限切れの食材がありません');
+      return;
+    }
+    
+    // 複数削除用のダイアログ表示
+    setDeletingStock({
+      id: 'bulk-delete',
+      name: `期限切れ食材 (${expiredItems.length}件)`,
+      quantity: '',
+      user_id: '',
+      storage_location: '',
+      is_homemade: false,
+      created_at: '',
+      updated_at: ''
+    });
+    setShowDeleteDialog(true);
+  };
+
+  // 期限切れ食材の一括削除確認ハンドラー
+  const handleConfirmExpiredDelete = async () => {
+    try {
+      const expiredItems = stockItems.filter(item => isExpired(item.best_before));
+      
+      // 期限切れ食材を順次削除
+      for (const item of expiredItems) {
+        await deleteStockItem(item.id);
+      }
+      
+      setShowDeleteDialog(false);
+      setDeletingStock(undefined);
+      
+      // 成功メッセージ
+      showSuccess(`期限切れ食材 ${expiredItems.length}件を削除しました`);
+    } catch (err) {
+      console.error('期限切れ食材の削除に失敗しました:', err);
+      showError('期限切れ食材の削除に失敗しました');
+    }
+  };
+
   // 検索フィルタリング
   const filteredStockItems = stockItems.filter(item => {
     const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
@@ -115,6 +168,9 @@ export const Stock: React.FC = () => {
 
   // 全保存場所を取得
   const allLocations = ['全て', ...Array.from(new Set(stockItems.map(item => item.storage_location).filter(Boolean)))];
+
+  // 期限切れ食材の件数を計算
+  const expiredItemsCount = stockItems.filter(item => isExpired(item.best_before)).length;
 
   // ローディング状態の表示
   if (loading) {
@@ -145,13 +201,26 @@ export const Stock: React.FC = () => {
           </h2>
           <div className="text-sm text-gray-600 mt-1">
             在庫: {stockItems.length}件
+            {expiredItemsCount > 0 && (
+              <span className="ml-2 text-red-600">期限切れ: {expiredItemsCount}件</span>
+            )}
             {loading && <span className="ml-2">読み込み中...</span>}
             {error && <span className="ml-2 text-red-500">エラー: {error}</span>}
           </div>
         </div>
-        <AddButton onClick={handleAddStock}>
-          + 在庫追加
-        </AddButton>
+        <div className="flex space-x-2">
+          {expiredItemsCount > 0 && (
+            <button
+              onClick={handleDeleteExpiredItems}
+              className="px-3 py-2 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors"
+            >
+              🗑️ 期限切れ削除 ({expiredItemsCount})
+            </button>
+          )}
+          <AddButton onClick={handleAddStock}>
+            + 在庫追加
+          </AddButton>
+        </div>
       </div>
 
       {/* 検索・フィルター */}
@@ -259,9 +328,15 @@ export const Stock: React.FC = () => {
         }}
         onSave={handleSaveStock}
         onDelete={editingStock?.id ? () => {
+          console.log('🗑️ [Stock] StockDialog onDelete triggered for:', editingStock?.name);
+          
           setShowStockDialog(false);
           if (editingStock) {
-            handleDeleteStock(editingStock);
+            console.log('🚀 [Stock] Setting deletingStock and showing confirm dialog...');
+            setDeletingStock(editingStock);
+            setShowDeleteDialog(true);
+          } else {
+            console.warn('⚠️ [Stock] No editingStock in onDelete');
           }
         } : undefined}
         initialData={editingStock}

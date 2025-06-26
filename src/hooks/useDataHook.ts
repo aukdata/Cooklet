@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTabRefresh } from './useTabRefresh';
@@ -169,10 +169,16 @@ export const useDataHook = <T extends Record<string, unknown> & { id?: string }>
 
   // データ削除
   const deleteData = async (id: string, options: CrudOptions = {}) => {
-    if (!user) throw new Error('ユーザーが認証されていません');
+    console.log('🗑️ [useDataHook] deleteData called for table:', config.tableName, 'id:', id);
+
+    if (!user) {
+      console.error('❌ [useDataHook] ユーザーが認証されていません');
+      throw new Error('ユーザーが認証されていません');
+    }
 
     try {
       setError(null);
+      console.log('🚀 [useDataHook] Executing Supabase delete operation...');
 
       const { error: deleteError } = await supabase
         .from(config.tableName)
@@ -180,15 +186,25 @@ export const useDataHook = <T extends Record<string, unknown> & { id?: string }>
         .eq('id', id)
         .eq('user_id', user.id);
 
+      console.log('📋 [useDataHook] Supabase delete response:', { deleteError });
+
       if (deleteError) {
+        console.error('❌ [useDataHook] Supabase delete error:', deleteError);
         throw deleteError;
       }
 
-      setData(prevData => 
-        prevData.filter(item => item.id !== id)
-      );
+      console.log('✅ [useDataHook] Delete successful, updating local state...');
+      
+      setData(prevData => {
+        const filtered = prevData.filter(item => item.id !== id);
+        console.log('📋 [useDataHook] Filtered out item with id:', id, 'remaining items:', filtered.length);
+        return filtered;
+      });
+      
       markAsUpdated();
+      console.log('✅ [useDataHook] deleteData completed successfully');
     } catch (err) {
+      console.error('❌ [useDataHook] deleteData failed:', err);
       console.error(`${errorMessages.delete}:`, err);
       const errorMessage = err instanceof Error ? err.message : errorMessages.delete;
       if (!options.skipErrorAlert) {

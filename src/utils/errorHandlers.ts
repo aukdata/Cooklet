@@ -133,7 +133,7 @@ export const createAsyncHandler = (
           showToast.showError(errorInfo.message);
         }
       },
-      (data) => {
+      (_data) => {
         if (successMessage) {
           showToast.showSuccess(successMessage);
         }

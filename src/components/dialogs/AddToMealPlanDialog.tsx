@@ -6,7 +6,7 @@ interface AddToMealPlanDialogProps {
   isOpen: boolean; // ダイアログの表示状態
   recipe: SavedRecipe | null; // 追加するレシピ
   onClose: () => void; // ダイアログを閉じる関数
-  onAdd: (date: string, mealType: '朝' | '昼' | '夜') => void; // 献立に追加する関数
+  onAdd: (date: string, mealType: '朝' | '昼' | '夜', recipe: SavedRecipe) => void; // 献立に追加する関数（レシピ情報も含む）
 }
 
 // 献立追加ダイアログコンポーネント - issue #31対応
@@ -26,7 +26,9 @@ export const AddToMealPlanDialog: React.FC<AddToMealPlanDialogProps> = ({
   // フォーム送信ハンドラ
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onAdd(selectedDate, selectedMealType);
+    if (recipe) {
+      onAdd(selectedDate, selectedMealType, recipe);
+    }
     onClose();
   };
 

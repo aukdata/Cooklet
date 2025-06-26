@@ -36,7 +36,16 @@ export const useStockItems = () => {
 
   // 在庫を削除
   const deleteStockItem = async (id: string) => {
-    return await deleteData(id);
+    console.log('🗑️ [useStockItems] deleteStockItem called with id:', id);
+    
+    try {
+      const result = await deleteData(id);
+      console.log('✅ [useStockItems] deleteStockItem success:', result);
+      return result;
+    } catch (error) {
+      console.error('❌ [useStockItems] deleteStockItem failed:', error);
+      throw error;
+    }
   };
 
   // 在庫を追加または更新（既存在庫があれば更新、なければ追加）

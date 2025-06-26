@@ -1,7 +1,7 @@
 // 共通ダイアログコンポーネントのエクスポート - CLAUDE.md仕様書に準拠
 
 // 献立編集ダイアログ（5.6.2）
-export { MealPlanDialog } from './MealPlanDialog';
+// MealPlanDialog は削除されました（ダイアログ重複問題解決のため）
 export { MealPlanEditDialog } from './MealPlanEditDialog';
 
 // 手動献立入力ダイアログ（5.6.3）

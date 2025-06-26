@@ -575,6 +575,108 @@ export const useStockItems = () => {
 </BaseDialog>
 ```
 
+### ダイアログ状態管理パターン
+```typescript
+// ✅ 正しい保存・削除処理パターン（必須実装）
+const handleSave = async (data: FormData) => {
+  try {
+    if (editingItem?.id) {
+      await updateItem(editingItem.id, data);
+    } else {
+      await addItem(data);
+    }
+    
+    // 🔑 重要: 保存成功時に必ずダイアログを閉じる
+    setIsDialogOpen(false);
+    setEditingItem(null);
+    
+    // ユーザーフィードバック
+    showSuccess(editingItem ? '更新しました' : '追加しました');
+  } catch (err) {
+    console.error('保存に失敗:', err);
+    showError('保存に失敗しました');
+    // エラー時はダイアログを開いたまま（ユーザーが修正できるように）
+  }
+};
+
+const handleDelete = async () => {
+  if (!editingItem?.id) return;
+  
+  try {
+    await deleteItem(editingItem.id);
+    
+    // 🔑 重要: 削除成功時に必ずダイアログを閉じる
+    setIsDialogOpen(false);
+    setEditingItem(null);
+    
+    showSuccess('削除しました');
+  } catch (err) {
+    console.error('削除に失敗:', err);
+    showError('削除に失敗しました');
+  }
+};
+
+// ❌ 禁止パターン: 保存後にダイアログを閉じない
+const badHandleSave = async (data: FormData) => {
+  try {
+    await saveItem(data);
+    // ダイアログを閉じる処理が抜けている（2回押し問題の原因）
+  } catch (err) {
+    // エラー処理のみ
+  }
+};
+```
+
+### ダイアログ遷移時の重複防止パターン
+```typescript
+// ✅ 詳細ダイアログから編集ダイアログへの遷移
+const handleEdit = (item: Item) => {
+  // 🔑 重要: 前のダイアログを必ず閉じる
+  setIsDetailDialogOpen(false);
+  setSelectedItem(undefined);
+  
+  // 編集ダイアログを開く
+  setEditingItem(item);
+  setIsEditDialogOpen(true);
+};
+
+// ✅ 詳細ダイアログから削除確認ダイアログへの遷移
+const handleDelete = (item: Item) => {
+  // 🔑 重要: 前のダイアログを必ず閉じる
+  setIsDetailDialogOpen(false);
+  setSelectedItem(undefined);
+  
+  // 削除確認ダイアログを開く
+  setDeletingItem(item);
+  setIsConfirmDialogOpen(true);
+};
+
+// ❌ 禁止パターン: 前のダイアログを閉じない
+const badHandleEdit = (item: Item) => {
+  // 詳細ダイアログが開いたまま編集ダイアログも開く（重複表示）
+  setEditingItem(item);
+  setIsEditDialogOpen(true);
+};
+```
+
+### z-index階層管理パターン
+```typescript
+// ✅ 統一されたz-index階層（2025-06-26確立）
+// TabNavigation: z-[90]   （最下位）
+// BaseDialog系:   z-[100]  （基本レベル）
+// ConfirmDialog: z-[110]  （確認ダイアログ）
+// ToastContainer: z-[120] （最上位）
+
+// 新しいダイアログ作成時は基本レベルを使用
+<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[100]">
+
+// 確認ダイアログのみ上位レベル
+<div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[110]">
+
+// ❌ 禁止: カスタムz-indexの勝手な設定
+<div className="fixed inset-0 z-[999]"> // 独自の値は使わない
+```
+
 ## 9. 品質保証
 
 ### Lint設定（oxlint）
@@ -606,6 +708,7 @@ pnpm run lint && pnpm run build:netlify
 - **型ガード関数推奨**: 複雑な型チェックは再利用可能な関数として実装
 - **必須型注釈**: 変数定義時の型記載を必須化
 - **自動品質チェック**: Git hooksによる品質管理の自動化
+- **未使用変数は削除**: 変数名に`_`をつけて警告を抑制するのは推奨されない
 
 ### TypeScript型安全性チェックリスト
 - ✅ `any`型を使用していない

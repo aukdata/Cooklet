@@ -78,6 +78,10 @@ export const Recipes: React.FC = () => {
 
   // レシピ編集ボタンのハンドラー
   const handleEditRecipe = (recipe: SavedRecipe) => {
+    // 詳細ダイアログが開いている場合は閉じる
+    setIsDetailDialogOpen(false);
+    setSelectedRecipe(undefined);
+    
     setEditingRecipe(recipe);
     setIsEditDialogOpen(true);
   };
@@ -85,6 +89,10 @@ export const Recipes: React.FC = () => {
 
   // レシピ削除ボタンのハンドラー
   const handleDeleteRecipe = (recipe: SavedRecipe) => {
+    // 詳細ダイアログが開いている場合は閉じる
+    setIsDetailDialogOpen(false);
+    setSelectedRecipe(undefined);
+    
     setDeletingRecipe(recipe);
     setIsConfirmDialogOpen(true);
   };
@@ -122,8 +130,8 @@ export const Recipes: React.FC = () => {
   };
 
   // 献立追加処理
-  const handleAddMealPlan = async (date: string, mealType: '朝' | '昼' | '夜') => {
-    if (!addingToMealPlanRecipe) return;
+  const handleAddMealPlan = async (date: string, mealType: '朝' | '昼' | '夜', recipe: SavedRecipe) => {
+    if (!recipe) return;
 
     try {
       // 同じ日時に既に献立があるかチェック
@@ -132,7 +140,7 @@ export const Recipes: React.FC = () => {
       if (existingMealPlan) {
         // 置き換え確認ダイアログを表示
         setReplacementData({
-          recipe: addingToMealPlanRecipe,
+          recipe: recipe,
           date,
           mealType,
           existingMealPlan
@@ -141,13 +149,13 @@ export const Recipes: React.FC = () => {
         return;
       }
 
-      // 献立を追加
+      // 献立を追加（レシピの材料データを含む）
       await addMealPlan({
         date,
         meal_type: mealType,
-        recipe_url: addingToMealPlanRecipe.url,
-        ingredients: [], // TODO: レシピから食材を取得する機能実装時に対応
-        memo: addingToMealPlanRecipe.title
+        recipe_url: recipe.url,
+        ingredients: recipe.ingredients || [], // レシピの材料データをコピー
+        memo: recipe.title
       });
 
       showSuccess('献立に追加しました');
@@ -162,12 +170,12 @@ export const Recipes: React.FC = () => {
     if (!replacementData) return;
 
     try {
-      // 献立を追加（既存を置き換え）
+      // 献立を追加（既存を置き換え、レシピの材料データを含む）
       await addMealPlan({
         date: replacementData.date,
         meal_type: replacementData.mealType,
         recipe_url: replacementData.recipe.url,
-        ingredients: [], // TODO: レシピから食材を取得する機能実装時に対応
+        ingredients: replacementData.recipe.ingredients || [], // レシピの材料データをコピー
         memo: replacementData.recipe.title
       });
 

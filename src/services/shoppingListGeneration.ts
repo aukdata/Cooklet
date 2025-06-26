@@ -77,29 +77,76 @@ const isStockSufficient = (
 const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, string> => {
   const aggregatedIngredients = new Map<string, string>();
   
-  mealPlans.forEach(plan => {
-    plan.ingredients.forEach((ingredient: { name: string; quantity: string }) => {
-      const normalizedName = normalizeIngredientName(ingredient.name);
+  console.log('🔍 [Debug] aggregateIngredientsFromMealPlans 開始');
+  
+  mealPlans.forEach((plan, planIndex) => {
+    console.log(`🔍 [Debug] 献立 ${planIndex + 1}:`, plan);
+    console.log(`🔍 [Debug] 献立 ${planIndex + 1} ingredients:`, plan.ingredients);
+    console.log(`🔍 [Debug] 献立 ${planIndex + 1} ingredients type:`, typeof plan.ingredients);
+    console.log(`🔍 [Debug] 献立 ${planIndex + 1} ingredients isArray:`, Array.isArray(plan.ingredients));
+    
+    // ingredientsが配列でない場合や空の場合の対処
+    if (!plan.ingredients) {
+      console.warn(`⚠️ [Debug] 献立 ${planIndex + 1} の ingredients が null/undefined:`, plan.ingredients);
+      return;
+    }
+
+    // ingredientsが文字列の場合（JSONB形式）、パースを試行
+    let ingredients = plan.ingredients;
+    if (typeof plan.ingredients === 'string') {
+      try {
+        ingredients = JSON.parse(plan.ingredients);
+        console.log(`🔍 [Debug] 献立 ${planIndex + 1} JSONB文字列をパース:`, ingredients);
+      } catch (parseError) {
+        console.error(`❌ [Debug] 献立 ${planIndex + 1} JSONB パースエラー:`, parseError, plan.ingredients);
+        return;
+      }
+    }
+
+    if (!Array.isArray(ingredients)) {
+      console.warn(`⚠️ [Debug] 献立 ${planIndex + 1} の ingredients が配列でない:`, ingredients);
+      return;
+    }
+
+    if (ingredients.length === 0) {
+      console.warn(`⚠️ [Debug] 献立 ${planIndex + 1} の ingredients が空配列:`, ingredients);
+      return;
+    }
+    
+    ingredients.forEach((ingredient: { name: string; quantity: string } | unknown, ingredientIndex) => {
+      console.log(`🔍 [Debug] 献立 ${planIndex + 1} 食材 ${ingredientIndex + 1}:`, ingredient);
+      
+      // 型ガードで安全にアクセス
+      if (!ingredient || typeof ingredient !== 'object' || !('name' in ingredient) || !('quantity' in ingredient)) {
+        console.warn(`⚠️ [Debug] 献立 ${planIndex + 1} 食材 ${ingredientIndex + 1} が無効:`, ingredient);
+        return;
+      }
+
+      const typedIngredient = ingredient as { name: string; quantity: string };
+      
+      const normalizedName = normalizeIngredientName(typedIngredient.name);
+      console.log(`🔍 [Debug] 正規化された食材名: "${typedIngredient.name}" → "${normalizedName}"`);
       
       if (aggregatedIngredients.has(normalizedName)) {
         // 既存の食材がある場合は数量を合計（簡易実装）
         const existingQuantity = aggregatedIngredients.get(normalizedName)!;
         const existing = normalizeQuantity(existingQuantity);
-        const current = normalizeQuantity(ingredient.quantity);
+        const current = normalizeQuantity(typedIngredient.quantity);
         
         if (existing.unit === current.unit) {
           const totalValue = existing.value + current.value;
           aggregatedIngredients.set(normalizedName, `${totalValue}${existing.unit}`);
         } else {
           // 単位が異なる場合は新しい量を採用
-          aggregatedIngredients.set(normalizedName, ingredient.quantity);
+          aggregatedIngredients.set(normalizedName, typedIngredient.quantity);
         }
       } else {
-        aggregatedIngredients.set(normalizedName, ingredient.quantity);
+        aggregatedIngredients.set(normalizedName, typedIngredient.quantity);
       }
     });
   });
   
+  console.log('🔍 [Debug] aggregateIngredientsFromMealPlans 終了 - 集計結果:', aggregatedIngredients);
   return aggregatedIngredients;
 };
 
@@ -110,7 +157,14 @@ export const generateShoppingListFromMealPlans = async (
   existingShoppingItems: ShoppingListItem[] = []
 ): Promise<ShoppingListGenerationResult> => {
   try {
+    console.log('🔍 [Debug] generateShoppingListFromMealPlans 開始');
+    console.log('🔍 [Debug] 入力 - 献立数:', mealPlans.length);
+    console.log('🔍 [Debug] 入力 - 在庫数:', stockItems.length);
+    console.log('🔍 [Debug] 入力 - 既存買い物リスト数:', existingShoppingItems.length);
+    console.log('🔍 [Debug] 献立詳細:', mealPlans);
+    
     if (mealPlans.length === 0) {
+      console.log('🔍 [Debug] 献立が0件のため終了');
       return {
         success: false,
         generatedItems: [],
@@ -121,6 +175,9 @@ export const generateShoppingListFromMealPlans = async (
     
     // 献立から必要な食材を集計
     const aggregatedIngredients = aggregateIngredientsFromMealPlans(mealPlans);
+    
+    console.log('🔍 [Debug] 集計された食材:', aggregatedIngredients);
+    console.log('🔍 [Debug] 集計された食材数:', aggregatedIngredients.size);
     
     // 既存の買い物リストアイテムを正規化してマップ化
     const existingItemsMap = new Map<string, ShoppingListItem>();
@@ -134,18 +191,37 @@ export const generateShoppingListFromMealPlans = async (
     let inStock = 0;
     let needToBuy = 0;
     
+    console.log('🔍 [Debug] 各食材について在庫チェック開始');
+    console.log('🔍 [Debug] aggregatedIngredients entries:', Array.from(aggregatedIngredients.entries()));
+
     // 各食材について在庫チェック
     for (const [normalizedName, quantity] of aggregatedIngredients) {
       totalIngredients++;
+      console.log(`🔍 [Debug] 処理中の食材: "${normalizedName}" (${quantity})`);
       
       // 元の食材名を復元（最初に見つかった名前を使用）
       let originalName = normalizedName;
       for (const plan of mealPlans) {
-        const found = plan.ingredients.find((ing: { name: string; quantity: string }) => 
-          normalizeIngredientName(ing.name) === normalizedName
-        );
-        if (found) {
-          originalName = found.name;
+        // ingredientsが配列でない場合の対処
+        let ingredients = plan.ingredients;
+        if (typeof plan.ingredients === 'string') {
+          try {
+            ingredients = JSON.parse(plan.ingredients);
+          } catch {
+            continue;
+          }
+        }
+        
+        if (!Array.isArray(ingredients)) continue;
+        
+        const found = ingredients.find((ing: unknown) => {
+          if (!ing || typeof ing !== 'object' || !('name' in ing)) return false;
+          const typedIng = ing as { name: string };
+          return normalizeIngredientName(typedIng.name) === normalizedName;
+        });
+        if (found && typeof found === 'object' && 'name' in found) {
+          const typedFound = found as { name: string };
+          originalName = typedFound.name;
           break;
         }
       }

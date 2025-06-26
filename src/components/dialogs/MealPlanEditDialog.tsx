@@ -4,6 +4,7 @@ import { useRecipes } from '../../hooks/useRecipes';
 import { BaseDialog } from '../ui/BaseDialog';
 import { IngredientsEditor, type Ingredient } from '../ui/IngredientsEditor';
 import { ConfirmDialog } from './ConfirmDialog';
+import { parseQuantity, formatQuantity } from '../../constants/units';
 
 // レシピデータ型（食材情報付き）
 interface Recipe {
@@ -51,16 +52,47 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   // 削除確認ダイアログの状態管理
   const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
-  // DBからレシピデータを取得（食材情報は献立計画時に入力）
+  // 数量を比例調整するヘルパー関数
+  const adjustQuantityByServings = (originalQuantity: string, originalServings: number, newServings: number): string => {
+    if (!originalQuantity || originalServings <= 0 || newServings <= 0) {
+      return originalQuantity;
+    }
+
+    const { amount, unit } = parseQuantity(originalQuantity);
+    
+    // 数値以外（適量、お好み等）の場合はそのまま返す
+    if (!amount || isNaN(parseFloat(amount))) {
+      return originalQuantity;
+    }
+
+    // 数値を比例計算
+    const numericAmount = parseFloat(amount);
+    const adjustedAmount = (numericAmount * newServings) / originalServings;
+    
+    // 小数点第2位まで四捨五入
+    const roundedAmount = Math.round(adjustedAmount * 100) / 100;
+    
+    return formatQuantity(roundedAmount.toString(), unit);
+  };
+
+  // 食材配列の数量を一括調整する関数
+  const adjustIngredientsQuantity = (ingredients: Ingredient[], originalServings: number, newServings: number): Ingredient[] => {
+    return ingredients.map(ingredient => ({
+      ...ingredient,
+      quantity: adjustQuantityByServings(ingredient.quantity, originalServings, newServings)
+    }));
+  };
+
+  // DBからレシピデータを取得（実際の食材情報を含む）
   const recipeList: Recipe[] = useMemo(() => {
     if (recipesLoading || !recipes) return [];
     
-    // SavedRecipeをRecipe型に変換（食材は空配列）
+    // SavedRecipeをRecipe型に変換（実際の食材データを使用）
     return recipes.map(recipe => ({
       id: recipe.id,
       title: recipe.title,
       url: recipe.url,
-      ingredients: [] // 食材は献立計画時に入力
+      ingredients: recipe.ingredients || [] // 実際の食材データを使用
     }));
   }, [recipes, recipesLoading]);
 
@@ -126,10 +158,26 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       const recipe = recipeList.find(r => r.id === recipeId);
       if (recipe) {
         setSelectedRecipe(recipe);
-        // 食材は空なので、空の食材を1つ追加して入力を促す
-        setIngredients([{ name: '', quantity: '' }]);
         setManualRecipeName(recipe.title);
         setManualRecipeUrl(recipe.url);
+        
+        // レシピの食材データを設定（人数に合わせて調整）
+        if (recipe.ingredients && recipe.ingredients.length > 0) {
+          // レシピの元の人数を取得（SavedRecipeのservingsフィールドから）
+          const savedRecipe = recipes.find(r => r.id === recipeId);
+          const recipeServings = savedRecipe?.servings || 2;
+          
+          // 現在の人数に合わせて食材の数量を調整
+          const adjustedIngredients = adjustIngredientsQuantity(
+            recipe.ingredients,
+            recipeServings,
+            servings
+          );
+          setIngredients(adjustedIngredients);
+        } else {
+          // 食材データがない場合は空の入力欄を1つ提供
+          setIngredients([{ name: '', quantity: '' }]);
+        }
       }
     }
   };
@@ -155,6 +203,23 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
     setIngredients(newIngredients);
   };
 
+  // 人数変更ハンドラ（食材の数量も連動して調整）
+  const handleServingsChange = (newServings: number) => {
+    const previousServings = servings;
+    setServings(newServings);
+    
+    // レシピが選択されており、食材データがある場合は数量を調整
+    // originalServingsからの比例計算ではなく、前回の人数からの調整で実装
+    if (selectedRecipe && ingredients.length > 0 && newServings > 0 && previousServings > 0) {
+      const adjustedIngredients = adjustIngredientsQuantity(
+        ingredients,
+        previousServings,
+        newServings
+      );
+      setIngredients(adjustedIngredients);
+    }
+  };
+
   // 保存処理
   const handleSave = () => {
     const mealPlan: MealPlan = {
@@ -171,6 +236,8 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
     };
 
     onSave(mealPlan);
+    // 🔑 重要: 保存後に必ずダイアログを閉じる
+    onClose();
   };
 
   // 削除確認ハンドラ
@@ -322,7 +389,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
               <input
                 type="number"
                 value={servings}
-                onChange={(e) => setServings(parseInt(e.target.value) || 1)}
+                onChange={(e) => handleServingsChange(parseInt(e.target.value) || 1)}
                 min="1"
                 max="10"
                 className="w-16 border border-gray-300 rounded px-2 py-1 text-sm"

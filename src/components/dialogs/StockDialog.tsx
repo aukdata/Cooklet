@@ -3,7 +3,6 @@ import type { StockItem } from '../../types/index';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
 import { BaseDialog } from '../ui/BaseDialog';
-import { ConfirmDialog } from './ConfirmDialog';
 
 // フォーム用の在庫データ型（UI表示用のcamelCase）
 interface StockFormData {
@@ -48,8 +47,6 @@ export const StockDialog: React.FC<StockDialogProps> = ({
     isHomemade: false
   });
 
-  // 削除確認ダイアログの状態管理
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
 
   // 今日の日付を取得
   const today = new Date().toISOString().split('T')[0];
@@ -105,21 +102,15 @@ export const StockDialog: React.FC<StockDialogProps> = ({
     onSave(stockData);
   };
 
-  // 削除確認ハンドラ
+  // 削除ハンドラー - 直接onDeleteを呼び出し
   const handleDelete = () => {
-    setIsConfirmDialogOpen(true);
-  };
-
-  // 削除実行ハンドラ
-  const handleConfirmDelete = () => {
+    console.log('🗑️ [StockDialog] handleDelete called for:', initialData?.name);
+    
+    console.log('🚀 [StockDialog] Calling onDelete directly...');
     onDelete?.();
+    console.log('✅ [StockDialog] onDelete called, closing dialog...');
     onClose();
-    setIsConfirmDialogOpen(false);
-  };
-
-  // 削除キャンセルハンドラ
-  const handleCancelDelete = () => {
-    setIsConfirmDialogOpen(false);
+    console.log('✅ [StockDialog] handleDelete completed');
   };
 
   // 日付クイック設定ハンドラ
@@ -242,19 +233,6 @@ export const StockDialog: React.FC<StockDialogProps> = ({
 
         </div>
       </BaseDialog>
-
-      {/* 削除確認ダイアログ */}
-      <ConfirmDialog
-        isOpen={isConfirmDialogOpen}
-        title="確認"
-        message="削除しますか？"
-        itemName={formData.name}
-        onConfirm={handleConfirmDelete}
-        onCancel={handleCancelDelete}
-        confirmText="削除"
-        cancelText="キャンセル"
-        isDestructive={true}
-      />
     </>
   );
 };

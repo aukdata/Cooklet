@@ -2,7 +2,176 @@
 
 ## 2025-06-26
 
-### 【最新】PLAN.md準拠の献立自動生成機能完全実装
+### 【最新】献立編集ダイアログの保存後ダイアログ閉じ処理修正
+
+#### 問題の解決
+- **保存後ダイアログ継続表示問題**: MealPlanEditDialogで保存ボタンを押した後もダイアログが表示され続ける問題を解決
+
+#### 修正内容
+- `handleSave`関数に`onClose()`呼び出しを追加
+- DEVELOPMENT_LOG.mdで記録済みの「保存ボタン2回押し問題」と同じパターンの修正
+- 保存成功時に必ずダイアログを閉じる処理を確実に実行
+
+#### 修正コード
+```typescript
+// 修正前: 保存後にダイアログが閉じない
+const handleSave = () => {
+  const mealPlan: MealPlan = { /* ... */ };
+  onSave(mealPlan);
+  // ダイアログを閉じる処理が抜けていた
+};
+
+// 修正後: 保存後に適切にダイアログを閉じる
+const handleSave = () => {
+  const mealPlan: MealPlan = { /* ... */ };
+  onSave(mealPlan);
+  // 🔑 重要: 保存後に必ずダイアログを閉じる
+  onClose();
+};
+```
+
+#### 技術的教訓
+- **ダイアログ状態管理の重要性**: 保存・削除処理では必ず成功時にダイアログを閉じる処理を含める
+- **一貫した実装パターン**: 他のダイアログでも同様の処理が必要
+- **ユーザビリティ**: 保存後にダイアログが開いたままだと操作完了感がない
+
+#### 品質確保
+- **lint**: エラー・警告0件
+- **build**: 成功（746KBバンドル）
+- **修正範囲**: 最小限の変更（1行追加）
+
+### 【前回】献立編集ダイアログの食材自動設定と数量比例調整機能実装
+
+#### 問題の解決
+- **食材一覧未反映問題**: MealPlanEditDialogでレシピ選択時に材料一覧が反映されない問題を解決
+- **人数変更時の数量調整不足**: 人数変更時に食材の数量が自動調整されない問題を解決
+
+#### 実装内容
+1. **レシピ選択時の食材自動設定機能**
+   - SavedRecipe.ingredientsフィールドからの実際の食材データ読み込み
+   - レシピの元の人数（servings）に基づく数量の初期調整
+   - 既存の空配列の代わりに実際の食材データを表示
+
+2. **人数変更時の数量比例調整機能**
+   - `adjustQuantityByServings`関数: 個別の数量を比例計算で調整
+   - `adjustIngredientsQuantity`関数: 食材配列全体の数量を一括調整
+   - `handleServingsChange`関数: 人数変更時に食材数量を自動更新
+
+3. **数量解析・処理の改善**
+   - parseQuantity/formatQuantity関数の活用
+   - 数値・単位の正確な分離と再結合
+   - 適量・お好み等の非数値データの適切な処理
+   - 小数点第2位までの四捨五入による精度管理
+
+#### 技術実装詳細
+```typescript
+// 数量比例調整の核心ロジック
+const adjustQuantityByServings = (originalQuantity: string, originalServings: number, newServings: number): string => {
+  const { amount, unit } = parseQuantity(originalQuantity);
+  
+  if (!amount || isNaN(parseFloat(amount))) {
+    return originalQuantity; // 非数値はそのまま
+  }
+
+  const numericAmount = parseFloat(amount);
+  const adjustedAmount = (numericAmount * newServings) / originalServings;
+  const roundedAmount = Math.round(adjustedAmount * 100) / 100;
+  
+  return formatQuantity(roundedAmount.toString(), unit);
+};
+```
+
+#### UI/UX改善
+- **即座の反映**: レシピ選択時に食材が即座に表示される
+- **リアルタイム調整**: 人数変更時に数量がリアルタイムで調整される
+- **正確な比例計算**: 元のレシピの人数を基準とした正確な計算
+- **単位保持**: 調整後も元の単位が適切に保持される
+
+#### ユーザビリティ向上
+- **直感的操作**: レシピを選ぶだけで食材が自動設定される
+- **手間削減**: 人数変更時の手動計算が不要になる
+- **精度向上**: 計算ミスのない正確な数量調整
+- **柔軟性**: 適量・お好み等の表現もそのまま保持
+
+#### 品質確保
+- **lint**: エラー・警告0件
+- **build**: 成功（746KBバンドル）
+- **型安全性**: 厳密なTypeScript型定義
+- **parseQuantity関数**: constants/units.tsの既存機能を活用
+
+#### 修正したファイル
+- `src/components/dialogs/MealPlanEditDialog.tsx`: 核心機能の実装
+- `src/components/dialogs/CLAUDE.md`: 機能仕様の更新
+- `.claude/ELEMENTS.md`: 要素定義の更新
+- `.claude/DEVELOPMENT_LOG.md`: 開発ログの記録
+
+#### 引き継ぎ事項
+1. **食材データ活用**: SavedRecipe.ingredientsフィールドを正しく活用
+2. **数量比例計算**: parseQuantity/formatQuantity関数による安全な数量処理
+3. **レシピ人数基準**: 元レシピのservingsフィールドを基準とした正確な比例計算
+4. **非数値対応**: 適量・お好み等の非数値表現の適切な保持
+5. **ユーザビリティ**: 直感的で手間のかからない操作体験の提供
+
+### 【前回】ダイアログ重複表示問題・保存ボタン2回押し問題の修正
+
+### 【最新】ダイアログ重複表示問題・保存ボタン2回押し問題の修正
+
+#### 問題の発見と原因
+- **ダイアログ重複表示問題**: MealPlanDialog.tsx（古い実装）とMealPlanEditDialog.tsx（新しい実装）が併存、同じz-index（z-[100]）で競合
+- **保存ボタン2回押し問題**: MealPlans.tsxの`handleSaveMeal`関数で、献立保存成功後にダイアログを閉じる処理が抜けていた
+
+#### 修正内容
+1. **不要ファイル削除とz-index階層化**
+   - MealPlanDialog.tsx削除（MealPlanEditDialogと重複のため）
+   - ダイアログz-index階層化: BaseDialog（z-[100]）→ ConfirmDialog（z-[110]）→ ToastContainer（z-[120]）
+   - Recipes.tsxでのダイアログ遷移時の重複防止処理追加
+
+2. **献立保存・削除処理の修正**
+   ```typescript
+   // 修正前: 保存後にダイアログが閉じない
+   const handleSaveMeal = async (newMealPlan: MealPlan) => {
+     try {
+       await saveMealPlan(newMealPlan);
+       // ダイアログを閉じる処理が抜けていた
+     } catch (err) {
+       // エラー処理のみ
+     }
+   };
+
+   // 修正後: 保存成功時に適切な処理
+   const handleSaveMeal = async (newMealPlan: MealPlan) => {
+     try {
+       await saveMealPlan(newMealPlan);
+       handleCloseDialog(); // ダイアログを閉じる
+       showSuccess('献立を保存しました'); // 成功通知
+     } catch (err) {
+       showError('献立の保存に失敗しました'); // エラー通知
+     }
+   };
+   ```
+
+#### 技術的教訓
+1. **ダイアログ状態管理パターン**: 保存・削除処理では必ず成功時にダイアログを閉じる処理を含める
+2. **z-index管理**: 用途別に階層化して競合を防ぐ（基本→確認→最上位の3段階）
+3. **古いファイル管理**: 機能統合時は不要ファイルを適切に削除・エクスポート更新
+4. **ダイアログ遷移**: 詳細→編集、詳細→削除時は前のダイアログを必ず閉じる
+
+#### 修正したファイル
+- `src/pages/meal-plans/MealPlans.tsx`: 保存・削除処理の修正
+- `src/pages/recipes/Recipes.tsx`: ダイアログ遷移時の重複防止
+- `src/components/dialogs/MealPlanDialog.tsx`: 削除（古い実装）
+- `src/components/dialogs/index.ts`: エクスポート修正
+- `src/components/dialogs/ConfirmDialog.tsx`: z-index調整（z-[110]）
+- `src/components/ui/ToastContainer.tsx`: z-index調整（z-[120]）
+- `src/components/dialogs/CLAUDE.md`: z-index階層管理の記録
+
+#### 引き継ぎ事項
+1. **保存処理パターン**: 全ての保存・削除処理で成功時のダイアログ閉じ処理を確認
+2. **z-index設計**: 新しいダイアログ追加時は階層設計に従う
+3. **ダイアログ遷移**: 複数ダイアログ間の遷移時は前ダイアログを閉じる
+4. **ユーザビリティ**: 成功・エラー時の適切なフィードバック提供
+
+### PLAN.md準拠の献立自動生成機能完全実装
 
 #### 実装内容
 - **PLAN.mdアルゴリズムの完全実装**: 在庫活用献立自動生成アルゴリズムをTypeScriptで実装
