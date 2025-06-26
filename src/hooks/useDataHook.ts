@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useTabRefresh } from './useTabRefresh';
@@ -36,12 +36,8 @@ export const useDataHook = <T extends Record<string, unknown> & { id?: string }>
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
-  const { markAsUpdated } = useTabRefresh(
-    () => fetchData(),
-    5 * 60 * 1000 // 5分間隔
-  );
 
-  // データ取得
+  // データ取得（依存配列を最小限に）
   const fetchData = useCallback(async () => {
     if (!user) return;
 
@@ -55,7 +51,7 @@ export const useDataHook = <T extends Record<string, unknown> & { id?: string }>
         .eq('user_id', user.id);
 
       // 並び替え設定を適用
-      if (config.orderBy) {
+      if (config.orderBy && config.orderBy.length > 0) {
         config.orderBy.forEach(order => {
           query = query.order(order.column, { ascending: order.ascending ?? false });
         });
@@ -74,7 +70,12 @@ export const useDataHook = <T extends Record<string, unknown> & { id?: string }>
     } finally {
       setLoading(false);
     }
-  }, [user, config, errorMessages.fetch]);
+  }, [user?.id, config.tableName]); // 最小限の依存配列
+
+  const { markAsUpdated } = useTabRefresh(
+    fetchData,
+    5 * 60 * 1000 // 5分間隔
+  );
 
   // 初期データ読み込み
   useEffect(() => {
