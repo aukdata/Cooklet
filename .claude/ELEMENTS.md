@@ -121,6 +121,12 @@
 - `MealPlanSuggestion` - 献立提案コンポーネント（週間サマリー・AI献立生成ボタン）
 - `CookedDialog` - 「作った！」ダイアログコンポーネント（完食・作り置き選択・在庫自動追加）
 
+## サマリー関連コンポーネント（components/summary/）
+
+- `TodayMealSection` - 今日の献立セクション表示コンポーネント（朝昼夜の献立表示・編集・追加ボタン・レシピリンク）
+- `StockAlertSection` - 在庫アラートセクション表示コンポーネント（期限切れ・期限間近アイテムの表示・期間別グループ化）
+- `MonthlyCostSection` - 月間コストセクション表示コンポーネント（自炊・外食統計・合計・平均表示・支出追加ボタン）
+
 ## カスタムフック（hooks/）
 
 ### データ管理フック
@@ -203,6 +209,10 @@
 - `WebFetcher` - Webサイトからコンテンツを取得するクライアント（fetchWebsite）
 
 ### ユーティリティ関数
+
+### 期限切れ管理ユーティリティ
+- `getExpiredPeriod(expiredDate)` - 期限切れ期間を計算（「今日」「1日前」「2ヶ月前」形式）
+- `groupExpiredItemsByPeriod(expiredItems)` - 期限切れアイテムを期間別にグループ化・ソート
 
 ### レシート・画像処理
 - `readReceiptFromImage(file, ingredients)` - レシート画像読み取り（OCR + AI構造化 + 商品名正規化）

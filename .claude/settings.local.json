@@ -24,7 +24,8 @@
       "Bash(sed:*)",
       "Bash(similarity-ts:*)",
       "Bash(oxlint:*)",
-      "Bash(mv:*)"
+      "Bash(mv:*)",
+      "Bash(npx similarity-ts:*)"
     ],
     "deny": [
       "Bash(rm:*)"
