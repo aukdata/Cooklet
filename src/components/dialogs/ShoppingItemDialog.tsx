@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BaseDialog } from '../ui/BaseDialog';
+import { QuantityInput } from '../common/QuantityInput';
 import { type ShoppingListItem } from '../../types';
 
 // 買い物リストアイテムダイアログのProps型定義
@@ -114,16 +115,13 @@ export const ShoppingItemDialog: React.FC<ShoppingItemDialogProps> = ({
 
         {/* 数量入力 */}
         <div>
-          <label htmlFor="itemQuantity" className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="block text-sm font-medium text-gray-700 mb-1">
             数量 <span className="text-gray-500">(任意)</span>
           </label>
-          <input
-            id="itemQuantity"
-            type="text"
+          <QuantityInput
             value={quantity}
-            onChange={(e) => setQuantity(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="例: 2個、500g、1パック"
+            onChange={setQuantity}
+            className="w-full"
             disabled={isLoading}
           />
         </div>
