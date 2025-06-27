@@ -54,6 +54,7 @@ export const useNotificationSettings = () => {
   const updateSettings = useCallback(async (newSettings: Partial<NotificationSettings>) => {
     if (!user?.id) return;
 
+    console.log('⚙️ updateSettings 開始:', newSettings);
     try {
       setError(null);
 
@@ -76,7 +77,7 @@ export const useNotificationSettings = () => {
         ...newSettings,
       }));
 
-      console.log('通知設定を更新しました:', newSettings);
+      console.log('⚙️ updateSettings 完了、通知設定を更新しました:', newSettings);
     } catch (err) {
       console.error('通知設定の更新に失敗:', err);
       setError('通知設定の更新に失敗しました');
@@ -118,7 +119,9 @@ export const useNotificationSettings = () => {
 
   // 通知機能の無効化
   const disableNotifications = useCallback(async () => {
+    console.log('🔕 disableNotifications 開始');
     await updateSettings({ notification_enabled: false });
+    console.log('🔕 disableNotifications 完了');
   }, [updateSettings]);
 
   // 期限通知日数の変更

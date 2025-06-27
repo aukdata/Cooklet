@@ -131,11 +131,14 @@ export const Settings: React.FC = () => {
 
   // 通知機能の無効化処理
   const handleDisableNotifications = async () => {
+    console.log('🔔 handleDisableNotifications 開始');
     try {
       await disableNotifications();
       // 朝の通知スケジュールもクリア
       notificationService.clearMorningNotifications();
+      console.log('🔔 通知無効化成功、トースト表示前');
       showSuccess('通知機能を無効にしました');
+      console.log('🔔 トースト表示完了');
     } catch (error) {
       console.error('通知無効化エラー:', error);
       showError('通知機能の無効化に失敗しました');

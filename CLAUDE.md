@@ -85,14 +85,20 @@
 ## 6. 関連ドキュメント
 
 ### 設計・仕様書
-- **技術仕様**: `.claude/TECH_SPECS.md`
-- **UI設計**: `.claude/UI.md`
-- **TypeScript**: `.claude/TYPESCRIPT_MIGRATION.md`
-- **レシートOCR**: `.claude/RECEIPT_OCR_DESIGN.md`
-- **セキュリティ**: `.claude/SECURITY.md`
+- **技術仕様**: `.claude/TECH_SPECS.md` - アーキテクチャ・DB設計・技術スタック
+- **UI設計**: `.claude/UI.md` - 画面設計・レイアウト・ユーザビリティガイドライン
+- **セキュリティ**: `.claude/SECURITY.md` - セキュリティ方針・実装ガイドライン
 
 ### 開発・運用
-- **開発計画**: `.claude/DEVELOPMENT_PLAN.md`
-- **開発ログ**: `.claude/DEVELOPMENT_LOG.md`
-- **要素定義**: `.claude/ELEMENTS.md`
-- **コーディングルール**: `.claude/CODING.md`
+- **開発ログ**: `.claude/DEVELOPMENT_LOG.md` - 開発履歴・バグ修正・引き継ぎ事項
+- **要素定義**: `.claude/ELEMENTS.md` - 型・コンポーネント・関数の包括リスト
+- **コーディングルール**: `.claude/CODING.md` - コーディング標準・ベストプラクティス
+
+### 削除済みファイル（2025-06-27整理）
+- ~~`.claude/DESIGN.md`~~ → `.claude/UI.md`に統合済み（内容削除）
+- ~~`.claude/DEVELOPMENT_PLAN.md`~~ → 古い計画のため削除済み（内容削除）
+- ~~`.claude/TYPESCRIPT_MIGRATION.md`~~ → 移行完了のため不要
+- ~~`.claude/RECEIPT_OCR_DESIGN.md`~~ → 実装完了のため不要
+
+### 新規追加ファイル（2025-06-27整理）
+- **ドキュメントテンプレート**: `.claude/DOC_TEMPLATES.md` - 標準的な文書作成テンプレート
