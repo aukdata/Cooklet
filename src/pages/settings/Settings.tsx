@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabase';
 import { useToast } from '../../hooks/useToast.tsx';
 import { useBuildInfo } from '../../hooks/useBuildInfo';
 import { useNotificationSettings } from '../../hooks/useNotificationSettings';
-import { NotificationSettings } from '../../components/settings/NotificationSettings';
+import { notificationService } from '../../services/notificationService';
 import { EditButton } from '../../components/ui/Button';
 
 // ユーザ設定画面コンポーネント - issue #11対応（画面化）
@@ -19,12 +19,41 @@ export const Settings: React.FC = () => {
   const [displayName, setDisplayName] = useState('');
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [notificationTime, setNotificationTime] = useState('08:00');
 
   // supabaseUserの変更を監視してdisplayNameを同期
   useEffect(() => {
     const fullName = supabaseUser?.user_metadata?.full_name || '';
     setDisplayName(fullName);
   }, [supabaseUser]);
+
+  // 通知時間を読み込み
+  useEffect(() => {
+    if (supabaseUser?.id) {
+      const loadNotificationTime = async () => {
+        try {
+          const { data, error } = await supabase
+            .from('users')
+            .select('notification_time')
+            .eq('id', supabaseUser.id)
+            .single();
+
+          if (error) {
+            console.warn('通知時間の取得に失敗:', error);
+            return;
+          }
+
+          if (data?.notification_time) {
+            setNotificationTime(data.notification_time);
+          }
+        } catch (error) {
+          console.error('通知時間読み込みエラー:', error);
+        }
+      };
+
+      loadNotificationTime();
+    }
+  }, [supabaseUser?.id]);
 
 
   // ユーザ名保存処理（Supabaseのuser_metadata更新）
@@ -84,7 +113,12 @@ export const Settings: React.FC = () => {
   const handleEnableNotifications = async () => {
     try {
       const success = await enableNotifications();
-      if (success) {
+      if (success && supabaseUser?.id) {
+        // 朝の通知もスケジュール
+        notificationService.scheduleMorningNotification({
+          enabled: true,
+          time: notificationTime
+        }, supabaseUser.id);
         showSuccess('通知機能を有効にしました');
       } else {
         showError('通知権限が拒否されました。ブラウザの設定から通知を許可してください。');
@@ -99,6 +133,8 @@ export const Settings: React.FC = () => {
   const handleDisableNotifications = async () => {
     try {
       await disableNotifications();
+      // 朝の通知スケジュールもクリア
+      notificationService.clearMorningNotifications();
       showSuccess('通知機能を無効にしました');
     } catch (error) {
       console.error('通知無効化エラー:', error);
@@ -114,6 +150,39 @@ export const Settings: React.FC = () => {
     } catch (error) {
       console.error('期限日数変更エラー:', error);
       showError('期限通知日数の変更に失敗しました');
+    }
+  };
+
+  // 通知時間の変更処理
+  const handleNotificationTimeChange = async (time: string) => {
+    if (!supabaseUser?.id) return;
+
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ notification_time: time })
+        .eq('id', supabaseUser.id);
+
+      if (error) {
+        console.error('通知時間の保存に失敗:', error);
+        showError('通知時間の保存に失敗しました');
+        return;
+      }
+
+      setNotificationTime(time);
+      
+      // 期限通知が有効な場合は朝の通知もスケジュール
+      if (notificationSettings.notification_enabled) {
+        notificationService.scheduleMorningNotification({
+          enabled: true,
+          time: time
+        }, supabaseUser.id);
+      }
+
+      showSuccess(`通知時間を${time}に設定しました`);
+    } catch (error) {
+      console.error('通知時間変更エラー:', error);
+      showError('通知時間の変更に失敗しました');
     }
   };
 
@@ -259,45 +328,55 @@ export const Settings: React.FC = () => {
 
           {/* 期限通知日数設定 */}
           {notificationSettings.notification_enabled && (
-            <div className="border-t pt-4">
-              <label className="block text-sm font-medium text-gray-900 mb-2">
-                通知タイミング
-              </label>
-              <div className="space-y-3">
-                <div className="flex items-center space-x-4">
-                  <select
-                    value={notificationSettings.expiry_notification_days}
-                    onChange={(e) => handleExpiryDaysChange(Number(e.target.value))}
-                    className="block w-32 rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
-                    disabled={notificationLoading}
-                  >
-                    {/* よく使われる日数を優先表示 */}
-                    <optgroup label="よく使われる設定">
-                      <option value={1}>1日前</option>
-                      <option value={2}>2日前</option>
-                      <option value={3}>3日前</option>
-                      <option value={5}>5日前</option>
-                      <option value={7}>1週間前</option>
-                    </optgroup>
-                    <optgroup label="その他の設定">
-                      <option value={4}>4日前</option>
-                      <option value={6}>6日前</option>
-                      <option value={10}>10日前</option>
-                      <option value={14}>2週間前</option>
-                      <option value={21}>3週間前</option>
-                      <option value={30}>1ヶ月前</option>
-                    </optgroup>
-                  </select>
-                  <span className="text-sm text-gray-500">から通知を開始</span>
+            <div className="border-t pt-4 space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  通知タイミング
+                </label>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-4">
+                    <select
+                      value={notificationSettings.expiry_notification_days}
+                      onChange={(e) => handleExpiryDaysChange(Number(e.target.value))}
+                      className="block w-32 rounded-md border-gray-300 text-sm focus:border-indigo-500 focus:ring-indigo-500"
+                      disabled={notificationLoading}
+                    >
+                      {/* よく使われる日数を優先表示 */}
+                      <optgroup label="よく使われる設定">
+                        <option value={1}>1日前</option>
+                        <option value={2}>2日前</option>
+                        <option value={3}>3日前</option>
+                        <option value={5}>5日前</option>
+                        <option value={7}>1週間前</option>
+                      </optgroup>
+                      <optgroup label="その他の設定">
+                        <option value={4}>4日前</option>
+                        <option value={6}>6日前</option>
+                        <option value={10}>10日前</option>
+                        <option value={14}>2週間前</option>
+                        <option value={21}>3週間前</option>
+                        <option value={30}>1ヶ月前</option>
+                      </optgroup>
+                    </select>
+                    <span className="text-sm text-gray-500">から通知を開始</span>
+                  </div>
                 </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
-                  <p className="text-xs text-blue-700">
-                    <strong>現在の設定:</strong> 賞味期限の{notificationSettings.expiry_notification_days}日前から通知
-                  </p>
-                  <p className="text-xs text-blue-600 mt-1">
-                    例: 今日が1月1日で3日前に設定している場合、1月4日が賞味期限の食品から通知されます
-                  </p>
-                </div>
+              </div>
+
+              {/* 通知時間設定 */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-2">
+                  通知時間
+                </label>
+                <input
+                  type="time"
+                  value={notificationTime}
+                  onChange={(e) => handleNotificationTimeChange(e.target.value)}
+                  className="border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                />
+                <p className="text-xs text-gray-500 mt-1">
+                  毎日この時間に期限の近い食材を通知します
+                </p>
               </div>
             </div>
           )}
@@ -323,8 +402,6 @@ export const Settings: React.FC = () => {
         </div>
       </div>
 
-      {/* 朝の通知設定 */}
-      <NotificationSettings supabaseUser={supabaseUser} />
 
       {/* アプリ情報セクション */}
       <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
