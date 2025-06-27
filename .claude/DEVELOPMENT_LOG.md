@@ -1,5 +1,72 @@
 # Cooklet 開発ログ
 
+## 2025-06-27
+
+### 【最新】通知設定UI統合・改善完了（issue #61対応）
+
+#### 問題の解決
+- **UI重複問題**: 「通知設定」カードと「朝の通知設定」カードが分離し、機能が重複していた問題を解決
+- **設定分散問題**: 期限通知と朝の通知が別々に管理され、ユーザーが混乱する問題を解決
+- **不要表示問題**: 重複する「現在の設定」説明文が表示されている問題を解決
+
+#### 修正内容
+1. **カード統合**: 「朝の通知設定」カードを削除し、「通知設定」カード一つに統合
+2. **機能統合**: 期限通知のスイッチで朝の通知も統合管理するよう変更
+3. **UI整理**: 重複していた「現在の設定」の青いボックス説明を削除
+4. **レイアウト改善**: 通知時間設定を「通知設定」カード内に適切に配置
+
+#### 技術実装詳細
+```typescript
+// Settings.tsx内で統合管理
+const handleEnableNotifications = async () => {
+  const success = await enableNotifications();
+  if (success && supabaseUser?.id) {
+    // 期限通知と朝の通知を同時に管理
+    notificationService.scheduleMorningNotification({
+      enabled: true,
+      time: notificationTime
+    }, supabaseUser.id);
+    showSuccess('通知機能を有効にしました');
+  }
+};
+
+const handleDisableNotifications = async () => {
+  await disableNotifications();
+  // 期限通知と朝の通知を同時に無効化
+  notificationService.clearMorningNotifications();
+  showSuccess('通知機能を無効にしました');
+};
+```
+
+#### UI/UX改善
+- **Before**: 「通知設定」と「朝の通知設定」が分離、重複する説明文
+- **After**: 一つの「通知設定」カードに統合、シンプルで直感的なUI
+- **操作性向上**: 一つのスイッチで全ての通知機能を管理
+- **理解しやすさ**: 機能が集約されて設定内容が明確化
+
+#### 削除・統合したコンポーネント
+- `NotificationSettings`コンポーネントの使用を停止（重複機能のため）
+- 重複していた設定説明文の削除
+- MorningNotificationManagerは必要な初期化処理のため維持
+
+#### 品質確保
+- **lint**: エラー・警告0件
+- **コミット**: bf04d03完了
+- **GitHub issue**: #61をクローズ完了
+- **修正範囲**: Settings.tsx内の統合処理のみ
+
+#### 技術的教訓
+1. **UI統合の重要性**: 関連機能は一つの場所で管理することでユーザビリティが向上
+2. **重複排除**: 同一機能の複数コンポーネントは混乱を招く
+3. **設定画面設計**: シンプルで直感的な操作性を重視
+4. **機能分離**: UIコンポーネントとサービス層の適切な役割分担
+
+#### 引き継ぎ事項
+1. **通知設定の一元管理**: Settings.tsx内で期限通知・朝の通知を統合管理
+2. **MorningNotificationManager**: アプリ起動時の初期化処理は維持
+3. **不要ファイル整理**: `NotificationSettings.tsx`の削除が今後必要
+4. **UI一貫性**: 他の設定項目も同様の統合アプローチで改善可能
+
 ## 2025-06-26
 
 ### 【最新】献立編集ダイアログの保存後ダイアログ閉じ処理修正
