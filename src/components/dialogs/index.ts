@@ -19,6 +19,9 @@ export { CostDialog } from './CostDialog';
 // 削除確認ダイアログ（5.6.7）
 export { ConfirmDialog } from './ConfirmDialog';
 
+// 献立生成結果確認ダイアログ（issue #64対応）
+export { MealGenerationResultDialog } from './MealGenerationResultDialog';
+
 // 各ダイアログの型定義は個別ファイルで定義されています
 // 使用時は個別にインポートしてください
 // 例: import type { MealPlanDialogProps } from './MealPlanDialog';

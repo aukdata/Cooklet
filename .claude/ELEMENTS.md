@@ -103,6 +103,7 @@
 - `ConfirmDialog` - 削除確認ダイアログ（汎用的な確認ダイアログ）
 - `IngredientDialog` - 材料編集ダイアログ（材料名・カテゴリ・デフォルト単位・価格）
 - `CookedDialog` - 「作った！」ダイアログ（献立完了時の状態選択、完食・作り置き選択）
+- `MealGenerationResultDialog` - 献立生成結果確認ダイアログ（issue #64対応、生成結果表示・決定・やり直し・キャンセル機能）
 
 ### 共通仕様
 - `useConfirmDialog` - 確認ダイアログフック

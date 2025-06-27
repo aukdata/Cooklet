@@ -429,9 +429,38 @@ CREATE INDEX idx_cost_records_user_date ON cost_records(user_id, date);
 - **画像最適化**
 - **PWA対応**によるオフライン機能
 
-## 6. 環境構築
+## 6. テスト設計
 
-### 6.1 開発環境
+### 6.1 テストフレームワーク
+- **Playwright**: E2Eテスト・UI自動テスト
+  - クロスブラウザテスト（Chrome, Firefox, Safari）
+  - モバイル・デスクトップ対応
+  - PWA機能テスト
+  - レスポンシブデザインテスト
+  - 認証フロー・データベース連携テスト
+
+### 6.2 テスト構成
+```typescript
+// tests/e2e/
+├── auth.spec.ts          // 認証フロー
+├── meal-plans.spec.ts    // 献立機能
+├── stock.spec.ts         // 在庫管理
+├── shopping-list.spec.ts // 買い物リスト
+├── notifications.spec.ts // 通知機能
+└── pwa.spec.ts          // PWA機能
+```
+
+### 6.3 テスト実行コマンド
+```bash
+pnpm run test           # 全テスト実行
+pnpm run test:headed    # ブラウザ表示でテスト
+pnpm run test:debug     # デバッグモード
+pnpm run test:report    # HTMLレポート生成
+```
+
+## 7. 環境構築
+
+### 7.1 開発環境
 ```bash
 # プロジェクト作成
 pnpm create vite@latest cooklet -- --template react-ts
@@ -446,15 +475,21 @@ pnpm install date-fns
 pnpm install react-calendar
 pnpm install lucide-react
 
+# テスト関連
+pnpm install -D playwright @playwright/test
+
 # 開発サーバー起動
 pnpm run dev
 
 # 型チェック・品質管理
 pnpm run lint      # ESLint + TypeScript型チェック
 pnpm run build     # ビルド時型チェック
+
+# テスト実行
+pnpm run test      # Playwrightテスト実行
 ```
 
-### 6.2 TypeScript設定・移行
+### 7.2 TypeScript設定・移行
 
 #### 設定概要
 - **厳密な型チェック**: `any`型の使用を禁止
@@ -529,7 +564,7 @@ if (!validation.isValid) {
 2. **保守性の向上**: APIレスポンス形式の一貫性、エラーハンドリング標準化
 3. **フロントエンドとの統合**: 共通型定義による一貫性
 
-### 6.3 環境変数
+### 7.3 環境変数
 ```env
 # Supabase
 VITE_SUPABASE_URL=your_supabase_url
@@ -542,7 +577,7 @@ GOOGLE_CLOUD_API_KEY=your_google_cloud_api_key
 ALLOWED_ORIGINS=https://cooklet.netlify.app,http://localhost:5173
 ```
 
-### 6.4 Supabase設定
+### 7.4 Supabase設定
 ```typescript
 // lib/supabase.ts
 import { createClient } from '@supabase/supabase-js'

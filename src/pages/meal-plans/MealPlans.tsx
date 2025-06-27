@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { MealPlanEditDialog } from '../../components/dialogs/MealPlanEditDialog';
+import { MealGenerationResultDialog } from '../../components/dialogs/MealGenerationResultDialog';
 import { WeeklyNavigation } from '../../components/meal-plans/WeeklyNavigation';
 import { MealPlanCalendar } from '../../components/meal-plans/MealPlanCalendar';
 import { MealPlanDayDetail } from '../../components/meal-plans/MealPlanDayDetail';
@@ -12,7 +13,7 @@ import { useStockItems } from '../../hooks/useStockItems';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useIngredients } from '../../hooks/useIngredients';
 import { useToast } from '../../hooks/useToast.tsx';
-import { generateMealPlan, type MealGenerationSettings } from '../../utils/mealPlanGeneration';
+import { generateMealPlan, type MealGenerationSettings, type MealGenerationResult } from '../../utils/mealPlanGeneration';
 
 // カレンダー画面コンポーネント - 週間表示・献立追加機能付き
 export const MealPlans: React.FC = () => {
@@ -38,6 +39,13 @@ export const MealPlans: React.FC = () => {
   // 作った選択ダイアログの状態
   const [isConsumedDialogOpen, setIsConsumedDialogOpen] = useState(false);
   const [processingMeal, setProcessingMeal] = useState<MealPlan | null>(null);
+
+  // 生成結果確認ダイアログの状態
+  const [isGenerationResultDialogOpen, setIsGenerationResultDialogOpen] = useState(false);
+  const [generationResult, setGenerationResult] = useState<MealGenerationResult | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentGenerationType, setCurrentGenerationType] = useState<'today' | 'weekly'>('today');
+  const [currentTemperature, setCurrentTemperature] = useState(0.0);
 
   // 献立データの取得（Supabase連携）
   const { mealPlans, loading, error, saveMealPlan, deleteMealPlan, updateMealPlanStatus, getMealPlansForDate, getMealPlan } = useMealPlans();
@@ -161,122 +169,207 @@ export const MealPlans: React.FC = () => {
     setProcessingMeal(null);
   };
 
-  // 今日の献立提案処理
+  // 今日の献立提案処理（確認ダイアログ表示）
   const handleTodayMealSuggestion = async () => {
+    setIsGenerating(true);
+    setCurrentGenerationType('today');
+    setCurrentTemperature(0.0); // 初回は0.0で開始
+    
     try {
       const settings: MealGenerationSettings = {
         stockItems,
         recipes,
         ingredients,
         days: 1, // 今日1日分
-        mealTypes: [true, true, true] // 朝昼夜すべて
+        mealTypes: [true, true, true], // 朝昼夜すべて
+        temperature: 0.0 // 初回は決定的な生成
       };
       
       const result = await generateMealPlan(settings);
       
-      // 生成された献立を献立計画に保存
-      const today = selectedDate.toISOString().split('T')[0];
-      const mealTypesArray: MealType[] = ['朝', '昼', '夜'];
+      // 生成結果を確認ダイアログで表示
+      setGenerationResult(result);
+      setIsGenerationResultDialogOpen(true);
       
-      for (const mealPlanItem of result.mealPlan) {
-        const mealTypeIndex = (mealPlanItem.mealNumber - 1) % 3; // 0, 1, 2
-        const mealType = mealTypesArray[mealTypeIndex];
-        
-        // 該当するレシピの詳細を検索
-        const matchedRecipe = recipes.find(recipe => recipe.title === mealPlanItem.recipe);
-        
-        if (matchedRecipe) {
-          const newMealPlan: MealPlan = {
-            id: '',
-            user_id: '',
-            date: today,
-            meal_type: mealType,
-            recipe_url: matchedRecipe.url,
-            ingredients: matchedRecipe.ingredients.map(ing => ({
-              name: ing.name,
-              quantity: ing.quantity
-            })),
-            memo: `AI生成: ${matchedRecipe.title}`,
-            consumed_status: 'pending',
-            created_at: '',
-            updated_at: ''
-          };
-          
-          await saveMealPlan(newMealPlan);
-        }
-      }
-      
-      if (result.warnings.length > 0) {
-        showInfo(result.warnings.join(', '));
-      } else {
-        showSuccess(`今日の献立を${result.mealPlan.length}件生成しました！`);
-      }
     } catch (err) {
       console.error('献立提案に失敗しました:', err);
       showError('献立提案に失敗しました');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  // 週間献立提案処理
+  // 週間献立提案処理（確認ダイアログ表示）
   const handleWeeklyMealSuggestion = async () => {
+    setIsGenerating(true);
+    setCurrentGenerationType('weekly');
+    setCurrentTemperature(0.0); // 初回は0.0で開始
+    
     try {
       const settings: MealGenerationSettings = {
         stockItems,
         recipes,
         ingredients,
         days: 7, // 7日分
-        mealTypes: [true, true, true] // 朝昼夜すべて
+        mealTypes: [true, true, true], // 朝昼夜すべて
+        temperature: 0.0 // 初回は決定的な生成
       };
       
       const result = await generateMealPlan(settings);
       
-      // 生成された献立を献立計画に保存
-      const mealTypesArray: MealType[] = ['朝', '昼', '夜'];
-      const startDate = new Date(currentWeekStart);
+      // 生成結果を確認ダイアログで表示
+      setGenerationResult(result);
+      setIsGenerationResultDialogOpen(true);
       
-      for (const mealPlanItem of result.mealPlan) {
-        // 食事番号から日付と食事タイプを計算
-        const dayIndex = Math.floor((mealPlanItem.mealNumber - 1) / 3); // 0-6日目
-        const mealTypeIndex = (mealPlanItem.mealNumber - 1) % 3; // 0, 1, 2
-        
-        const mealDate = new Date(startDate);
-        mealDate.setDate(startDate.getDate() + dayIndex);
-        const dateStr = mealDate.toISOString().split('T')[0];
-        const mealType = mealTypesArray[mealTypeIndex];
-        
-        // 該当するレシピの詳細を検索
-        const matchedRecipe = recipes.find(recipe => recipe.title === mealPlanItem.recipe);
-        
-        if (matchedRecipe) {
-          const newMealPlan: MealPlan = {
-            id: '',
-            user_id: '',
-            date: dateStr,
-            meal_type: mealType,
-            recipe_url: matchedRecipe.url,
-            ingredients: matchedRecipe.ingredients.map(ing => ({
-              name: ing.name,
-              quantity: ing.quantity
-            })),
-            memo: `AI生成: ${matchedRecipe.title}`,
-            consumed_status: 'pending',
-            created_at: '',
-            updated_at: ''
-          };
-          
-          await saveMealPlan(newMealPlan);
-        }
-      }
-      
-      if (result.warnings.length > 0) {
-        showInfo(result.warnings.join(', '));
-      } else {
-        showSuccess(`週間献立を${result.mealPlan.length}件生成しました！`);
-      }
     } catch (err) {
       console.error('週間献立提案に失敗しました:', err);
       showError('週間献立提案に失敗しました');
+    } finally {
+      setIsGenerating(false);
     }
+  };
+
+  // 生成結果確認ダイアログの処理
+  
+  // 決定ボタン処理（生成結果を献立に反映）
+  const handleConfirmGeneration = async () => {
+    if (!generationResult) return;
+    
+    setIsGenerating(true);
+    
+    try {
+      const mealTypesArray: MealType[] = ['朝', '昼', '夜'];
+      
+      if (currentGenerationType === 'today') {
+        // 今日の献立として保存
+        const today = selectedDate.toISOString().split('T')[0];
+        
+        for (const mealPlanItem of generationResult.mealPlan) {
+          const mealTypeIndex = (mealPlanItem.mealNumber - 1) % 3; // 0, 1, 2
+          const mealType = mealTypesArray[mealTypeIndex];
+          
+          // 該当するレシピの詳細を検索
+          const matchedRecipe = recipes.find(recipe => recipe.title === mealPlanItem.recipe);
+          
+          if (matchedRecipe) {
+            const newMealPlan: MealPlan = {
+              id: '',
+              user_id: '',
+              date: today,
+              meal_type: mealType,
+              recipe_url: matchedRecipe.url,
+              ingredients: matchedRecipe.ingredients.map(ing => ({
+                name: ing.name,
+                quantity: ing.quantity
+              })),
+              memo: `AI生成: ${matchedRecipe.title}`,
+              consumed_status: 'pending',
+              created_at: '',
+              updated_at: ''
+            };
+            
+            await saveMealPlan(newMealPlan);
+          }
+        }
+        
+        showSuccess(`今日の献立を${generationResult.mealPlan.length}件生成しました！`);
+        
+      } else {
+        // 週間献立として保存
+        const startDate = new Date(currentWeekStart);
+        
+        for (const mealPlanItem of generationResult.mealPlan) {
+          // 食事番号から日付と食事タイプを計算
+          const dayIndex = Math.floor((mealPlanItem.mealNumber - 1) / 3); // 0-6日目
+          const mealTypeIndex = (mealPlanItem.mealNumber - 1) % 3; // 0, 1, 2
+          
+          const mealDate = new Date(startDate);
+          mealDate.setDate(startDate.getDate() + dayIndex);
+          const dateStr = mealDate.toISOString().split('T')[0];
+          const mealType = mealTypesArray[mealTypeIndex];
+          
+          // 該当するレシピの詳細を検索
+          const matchedRecipe = recipes.find(recipe => recipe.title === mealPlanItem.recipe);
+          
+          if (matchedRecipe) {
+            const newMealPlan: MealPlan = {
+              id: '',
+              user_id: '',
+              date: dateStr,
+              meal_type: mealType,
+              recipe_url: matchedRecipe.url,
+              ingredients: matchedRecipe.ingredients.map(ing => ({
+                name: ing.name,
+                quantity: ing.quantity
+              })),
+              memo: `AI生成: ${matchedRecipe.title}`,
+              consumed_status: 'pending',
+              created_at: '',
+              updated_at: ''
+            };
+            
+            await saveMealPlan(newMealPlan);
+          }
+        }
+        
+        showSuccess(`週間献立を${generationResult.mealPlan.length}件生成しました！`);
+      }
+      
+      // 警告があれば表示
+      if (generationResult.warnings.length > 0) {
+        showInfo(generationResult.warnings.join(', '));
+      }
+      
+      // ダイアログを閉じる
+      setIsGenerationResultDialogOpen(false);
+      setGenerationResult(null);
+      
+    } catch (err) {
+      console.error('献立の保存に失敗しました:', err);
+      showError('献立の保存に失敗しました');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // やり直しボタン処理（temperatureを上げて再生成）
+  const handleRetryGeneration = async () => {
+    setIsGenerating(true);
+    
+    try {
+      // temperatureを上げて再生成（0.1ずつ増加、最大1.0）
+      const newTemperature = Math.min(currentTemperature + 0.1, 1.0);
+      setCurrentTemperature(newTemperature);
+      
+      const settings: MealGenerationSettings = {
+        stockItems,
+        recipes,
+        ingredients,
+        days: currentGenerationType === 'today' ? 1 : 7,
+        mealTypes: [true, true, true], // 朝昼夜すべて
+        temperature: newTemperature
+      };
+      
+      const result = await generateMealPlan(settings);
+      
+      // 新しい生成結果で更新
+      setGenerationResult(result);
+      
+      showInfo(`別のレシピで再生成しました（ランダム性: ${Math.round(newTemperature * 100)}%）`);
+      
+    } catch (err) {
+      console.error('再生成に失敗しました:', err);
+      showError('再生成に失敗しました');
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // 生成結果ダイアログを閉じる処理
+  const handleCloseGenerationDialog = () => {
+    setIsGenerationResultDialogOpen(false);
+    setGenerationResult(null);
+    setCurrentTemperature(0.0);
   };
 
   // 週間サマリーデータ
@@ -376,6 +469,16 @@ export const MealPlans: React.FC = () => {
         onCompleted={handleCompleted}
         onStoreMade={handleStoreMade}
         onClose={handleCloseConsumedDialog}
+      />
+
+      {/* 献立生成結果確認ダイアログ */}
+      <MealGenerationResultDialog
+        isOpen={isGenerationResultDialogOpen}
+        onClose={handleCloseGenerationDialog}
+        result={generationResult}
+        onConfirm={handleConfirmGeneration}
+        onRetry={handleRetryGeneration}
+        isGenerating={isGenerating}
       />
     </div>
   );

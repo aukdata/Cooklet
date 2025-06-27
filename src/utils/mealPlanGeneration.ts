@@ -45,9 +45,17 @@ export interface ShoppingItem {
   unit: string;
 }
 
+// 献立アイテムを表すインターフェース
+export interface MealPlanItem {
+  mealNumber: number; // 食事番号
+  recipe: string; // レシピ名
+  ingredients?: string[]; // 使用する食材リスト
+  estimatedCost?: number; // 推定コスト
+}
+
 // 献立生成結果を表すインターフェース（PLAN.md準拠）
 export interface MealGenerationResult {
-  mealPlan: { mealNumber: number; recipe: string }[]; // 生成された献立配列
+  mealPlan: MealPlanItem[]; // 生成された献立配列（詳細情報付き）
   shoppingList: ShoppingItem[]; // 購入リスト
   warnings: string[]; // 警告メッセージ（在庫不足など）
   usedIngredients: string[]; // 使用された食材名（後方互換性のため残す）
@@ -74,7 +82,7 @@ export const generateMealPlanAlgorithm = (
   alpha: number = 1.0,
   beta: number = 1.0,
   temperature: number = 0.0
-): [{ mealNumber: number; recipe: string }[], ShoppingItem[]] => {
+): [MealPlanItem[], ShoppingItem[]] => {
   // 暫定在庫を現在の在庫でディープコピー
   const tempInventory: { [key: string]: InventoryItem } = {};
   for (const [key, value] of Object.entries(inventory)) {
@@ -82,7 +90,7 @@ export const generateMealPlanAlgorithm = (
   }
 
   const purchaseList: ShoppingItem[] = [];
-  const mealPlan: { mealNumber: number; recipe: string }[] = [];
+  const mealPlan: MealPlanItem[] = [];
 
   // 各食事の処理ループ
   for (let mealNum = 1; mealNum <= numMeals; mealNum++) {
@@ -148,7 +156,31 @@ export const generateMealPlanAlgorithm = (
 
     // 最適レシピ選択と在庫更新・購入処理
     const selectedRecipe = recipes[bestRecipe];
-    mealPlan.push({ mealNumber: mealNum, recipe: bestRecipe });
+    
+    // 食材リストを作成
+    const ingredients = selectedRecipe.ingredients.map(ing => ing.name);
+    
+    // 推定コストを計算（購入コスト）
+    let estimatedCost = 0;
+    for (const ingredient of selectedRecipe.ingredients) {
+      const neededAmount = ingredient.quantity / selectedRecipe.servings;
+      const currentStock = tempInventory[ingredient.name]?.quantity || 0;
+      if (currentStock < neededAmount) {
+        const shortage = neededAmount - currentStock;
+        const purchaseUnit = purchaseUnits[ingredient.name];
+        if (purchaseUnit) {
+          const unitsToBuy = Math.ceil(shortage / purchaseUnit.quantity);
+          estimatedCost += unitsToBuy * 100; // 仮の価格（1単位100円）
+        }
+      }
+    }
+    
+    mealPlan.push({ 
+      mealNumber: mealNum, 
+      recipe: bestRecipe,
+      ingredients,
+      estimatedCost 
+    });
 
     for (const ingredient of selectedRecipe.ingredients) {
       const neededAmount = ingredient.quantity / selectedRecipe.servings;
