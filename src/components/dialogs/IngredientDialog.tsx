@@ -15,7 +15,7 @@ interface IngredientDialogProps {
   /** 材料保存時のコールバック */
   onSave: (ingredient: Omit<Ingredient, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
   /** 材料削除時のコールバック */
-  onDelete?: (id: number) => Promise<void>;
+  onDelete?: (id: string) => Promise<void>;
 }
 
 /**

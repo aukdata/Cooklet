@@ -12,8 +12,8 @@ export interface User {
 }
 
 // 食材マスタ情報を表すインターフェース（ユーザー認証対応）
-export interface Ingredient {
-  id: number; // 食材ID
+export interface Ingredient extends Record<string, unknown> {
+  id: string; // 食材ID（UUIDに変更）
   userId: string; // 所有ユーザーID
   name: string; // 食材名
   category: 'vegetables' | 'meat' | 'seasoning' | 'others'; // カテゴリ（野菜・肉・調味料・その他）

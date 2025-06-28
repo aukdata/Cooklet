@@ -85,7 +85,7 @@ export const IngredientManagement: React.FC = () => {
     try {
       if (editingIngredient) {
         // 編集モード
-        await updateIngredient(editingIngredient.id, ingredientData);
+        await updateIngredient(editingIngredient.id.toString(), ingredientData);
         showSuccess('材料を更新しました');
       } else {
         // 新規作成モード
@@ -100,7 +100,7 @@ export const IngredientManagement: React.FC = () => {
   };
 
   // 材料削除処理
-  const handleDeleteIngredient = async (id: number) => {
+  const handleDeleteIngredient = async (id: string) => {
     try {
       await deleteIngredient(id);
       showSuccess('材料を削除しました');

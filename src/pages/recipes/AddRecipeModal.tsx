@@ -9,7 +9,7 @@ interface AddRecipeModalProps {
 }
 
 interface RecipeIngredientForm {
-  ingredient_id: number;
+  ingredient_id: string;
   quantity: number;
   unit: string;
   is_optional: boolean;
@@ -82,11 +82,11 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onClose, onSucce
       return;
     }
 
-    const ingredient = ingredients.find(ing => ing.id === parseInt(ingredientForm.ingredient_id));
+    const ingredient = ingredients.find(ing => ing.id === ingredientForm.ingredient_id);
     if (!ingredient) return;
 
     const newIngredient: RecipeIngredientForm = {
-      ingredient_id: parseInt(ingredientForm.ingredient_id),
+      ingredient_id: ingredientForm.ingredient_id,
       quantity: parseFloat(ingredientForm.quantity),
       unit: ingredientForm.unit || ingredient.defaultUnit,
       is_optional: ingredientForm.is_optional,
@@ -217,7 +217,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onClose, onSucce
             {recipeIngredients.length > 0 && (
               <div className="space-y-2 mb-3">
                 {recipeIngredients.map((ing, index) => {
-                  const ingredient = ingredients.find(i => i.id === ing.ingredient_id);
+                  const ingredient = ingredients.find(i => i.id === ing.ingredient_id.toString());
                   return (
                     <div key={index} className="flex items-center justify-between bg-gray-50 p-2 rounded">
                       <span className="text-sm">
@@ -243,7 +243,7 @@ export const AddRecipeModal: React.FC<AddRecipeModalProps> = ({ onClose, onSucce
                   <select
                     value={ingredientForm.ingredient_id}
                     onChange={(e) => {
-                      const ingredient = ingredients.find(ing => ing.id === parseInt(e.target.value));
+                      const ingredient = ingredients.find(ing => ing.id === e.target.value);
                       setIngredientForm(prev => ({
                         ...prev,
                         ingredient_id: e.target.value,

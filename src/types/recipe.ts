@@ -7,7 +7,7 @@ export interface RecipeIngredient {
 }
 
 // 保存されたレシピデータ（CLAUDE.md仕様書準拠）
-export interface SavedRecipe {
+export interface SavedRecipe extends Record<string, unknown> {
   id: string;
   user_id: string;
   title: string;
@@ -19,7 +19,7 @@ export interface SavedRecipe {
 }
 
 // レシピフォームデータ（新規作成・編集用）
-export interface RecipeFormData {
+export interface RecipeFormData extends Record<string, unknown> {
   title: string;
   url: string;
   servings: number;
