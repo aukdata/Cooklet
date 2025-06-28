@@ -92,8 +92,8 @@ export const StockDialog: React.FC<StockDialogProps> = ({
       user_id: initialData?.user_id || '',
       name: formData.name,
       quantity: formData.quantity,
-      best_before: formData.bestBefore || undefined,
-      storage_location: formData.storageLocation || undefined,
+      best_before: formData.bestBefore?.trim() || undefined,
+      storage_location: formData.storageLocation?.trim() || undefined,
       is_homemade: formData.isHomemade,
       created_at: initialData?.created_at || '',
       updated_at: initialData?.updated_at || ''

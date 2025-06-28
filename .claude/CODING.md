@@ -178,6 +178,76 @@ function badProcess(data: unknown): User {
 const userData = response.data as { user: { profile: { settings: any } } };
 ```
 
+### オプショナルプロパティの使用ルール
+
+```typescript
+// ✅ 正しい例 - オプショナルプロパティを使用
+interface StockItem {
+  id: string; // 在庫ID（UUID）
+  name: string; // 食材名
+  quantity: string; // 数量（文字列形式で保存）
+  best_before?: string; // 賞味期限（任意、ISO文字列形式）
+  storage_location?: string; // 保存場所（任意）
+}
+
+// ✅ APIレスポンス型でのオプショナルプロパティ
+interface UserProfile {
+  id: string; // ユーザーID
+  name: string; // ユーザー名
+  email: string; // メールアドレス
+  avatar_url?: string; // アバターURL（任意）
+  bio?: string; // 自己紹介（任意）
+}
+
+// ❌ 避けるべき例 - null/undefined union型
+interface BadStockItem {
+  id: string;
+  name: string;
+  quantity: string;
+  best_before: string | null; // オプショナルプロパティの方が適切
+  storage_location: string | undefined; // オプショナルプロパティの方が適切
+}
+```
+
+#### オプショナルプロパティ使用ガイドライン
+
+1. **基本ルール**: `| null`や`| undefined`ではなく、可能な限り`?:`（オプショナルプロパティ）を使用
+2. **適用場面**: フィールドが存在しない可能性がある場合（未入力、任意項目など）
+3. **型ガードとの組み合わせ**: オプショナルプロパティへのアクセス時は適切なチェックを実施
+
+```typescript
+// ✅ オプショナルプロパティの安全な使用
+const formatBestBefore = (item: StockItem): string => {
+  // オプショナルプロパティのチェック
+  if (item.best_before) {
+    return new Date(item.best_before).toLocaleDateString('ja-JP');
+  }
+  return '期限なし';
+};
+
+// ✅ オプショナルプロパティでのデフォルト値
+const displayStorageLocation = (item: StockItem): string => {
+  return item.storage_location ?? '未指定';
+};
+```
+
+#### 例外的にnull/undefined unionを使用する場面
+
+```typescript
+// ✅ 例外 - 明示的に「値なし」状態を区別する必要がある場合
+interface SearchFilters {
+  category: string;
+  price_min: number | null; // null = フィルタ未設定、0 = 0円以上
+  price_max: number | null; // null = フィルタ未設定、0 = 0円以下
+}
+
+// ✅ 例外 - APIの仕様上null値が返される場合
+interface APIResponse {
+  data: UserData[];
+  next_cursor: string | null; // API仕様でnullが返される
+}
+```
+
 ### 型定義ベストプラクティス
 
 #### 1. Union型の活用
