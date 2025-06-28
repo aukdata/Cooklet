@@ -36,8 +36,8 @@ export const AddToMealPlanDialog: React.FC<AddToMealPlanDialogProps> = ({
   if (!isOpen || !recipe) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[100]">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[100] overflow-y-auto">
+      <div className="bg-white rounded-lg p-4 sm:p-6 w-full max-w-md mx-auto my-8 max-h-[90vh] overflow-y-auto">
         {/* ダイアログヘッダー */}
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold flex items-center">
@@ -105,17 +105,17 @@ export const AddToMealPlanDialog: React.FC<AddToMealPlanDialogProps> = ({
           </div>
 
           {/* ボタン */}
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
+              className="w-full sm:flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50"
             >
               キャンセル
             </button>
             <button
               type="submit"
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+              className="w-full sm:flex-1 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
             >
               献立に追加
             </button>
