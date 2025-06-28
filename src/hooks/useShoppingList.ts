@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
+import { useDataHook } from './useDataHook';
 import { useAuth } from '../contexts/AuthContext';
-import { useTabRefresh } from './useTabRefresh';
+import { supabase } from '../lib/supabase';
 
 // 買い物リストデータの型定義（CLAUDE.md仕様書準拠）
-export interface ShoppingListItem {
+export interface ShoppingListItem extends Record<string, unknown> {
   id?: string;
   user_id?: string;
   name: string;
@@ -14,134 +13,45 @@ export interface ShoppingListItem {
   created_at?: string;
 }
 
-// useShoppingListフック - Supabase shopping_listテーブルとの連携
+// useShoppingListフック - useDataHookベースの買い物リスト管理
 export const useShoppingList = () => {
-  const [shoppingList, setShoppingList] = useState<ShoppingListItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
 
-  // 買い物リストデータを取得
-  const fetchShoppingList = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      const { data, error: fetchError } = await supabase
-        .from('shopping_list')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('checked', { ascending: true })
-        .order('created_at', { ascending: false });
-
-      if (fetchError) {
-        throw fetchError;
-      }
-
-      setShoppingList(data || []);
-    } catch (err) {
-      console.error('買い物リストデータの取得に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '買い物リストデータの取得に失敗しました');
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
+  // useDataHookによる基本CRUD操作
+  const {
+    data: shoppingList,
+    loading,
+    error,
+    addData,
+    updateData,
+    deleteData,
+    refetch: fetchShoppingList
+  } = useDataHook<ShoppingListItem>({
+    tableName: 'shopping_list',
+    orderBy: [
+      { column: 'checked', ascending: true }, // 未完了を先に表示
+      { column: 'created_at', ascending: false } // 新しいものを先に表示
+    ]
+  }, {
+    fetch: '買い物リストデータの取得に失敗しました',
+    add: '買い物リストアイテムの追加に失敗しました',
+    update: '買い物リストアイテムの更新に失敗しました',
+    delete: '買い物リストアイテムの削除に失敗しました'
+  });
 
   // 買い物リストアイテムを追加
   const addShoppingItem = async (item: Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>) => {
-    if (!user) throw new Error('ユーザーが認証されていません');
-
-    try {
-      setError(null);
-
-      const { data, error: insertError } = await supabase
-        .from('shopping_list')
-        .insert([
-          {
-            user_id: user.id,
-            name: item.name,
-            quantity: item.quantity,
-            checked: item.checked,
-            added_from: item.added_from
-          }
-        ])
-        .select()
-        .single();
-
-      if (insertError) {
-        throw insertError;
-      }
-
-      // ローカル状態を更新
-      setShoppingList(prev => [data, ...prev]);
-      markAsUpdated(); // データ変更後に更新時刻をマーク
-      return data;
-    } catch (err) {
-      console.error('買い物リストアイテムの追加に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '買い物リストアイテムの追加に失敗しました');
-      throw err;
-    }
+    return await addData(item);
   };
 
   // 買い物リストアイテムを更新
   const updateShoppingItem = async (id: string, updates: Partial<Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>>) => {
-    if (!user) throw new Error('ユーザーが認証されていません');
-
-    try {
-      setError(null);
-
-      const { data, error: updateError } = await supabase
-        .from('shopping_list')
-        .update(updates)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (updateError) {
-        throw updateError;
-      }
-
-      // ローカル状態を更新
-      setShoppingList(prev => 
-        prev.map(item => item.id === id ? data : item)
-      );
-      markAsUpdated(); // データ変更後に更新時刻をマーク
-      return data;
-    } catch (err) {
-      console.error('買い物リストアイテムの更新に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '買い物リストアイテムの更新に失敗しました');
-      throw err;
-    }
+    return await updateData(id, updates);
   };
 
   // 買い物リストアイテムを削除
   const deleteShoppingItem = async (id: string) => {
-    if (!user) throw new Error('ユーザーが認証されていません');
-
-    try {
-      setError(null);
-
-      const { error: deleteError } = await supabase
-        .from('shopping_list')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (deleteError) {
-        throw deleteError;
-      }
-
-      // ローカル状態を更新
-      setShoppingList(prev => prev.filter(item => item.id !== id));
-      markAsUpdated(); // データ変更後に更新時刻をマーク
-    } catch (err) {
-      console.error('買い物リストアイテムの削除に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '買い物リストアイテムの削除に失敗しました');
-      throw err;
-    }
+    return await deleteData(id);
   };
 
   // アイテムのチェック状態を切り替え
@@ -174,57 +84,23 @@ export const useShoppingList = () => {
 
   // 完了済みアイテムを一括削除
   const deleteCompletedItems = async () => {
-    if (!user) throw new Error('ユーザーが認証されていません');
-
-    try {
-      setError(null);
-
-      const { error: deleteError } = await supabase
-        .from('shopping_list')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('checked', true);
-
-      if (deleteError) {
-        throw deleteError;
+    // 完了済みアイテムを一つずつ削除
+    const completedItems = getCompletedItems();
+    for (const item of completedItems) {
+      if (item.id) {
+        await deleteShoppingItem(item.id);
       }
-
-      // ローカル状態を更新
-      setShoppingList(prev => prev.filter(item => !item.checked));
-      markAsUpdated(); // データ変更後に更新時刻をマーク
-    } catch (err) {
-      console.error('完了済みアイテムの削除に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '完了済みアイテムの削除に失敗しました');
-      throw err;
     }
   };
 
   // 全アイテムを選択
   const selectAllItems = async () => {
-    if (!user) throw new Error('ユーザーが認証されていません');
-
-    try {
-      setError(null);
-
-      const { error: updateError } = await supabase
-        .from('shopping_list')
-        .update({ checked: true })
-        .eq('user_id', user.id)
-        .eq('checked', false);
-
-      if (updateError) {
-        throw updateError;
+    // 未完了のアイテムを一つずつ更新
+    const uncompletedItems = getUncompletedItems();
+    for (const item of uncompletedItems) {
+      if (item.id) {
+        await updateShoppingItem(item.id, { checked: true });
       }
-
-      // ローカル状態を更新
-      setShoppingList(prev => 
-        prev.map(item => ({ ...item, checked: true }))
-      );
-      markAsUpdated(); // データ変更後に更新時刻をマーク
-    } catch (err) {
-      console.error('全選択に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '全選択に失敗しました');
-      throw err;
     }
   };
 
@@ -235,8 +111,6 @@ export const useShoppingList = () => {
     if (completedItems.length === 0) return;
 
     try {
-      setError(null);
-
       // 在庫アイテムとして追加
       const stockItemsToAdd = completedItems.map(item => ({
         user_id: user?.id,
@@ -259,7 +133,6 @@ export const useShoppingList = () => {
       
     } catch (err) {
       console.error('在庫への追加に失敗しました:', err);
-      setError(err instanceof Error ? err.message : '在庫への追加に失敗しました');
       throw err;
     }
   };
@@ -285,13 +158,6 @@ export const useShoppingList = () => {
     };
   };
 
-  // 初回データ取得
-  useEffect(() => {
-    fetchShoppingList();
-  }, [fetchShoppingList]);
-
-  // タブ切り替え時の更新チェック機能（5分間隔）
-  const { markAsUpdated } = useTabRefresh(fetchShoppingList, 5);
 
   return {
     shoppingList,

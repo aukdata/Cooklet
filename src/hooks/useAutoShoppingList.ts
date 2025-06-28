@@ -57,22 +57,31 @@ export const useAutoShoppingList = () => {
       // 各アイテムを買い物リストに追加
       for (const item of result.generatedItems) {
         console.log('🔍 [Debug] アイテム追加試行:', item);
+        
+        // 型安全性チェック
+        if (typeof item !== 'object' || item === null || !('name' in item)) {
+          console.warn('❌ [Debug] 無効なアイテム形式:', item);
+          continue;
+        }
+        
+        const shoppingItem = item as { name: string; quantity?: string; checked: boolean; added_from: 'manual' | 'auto' };
+        
         try {
-          await addShoppingItem(item);
+          await addShoppingItem(shoppingItem);
           itemsAdded++;
-          console.log(`✅ [Debug] アイテム追加成功: ${item.name}`);
+          console.log(`✅ [Debug] アイテム追加成功: ${shoppingItem.name}`);
           details.push({
-            name: item.name,
-            quantity: item.quantity || '適量',
+            name: shoppingItem.name,
+            quantity: shoppingItem.quantity || '適量',
             source: '献立より自動生成',
             action: 'added'
           });
         } catch (err) {
-          console.warn(`❌ [Debug] アイテムの追加に失敗: ${item.name}`, err);
+          console.warn(`❌ [Debug] アイテムの追加に失敗: ${shoppingItem.name}`, err);
           itemsSkipped++;
           details.push({
-            name: item.name,
-            quantity: item.quantity || '適量',
+            name: shoppingItem.name,
+            quantity: shoppingItem.quantity || '適量',
             source: '献立より自動生成',
             action: 'skipped'
           });
