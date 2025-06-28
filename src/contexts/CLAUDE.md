@@ -8,6 +8,29 @@ React Contextを使用したグローバル状態管理を行うディレクト�
 ### AuthContext.tsx
 ユーザー認証状態の管理を行うContext。
 
+### RepositoryContext.tsx
+Repository層のDI（依存性注入）管理コンテキスト。
+
+#### 機能
+- Repository実装の抽象化とモック化対応
+- 環境に応じたRepository実装の切り替え
+- テスト時のモックRepository注入
+
+#### 提供する値
+- `stockRepository`: 在庫管理Repository
+- `mealPlanRepository`: 献立管理Repository 
+- `shoppingListRepository`: 買い物リスト管理Repository
+
+#### 専用フック
+- `useRepository()`: 全Repositoryコンテナを取得
+- `useStockRepository()`: 在庫Repository専用フック
+- `useMealPlanRepository()`: 献立Repository専用フック
+- `useShoppingListRepository()`: 買い物リストRepository専用フック
+
+#### 環境別実装
+- **本番・開発環境**: Supabase実装を使用
+- **テスト環境**: Mock実装を使用（メモリ内データ管理）
+
 ### DialogContext.tsx
 ダイアログ表示状態の管理コンテキスト。
 

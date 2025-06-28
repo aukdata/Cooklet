@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { DialogProvider } from './contexts/DialogContext'
 import { NavigationProvider } from './contexts/NavigationContext'
+import { RepositoryProvider } from './contexts/RepositoryContext'
 import { ToastProvider, useToast } from './hooks/useToast.tsx'
 import { Login } from './pages/auth/Login'
 import { MainLayout } from './components/layout/MainLayout'
@@ -151,13 +152,15 @@ const AppContent: React.FC = () => {
 function App() {
   return (
     <AuthProvider>
-      <NavigationProvider>
-        <DialogProvider>
-          <ToastProvider>
-            <AppContent />
-          </ToastProvider>
-        </DialogProvider>
-      </NavigationProvider>
+      <RepositoryProvider>
+        <NavigationProvider>
+          <DialogProvider>
+            <ToastProvider>
+              <AppContent />
+            </ToastProvider>
+          </DialogProvider>
+        </NavigationProvider>
+      </RepositoryProvider>
     </AuthProvider>
   )
 }
