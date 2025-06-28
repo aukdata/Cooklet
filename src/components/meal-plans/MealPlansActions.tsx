@@ -154,6 +154,6 @@ export const useMealPlansActions = (): MealPlansActionsReturn => {
     
     // ヘルパー関数
     getMealPlansForDate,
-    getMealPlan: (date: Date, mealType: string) => getMealPlan(date, mealType as MealType)
+    getMealPlan: (date: Date, mealType: string) => getMealPlan(date, mealType as MealType) || null
   };
 };

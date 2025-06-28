@@ -1,11 +1,98 @@
 # Components/Meal-Plans ディレクトリ
 
 ## 概要
-献立計画機能に関連するコンポーネントを管理するディレクトリ。MealPlansページのリファクタリングにより分離されたコンポーネント群。
+献立計画機能に関連するコンポーネントを管理するディレクトリ。適切な粒度でコンポーネント化された統合実装版。
 
 ## ファイル構成
 
-### MealPlanDetail.tsx
+### 新しいコンポーネント（適切な粒度での分離）
+
+#### MealPlanHeader.tsx
+献立計画ページのヘッダーコンポーネント - タイトル、週範囲、ローディング・エラー状態表示。
+
+**Props:**
+- `weekRange: string` - 週の範囲表示用文字列
+- `loading?: boolean` - ローディング状態
+- `error?: string | null` - エラーメッセージ
+
+**機能:**
+- 📅アイコン付きタイトル表示
+- 週範囲の動的表示
+- ローディング・エラー状態の適切なフィードバック
+
+#### WeeklyNavigation.tsx（更新版）
+週間ナビゲーションコンポーネント - 前週・次週・今日ボタンによる週間移動機能。
+
+**Props:**
+- `onPreviousWeek: () => void` - 前週移動ハンドラー
+- `onNextWeek: () => void` - 次週移動ハンドラー
+- `onThisWeek: () => void` - 今日週復帰ハンドラー
+- `isCurrentWeek: boolean` - 今日週判定フラグ
+
+**機能:**
+- シンプルで直感的な週間移動
+- 今日週以外での「今日」ボタン表示
+- 統一されたボタンデザイン
+
+#### WeeklyCalendar.tsx（新規）
+週間カレンダーコンポーネント - 7日間の日付表示と献立インジケーター。
+
+**Props:**
+- `weekDates: Date[]` - 7日分の日付配列
+- `selectedDate: Date` - 選択中の日付
+- `onDateSelect: (date: Date) => void` - 日付選択ハンドラー
+- `getMealPlansForDate: (date: Date) => MealPlan[]` - 献立取得関数
+
+**機能:**
+- 7列グリッドによる日付表示
+- 今日のハイライト（青リング）
+- 選択日のハイライト（インディゴ背景）
+- 献立有無のドットインジケーター
+
+#### DayDetail.tsx（新規）
+選択日の詳細コンポーネント - 朝昼夜の献立表示と操作機能の統合実装。
+
+**Props:**
+- `selectedDate: Date` - 選択された日付
+- `getMealPlan: (date: Date, mealType: MealType) => MealPlan | undefined` - 献立取得関数
+- `onAddMeal: (date: Date, mealType: MealType) => void` - 献立追加ハンドラー
+- `onEditMeal: (mealPlan: MealPlan) => void` - 献立編集ハンドラー
+- `onCookedClick: (mealPlan: MealPlan) => void` - 食べたボタンハンドラー
+- `onStatusClick: (mealPlan: MealPlan) => void` - ステータス変更ハンドラー
+
+**機能:**
+- `renderMealPlan`関数による朝昼夜の統一表示ロジック
+- 完食・作り置きステータスの視覚的表現
+- レシピリンク・食べたボタン・編集ボタンの適切な配置
+- 材料リストの表示
+
+#### WeeklySummary.tsx（新規）
+週間サマリーコンポーネント - 自炊・外食回数と予算表示。
+
+**Props:**
+- `weekRange: string` - 週の範囲表示用文字列
+- `summaryData: WeeklySummaryData` - サマリーデータ
+
+**機能:**
+- 📊アイコン付きサマリー表示
+- 自炊・外食回数の統計表示
+- 予算情報の表示
+
+#### MealSuggestions.tsx（新規）
+献立提案コンポーネント - AI献立生成ボタン群。
+
+**Props:**
+- `onTodayMealSuggestion: () => void` - 今日の献立提案ハンドラー
+- `onWeeklyMealSuggestion: () => void` - 週間献立提案ハンドラー
+
+**機能:**
+- 💡アイコン付き提案機能説明
+- 今日・週間の2つの提案ボタン
+- 統一されたボタンデザイン
+
+### 旧コンポーネント（削除対象）
+
+#### MealPlanDetail.tsx（旧版）
 献立詳細表示コンポーネント - 朝食・昼食・夕食の表示ロジックを統一したコンポーネント。
 
 #### 実装済み機能

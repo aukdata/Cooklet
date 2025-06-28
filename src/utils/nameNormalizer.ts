@@ -23,7 +23,7 @@ export const normalizeProductName = (
 ): NameNormalizationResult => {
   // 完全一致で検索
   const exactMatch = ingredients.find(ingredient => 
-    ingredient.originalName === item.originalName
+    ingredient.original_name === item.originalName
   );
 
   if (exactMatch) {
@@ -39,13 +39,13 @@ export const normalizeProductName = (
 
   // 正規表現一致で検索（大文字小文字を無視）
   const regexMatch = ingredients.find(ingredient => {
-    if (!ingredient.originalName) return false;
+    if (!ingredient.original_name) return false;
     try {
-      const regex = new RegExp(ingredient.originalName, 'i');
+      const regex = new RegExp(ingredient.original_name, 'i');
       return regex.test(item.originalName);
     } catch {
       // 正規表現が無効な場合は文字列一致にフォールバック
-      return ingredient.originalName.toLowerCase().includes(item.originalName.toLowerCase());
+      return ingredient.original_name.toLowerCase().includes(item.originalName.toLowerCase());
     }
   });
 

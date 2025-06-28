@@ -70,7 +70,7 @@ export const classifyError = (error: unknown): ErrorInfo => {
   return {
     type: 'unknown',
     message: '予期しないエラーが発生しました。',
-    originalError: error
+    originalError: error instanceof Error ? error : new Error(String(error))
   };
 };
 

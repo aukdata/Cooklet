@@ -155,7 +155,8 @@ export const Recipes: React.FC = () => {
         meal_type: mealType,
         recipe_url: recipe.url,
         ingredients: recipe.ingredients || [], // レシピの材料データをコピー
-        memo: recipe.title
+        memo: recipe.title,
+        consumed_status: 'pending' // デフォルト値を設定
       });
 
       showSuccess('献立に追加しました');
@@ -176,7 +177,8 @@ export const Recipes: React.FC = () => {
         meal_type: replacementData.mealType,
         recipe_url: replacementData.recipe.url,
         ingredients: replacementData.recipe.ingredients || [], // レシピの材料データをコピー
-        memo: replacementData.recipe.title
+        memo: replacementData.recipe.title,
+        consumed_status: 'pending' // デフォルト値を設定
       });
 
       showSuccess('献立を置き換えました');

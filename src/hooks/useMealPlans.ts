@@ -194,9 +194,9 @@ export const useMealPlans = () => {
   };
 
   // 指定日・食事タイプの献立を取得
-  const getMealPlan = (date: Date, mealType: MealType): MealPlan | null => {
+  const getMealPlan = (date: Date, mealType: MealType): MealPlan | undefined => {
     const dateStr = date.toISOString().split('T')[0];
-    return (mealPlans || []).find(plan => plan.date === dateStr && plan.meal_type === mealType) || null;
+    return (mealPlans || []).find(plan => plan.date === dateStr && plan.meal_type === mealType);
   };
 
   // レシピURLに基づいて最後に調理された日付を取得（issue #31対応）

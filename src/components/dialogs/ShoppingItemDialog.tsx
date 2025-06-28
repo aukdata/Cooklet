@@ -7,7 +7,7 @@ import { type ShoppingListItem } from '../../types';
 interface ShoppingItemDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (item: Omit<ShoppingListItem, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  onSave: (item: Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>) => Promise<void>;
   onDelete?: () => void; // アイテムを削除する関数（編集時のみ）
   initialData?: ShoppingListItem;
 }
@@ -55,7 +55,7 @@ export const ShoppingItemDialog: React.FC<ShoppingItemDialogProps> = ({
         name: name.trim(),
         quantity: quantity.trim() || undefined,
         checked: initialData?.checked || false,
-        addedFrom: initialData?.addedFrom || 'manual'
+        added_from: initialData?.added_from || 'manual'
       });
       resetForm();
       onClose();

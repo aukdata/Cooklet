@@ -35,7 +35,7 @@ export const IngredientManagement: React.FC = () => {
       const matchesCategory = categoryName.includes(query) || ingredient.category.toLowerCase().includes(query);
       
       // 単位での検索
-      const matchesUnit = ingredient.defaultUnit.toLowerCase().includes(query);
+      const matchesUnit = ingredient.default_unit.toLowerCase().includes(query);
       
       return matchesName || matchesCategory || matchesUnit;
     });
@@ -81,7 +81,7 @@ export const IngredientManagement: React.FC = () => {
   };
 
   // 材料保存処理
-  const handleSaveIngredient = async (ingredientData: Omit<Ingredient, 'id' | 'userId' | 'createdAt'>) => {
+  const handleSaveIngredient = async (ingredientData: Omit<Ingredient, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => {
     try {
       if (editingIngredient) {
         // 編集モード
@@ -241,13 +241,13 @@ export const IngredientManagement: React.FC = () => {
                           <div className="flex justify-between items-center">
                             <div className="flex-1">
                               <div className="flex items-center text-sm">
-                                <span className="text-gray-500">{ingredient.originalName}</span>
+                                <span className="text-gray-500">{ingredient.original_name}</span>
                                 <span className="text-gray-400 mx-2">→</span>
                                 <span className="text-gray-900 font-medium">{ingredient.name}</span>
                               </div>
-                              {ingredient.typicalPrice && (
+                              {ingredient.typical_price && (
                                 <div className="text-xs text-gray-500 mt-1">
-                                  ¥{ingredient.typicalPrice}
+                                  ¥{ingredient.typical_price}
                                 </div>
                               )}
                             </div>

@@ -17,7 +17,7 @@ interface ReceiptReaderProps {
   /** 食材マスタデータ（商品名正規化用） */
   ingredients: Ingredient[];
   /** 食材マスタ追加関数 */
-  addIngredient: (ingredient: Omit<Ingredient, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  addIngredient: (ingredient: Omit<Ingredient, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   /** 買い物リストアイテム追加関数 */
   addShoppingItem: (item: { name: string; quantity?: string; checked: boolean; added_from: 'manual' | 'auto' }) => Promise<void>;
 }
@@ -117,7 +117,7 @@ export const ReceiptReader: React.FC<ReceiptReaderProps> = ({
           const originalNameForSearch = item.originalName || item.name;
           const existingIngredient = ingredients.find(ing => 
             ing.name === item.name || 
-            (ing.originalName && new RegExp(ing.originalName, 'i').test(originalNameForSearch))
+            (ing.original_name && new RegExp(ing.original_name, 'i').test(originalNameForSearch))
           );
 
           // 2. 未登録の場合は自動登録
@@ -140,9 +140,9 @@ export const ReceiptReader: React.FC<ReceiptReaderProps> = ({
               await addIngredient({
                 name: item.name,
                 category,
-                defaultUnit: item.unit !== '-' ? item.unit : '個',
-                typicalPrice: item.price,
-                originalName: originalNameForSearch !== item.name ? originalNameForSearch : item.name
+                default_unit: item.unit !== '-' ? item.unit : '個',
+                typical_price: item.price,
+                original_name: originalNameForSearch !== item.name ? originalNameForSearch : item.name
               });
               registeredCount++;
             } catch (err) {

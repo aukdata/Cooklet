@@ -65,7 +65,7 @@ export const Shopping: React.FC = () => {
   }, [pendingItems]);
 
   // 新規アイテム追加処理（ダイアログから）
-  const handleAddItem = async (item: Omit<ShoppingListItem, 'id' | 'userId' | 'createdAt'>) => {
+  const handleAddItem = async (item: Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>) => {
     try {
       await addShoppingItem({
         name: item.name as string,
@@ -135,12 +135,12 @@ export const Shopping: React.FC = () => {
       for (const item of completedItems) {
         const quantity = editingQuantities[item.id!] || item.quantity || '1個';
         
-        const stockData: Omit<StockItem, 'id' | 'userId' | 'createdAt' | 'updatedAt'> = {
+        const stockData: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
           name: item.name,
           quantity: quantity,
-          bestBefore: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後
-          storageLocation: '冷蔵庫',
-          isHomemade: false
+          best_before: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後
+          storage_location: '冷蔵庫',
+          is_homemade: false
         };
         
         await addStockItem(stockData);

@@ -63,7 +63,7 @@ export const useDataHook = <T extends { id?: string; user_id?: string; created_a
         throw fetchError;
       }
 
-      setData((fetchedData as T[]) || []);
+      setData((fetchedData as unknown as T[]) || []);
     } catch (err) {
       console.error(`${errorMessages.fetch}:`, err);
       setError(err instanceof Error ? err.message : errorMessages.fetch);

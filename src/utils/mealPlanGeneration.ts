@@ -299,8 +299,8 @@ export const generateMealPlan = async (settings: MealGenerationSettings): Promis
     settings.ingredients.forEach(ingredient => {
       purchaseUnits[ingredient.name] = {
         ingredientName: ingredient.name,
-        quantity: parseFloat(ingredient.conversionQuantity || "1") || 1,
-        unit: ingredient.conversionUnit || ingredient.defaultUnit
+        quantity: parseFloat(ingredient.conversion_quantity || "1") || 1,
+        unit: ingredient.conversion_unit || ingredient.default_unit
       };
     });
     
