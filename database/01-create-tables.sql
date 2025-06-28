@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS ingredients (
   category TEXT NOT NULL CHECK (category IN ('vegetables', 'meat', 'seasoning', 'others')),
   default_unit TEXT NOT NULL,
   typical_price DECIMAL(10,2),
+  infinity BOOLEAN DEFAULT FALSE, -- 1回の使用量が少ない食材（調味料など）で在庫から消費されないもの
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   UNIQUE(user_id, name) -- ユーザーごとに食材名がユニーク
 );
@@ -49,6 +50,7 @@ CREATE TABLE IF NOT EXISTS meal_plans (
   recipe_url TEXT,
   ingredients JSONB,
   memo TEXT,
+  consumed_status TEXT DEFAULT 'pending' CHECK (consumed_status IN ('pending', 'completed', 'stored')),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

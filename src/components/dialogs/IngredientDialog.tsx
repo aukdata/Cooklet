@@ -96,6 +96,7 @@ export const IngredientDialog = ({
         category,
         default_unit: defaultUnit.trim(),
         typical_price: typicalPrice ? parseFloat(typicalPrice) : undefined,
+        infinity: false, // デフォルトは通常の食材として設定
         original_name: originalName.trim() || name.trim(),
         conversion_quantity: conversionQuantity.trim() || undefined,
         conversion_unit: conversionUnit.trim() || undefined

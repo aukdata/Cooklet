@@ -337,12 +337,19 @@ ingredients (
   category: TEXT NOT NULL CHECK (category IN ('vegetables', 'meat', 'seasoning', 'others')),
   default_unit: TEXT NOT NULL,
   typical_price: DECIMAL(10,2),
+  infinity: BOOLEAN DEFAULT FALSE, -- 無限食材フラグ（1回の使用量が少なく在庫から消費されない食材）
   original_name: TEXT NOT NULL,
   conversion_quantity: TEXT,
   conversion_unit: TEXT,
   created_at: TIMESTAMP DEFAULT NOW()
 )
 ```
+
+#### infinityフィールドについて
+- **目的**: 醤油、塩、砂糖などの調味料類で、1回の使用量が少なく実質的に在庫から消費されない食材を管理
+- **デフォルト**: `FALSE`（通常の食材）
+- **用途**: 献立生成や在庫管理で、これらの食材を考慮せずに計算を行う
+- **例**: 醤油、塩、砂糖、酢、みりん、料理酒、胡椒、味噌など
 
 ### 3.4 stock_items（食材在庫）
 ```sql

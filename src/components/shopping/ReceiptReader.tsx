@@ -142,6 +142,7 @@ export const ReceiptReader: React.FC<ReceiptReaderProps> = ({
                 category,
                 default_unit: item.unit !== '-' ? item.unit : '個',
                 typical_price: item.price,
+                infinity: false,
                 original_name: originalNameForSearch !== item.name ? originalNameForSearch : item.name
               });
               registeredCount++;

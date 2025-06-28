@@ -24,17 +24,6 @@ Read all project design documents and specifications to understand the complete 
 - `database/README.md` - Database setup and migration instructions
 - `tests/README.md` - Testing guidelines and procedures
 
-### Code Module Documentation (CLAUDE.md files)
-- `src/components/CLAUDE.md` - Component architecture overview
-- `src/pages/CLAUDE.md` - Page structure and routing
-- `src/lib/CLAUDE.md` - Utility libraries and helpers
-- `src/services/CLAUDE.md` - Service layer and API integrations
-- `src/types/CLAUDE.md` - TypeScript type definitions
-- `src/hooks/CLAUDE.md` - Custom React hooks
-- `src/contexts/CLAUDE.md` - React context providers
-- `src/utils/CLAUDE.md` - Utility functions
-- `src/constants/CLAUDE.md` - Application constants
-
 ### Feature-Specific Documentation
 - Page modules: `src/pages/{auth,recipes,cost,summary,settings,shopping,meal-plans,stock}/CLAUDE.md`
 - Component modules: `src/components/{layout,ui,common,shopping,meal-plans,dialogs,summary}/CLAUDE.md`

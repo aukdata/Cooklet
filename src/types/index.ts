@@ -19,6 +19,7 @@ export interface Ingredient {
   category: 'vegetables' | 'meat' | 'seasoning' | 'others'; // カテゴリ（野菜・肉・調味料・その他）
   default_unit: string; // デフォルト単位（g, 個, etc.）（DB形式）
   typical_price?: number; // 一般的な価格（任意）（DB形式）
+  infinity: boolean; // 無限食材フラグ（醤油、塩など1回の使用量が少なく在庫から消費されない食材）
   original_name: string; // 正規化前の商品名（商品名を一般名に変換するときに使用）（DB形式）
   conversion_quantity?: string; // 1個当たりの数量（任意）（DB形式）
   conversion_unit?: string; // 1個当たりの単位（任意）（DB形式）
