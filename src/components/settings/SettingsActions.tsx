@@ -31,7 +31,7 @@ export const SettingsActions: React.FC = () => {
 
   // 材料管理画面への遷移
   const handleIngredientManagement = () => {
-    navigate('ingredient-management');
+    navigate('settings/ingredients');
   };
 
   return (
@@ -97,13 +97,6 @@ export const SettingsActions: React.FC = () => {
                 </>
               )}
             </button>
-          </div>
-          
-          {/* 注意書き */}
-          <div className="bg-red-50 border border-red-200 rounded-md p-3">
-            <div className="text-sm text-red-800">
-              ⚠️ ログアウトすると、再びログインするまでデータへアクセスできなくなります。
-            </div>
           </div>
         </div>
       </div>

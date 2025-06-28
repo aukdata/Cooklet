@@ -103,3 +103,65 @@
 **コンポーネント仕様**：
 - 詳細は `/src/components/ui/CLAUDE.md` を参照
 - 在庫画面の編集ボタンを基準とした統一デザイン
+
+### 3.6 レイアウト・スペーシング統一ルール
+
+**ページレベルのpadding統一**：
+```css
+.page-container {
+  padding: 1rem; /* p-4 */
+}
+```
+
+**適用対象**：
+- サマリー画面（Summary.tsx）
+- 献立管理画面（MealPlans.tsx）
+- 買い物リスト画面（Shopping.tsx）
+- レシピ管理画面（Recipes.tsx）
+- 在庫管理画面（Stock.tsx）
+- コスト管理画面（Cost.tsx）
+- 設定画面（Settings.tsx）
+- 材料マスタ管理画面（IngredientManagement.tsx）
+
+**実装方法**：
+```tsx
+export const PageComponent: React.FC = () => {
+  return (
+    <div className="p-4">
+      {/* ページコンテンツ */}
+    </div>
+  );
+};
+```
+
+**カードコンポーネントのスペーシング**：
+- **カード間のマージン**: `mb-4`（下部マージン1rem）
+- **カード内のpadding**: `p-4`（内部パディング1rem）
+- **セクション間のスペース**: `space-y-6`（垂直方向1.5rem）
+
+**統一されたカードデザイン**：
+```tsx
+<div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
+  {/* カードコンテンツ */}
+</div>
+```
+
+**ヘッダーセクションの統一**：
+```tsx
+<div className="flex justify-between items-center mb-4">
+  <h2 className="text-lg font-semibold flex items-center">
+    <span className="mr-2">{/* アイコン絵文字 */}</span>
+    {/* タイトル */}
+  </h2>
+</div>
+```
+
+**禁止事項**：
+- ページごとに異なるpadding値の使用
+- カード間の不統一なmargin設定
+- 独自のレイアウトシステムの作成
+
+**例外ルール**：
+- ダイアログ・モーダル内は独自のpadding設定可能
+- モバイル表示時のレスポンシブ調整は許可
+- MainLayoutレベルでの全体レイアウト調整は対象外

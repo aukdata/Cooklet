@@ -26,6 +26,7 @@ interface IngredientDialogProps {
  * - カテゴリ選択（野菜・肉・調味料・その他）
  * - デフォルト単位の設定
  * - 一般的価格の設定（任意）
+ * - 在庫消費なし設定（infinityフラグ）
  */
 export const IngredientDialog = ({
   isOpen,
@@ -42,6 +43,7 @@ export const IngredientDialog = ({
   const [typicalPrice, setTypicalPrice] = useState<string>('');
   const [conversionQuantity, setConversionQuantity] = useState<string>('');
   const [conversionUnit, setConversionUnit] = useState<string>('');
+  const [infinity, setInfinity] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // 編集モードかどうかの判定
@@ -57,6 +59,7 @@ export const IngredientDialog = ({
       setTypicalPrice(ingredient.typical_price ? ingredient.typical_price.toString() : '');
       setConversionQuantity(ingredient.conversion_quantity || '');
       setConversionUnit(ingredient.conversion_unit || '');
+      setInfinity(ingredient.infinity || false);
     } else {
       // 新規作成時は初期化
       setOriginalName('');
@@ -66,6 +69,7 @@ export const IngredientDialog = ({
       setTypicalPrice('');
       setConversionQuantity('');
       setConversionUnit('');
+      setInfinity(false);
     }
   }, [ingredient]);
 
@@ -78,6 +82,7 @@ export const IngredientDialog = ({
     setTypicalPrice('');
     setConversionQuantity('');
     setConversionUnit('');
+    setInfinity(false);
     setIsLoading(false);
     onClose();
   };
@@ -96,7 +101,7 @@ export const IngredientDialog = ({
         category,
         default_unit: defaultUnit.trim(),
         typical_price: typicalPrice ? parseFloat(typicalPrice) : undefined,
-        infinity: false, // デフォルトは通常の食材として設定
+        infinity: infinity, // 在庫消費なしフラグ
         original_name: originalName.trim() || name.trim(),
         conversion_quantity: conversionQuantity.trim() || undefined,
         conversion_unit: conversionUnit.trim() || undefined
@@ -271,6 +276,27 @@ export const IngredientDialog = ({
           step="0.01"
           disabled={isLoading}
         />
+      </div>
+
+      {/* 在庫消費なし設定 */}
+      <div className="space-y-2">
+        <label className="flex items-start space-x-3 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={infinity}
+            onChange={(e) => setInfinity(e.target.checked)}
+            className="mt-1 h-4 w-4 text-indigo-600 border-gray-300 rounded focus:ring-indigo-500"
+            disabled={isLoading}
+          />
+          <div>
+            <span className="text-sm font-medium text-gray-700">
+              在庫消費なし
+            </span>
+            <p className="text-xs text-gray-500">
+              醤油・塩・砂糖など、1回の使用量が少なく在庫管理が不要な調味料をチェック
+            </p>
+          </div>
+        </label>
       </div>
     </BaseDialog>
   );

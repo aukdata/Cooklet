@@ -16,6 +16,7 @@ export interface InventoryItem {
   quantity: number;
   unit: string;
   expiryDate?: string;
+  infinity?: boolean; // 在庫消費なしフラグ
 }
 
 // レシピ情報（アルゴリズム内部用）
@@ -107,9 +108,10 @@ export const generateMealPlanAlgorithm = (
         // 1人前に換算
         const neededAmount = ingredient.quantity / recipeData.servings;
         const currentStock = tempInventory[ingredient.name]?.quantity || 0;
+        const isInfinityIngredient = tempInventory[ingredient.name]?.infinity || false;
 
-        // 購入必要コスト計算
-        if (currentStock < neededAmount) {
+        // 購入必要コスト計算（infinityフラグがtrueの食材は購入不要）
+        if (!isInfinityIngredient && currentStock < neededAmount) {
           const shortage = neededAmount - currentStock;
           const purchaseUnit = purchaseUnits[ingredient.name];
           if (!purchaseUnit) {
@@ -165,7 +167,10 @@ export const generateMealPlanAlgorithm = (
     for (const ingredient of selectedRecipe.ingredients) {
       const neededAmount = ingredient.quantity / selectedRecipe.servings;
       const currentStock = tempInventory[ingredient.name]?.quantity || 0;
-      if (currentStock < neededAmount) {
+      const isInfinityIngredient = tempInventory[ingredient.name]?.infinity || false;
+      
+      // infinityフラグがtrueの食材は購入コストに含めない
+      if (!isInfinityIngredient && currentStock < neededAmount) {
         const shortage = neededAmount - currentStock;
         const purchaseUnit = purchaseUnits[ingredient.name];
         if (purchaseUnit) {
@@ -185,9 +190,10 @@ export const generateMealPlanAlgorithm = (
     for (const ingredient of selectedRecipe.ingredients) {
       const neededAmount = ingredient.quantity / selectedRecipe.servings;
       const currentStock = tempInventory[ingredient.name]?.quantity || 0;
+      const isInfinityIngredient = tempInventory[ingredient.name]?.infinity || false;
 
-      // 不足分の購入処理
-      if (currentStock < neededAmount) {
+      // 不足分の購入処理（infinityフラグがtrueの食材は購入不要）
+      if (!isInfinityIngredient && currentStock < neededAmount) {
         const shortage = neededAmount - currentStock;
         const purchaseUnit = purchaseUnits[ingredient.name];
         const unitsToBuy = Math.ceil(shortage / purchaseUnit.quantity);
@@ -211,8 +217,10 @@ export const generateMealPlanAlgorithm = (
         tempInventory[ingredient.name].quantity += purchaseAmount;
       }
 
-      // 使用分を在庫から減算
-      tempInventory[ingredient.name].quantity -= neededAmount;
+      // 使用分を在庫から減算（infinityフラグがtrueの食材は在庫消費なし）
+      if (!isInfinityIngredient) {
+        tempInventory[ingredient.name].quantity -= neededAmount;
+      }
     }
   }
 
@@ -249,11 +257,15 @@ export const generateMealPlan = async (settings: MealGenerationSettings): Promis
     const inventory: { [key: string]: InventoryItem } = {};
     settings.stockItems.forEach(stock => {
       const parsed = parseQuantity(stock.quantity);
+      // 食材マスタからinfinityフラグを取得
+      const ingredientMaster = settings.ingredients.find(ing => ing.name === stock.name);
+      
       inventory[stock.name] = {
         name: stock.name,
         quantity: parseFloat(parsed.amount) || 0,
         unit: parsed.unit,
-        expiryDate: stock.best_before
+        expiryDate: stock.best_before,
+        infinity: ingredientMaster?.infinity || false // 在庫消費なしフラグ
       };
     });
 
@@ -302,6 +314,16 @@ export const generateMealPlan = async (settings: MealGenerationSettings): Promis
         quantity: parseFloat(ingredient.conversion_quantity || "1") || 1,
         unit: ingredient.conversion_unit || ingredient.default_unit
       };
+      
+      // infinityフラグがtrueの食材で在庫にない場合は無限在庫として追加
+      if (ingredient.infinity && !inventory[ingredient.name]) {
+        inventory[ingredient.name] = {
+          name: ingredient.name,
+          quantity: Number.MAX_SAFE_INTEGER, // 無限大の数量
+          unit: ingredient.default_unit,
+          infinity: true
+        };
+      }
     });
     
     // レシピに含まれているが食材マスタにない食材用のデフォルト購入単位を生成

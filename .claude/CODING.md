@@ -818,3 +818,127 @@ Cookletのコーディングルールは以下の価値観に基づいていま�
 Cookletでは、外部API（Google Vision API、Supabase等）やユーザー入力データを多く扱うため、特に型安全性を重視しています。`unknown`型と型ガードの適切な組み合わせにより、実行時エラーを防止し、信頼性の高いアプリケーションを実現しています。
 
 これらのルールに従うことで、高品質で保守しやすく、実行時にも安全なコードベースを維持できます。
+
+## 9. レイアウト・デザインルール
+
+### 9.1 ページレベルレイアウト統一
+
+**統一スタイル**：
+```tsx
+// ✅ 全ページ共通レイアウト
+export const PageComponent: React.FC = () => {
+  return (
+    <div className="p-4">
+      {/* ページコンテンツ */}
+    </div>
+  );
+};
+```
+
+**適用必須ページ**：
+- サマリー（Summary.tsx）
+- 献立管理（MealPlans.tsx）  
+- 買い物リスト（Shopping.tsx）
+- レシピ管理（Recipes.tsx）
+- 在庫管理（Stock.tsx）
+- コスト管理（Cost.tsx）
+- 設定（Settings.tsx）
+- 材料マスタ管理（IngredientManagement.tsx）
+
+### 9.2 カードコンポーネント統一
+
+**標準カードスタイル**：
+```tsx
+// ✅ 統一されたカードデザイン
+<div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
+  {/* カードコンテンツ */}
+</div>
+```
+
+**スペーシングルール**：
+- **ページpadding**: `p-4`（1rem）
+- **カード間margin**: `mb-4`（1rem）
+- **カード内padding**: `p-4`（1rem）
+- **セクション間space**: `space-y-6`（1.5rem）
+
+### 9.3 ヘッダーセクション統一
+
+**標準ヘッダー構造**：
+```tsx
+// ✅ 統一されたヘッダーデザイン
+<div className="flex justify-between items-center mb-4">
+  <h2 className="text-lg font-semibold flex items-center">
+    <span className="mr-2">{/* 絵文字アイコン */}</span>
+    {/* ページタイトル */}
+  </h2>
+</div>
+```
+
+### 9.4 禁止パターン
+
+```tsx
+// ❌ 禁止 - 不統一なpadding
+export const BadPage: React.FC = () => {
+  return (
+    <div className="p-2"> {/* 他のページと異なるpadding */}
+      {/* コンテンツ */}
+    </div>
+  );
+};
+
+// ❌ 禁止 - 不統一なmargin
+<div className="bg-white rounded-lg p-3 shadow-sm mb-6"> {/* 異なるpadding/margin */}
+  {/* カードコンテンツ */}
+</div>
+
+// ❌ 禁止 - 独自のレイアウトシステム
+<div className="custom-container"> {/* 独自クラス使用禁止 */}
+  {/* コンテンツ */}
+</div>
+```
+
+### 9.5 レスポンシブ対応
+
+**モバイルファースト原則**：
+- 基本デザインはモバイル最適化
+- デスクトップは必要に応じて拡張
+- タッチ操作を前提とした要素サイズ
+
+**メディアクエリ使用ガイドライン**：
+```tsx
+// ✅ レスポンシブデザイン例
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+  {/* グリッドアイテム */}
+</div>
+```
+
+### 9.6 コンポーネント設計原則
+
+**再利用可能性**：
+- 共通パターンは`src/components/common/`に配置
+- プロパティによる柔軟な制御
+- 一貫したprops命名規則
+
+**型安全なスタイリング**：
+```tsx
+// ✅ 型安全なスタイルprops
+interface CardProps {
+  className?: string; // 追加スタイルの許可
+  children: React.ReactNode;
+}
+
+export const Card: React.FC<CardProps> = ({ className = "", children }) => {
+  return (
+    <div className={`bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4 ${className}`}>
+      {children}
+    </div>
+  );
+};
+```
+
+### 9.7 デザインシステム準拠
+
+**UI/UXとの統一**：
+- `.claude/UI.md`の「3.6 レイアウト・スペーシング統一ルール」に準拠
+- デザインシステムとコーディングルールの一致
+- 継続的な一貫性の維持

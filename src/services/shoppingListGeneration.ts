@@ -1,7 +1,7 @@
 // 買い物リスト自動生成サービス - CLAUDE.md仕様書に準拠
 // 献立から買い物リストを自動生成し、在庫との突合を行う機能
 
-import { type MealPlan, type StockItem } from '../types/index';
+import { type MealPlan, type StockItem, type Ingredient } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 
 export interface ShoppingListGenerationResult {
@@ -53,6 +53,20 @@ const findMatchingStock = (ingredientName: string, stockItems: StockItem[]): Sto
            normalizedStockName.includes(normalizedName) ||
            normalizedName.includes(normalizedStockName);
   }) || null;
+};
+
+// 食材が無限食材（在庫消費なし）かどうかをチェックする関数
+const isInfinityIngredient = (ingredientName: string, ingredients: Ingredient[]): boolean => {
+  const normalizedName = normalizeIngredientName(ingredientName);
+  
+  return ingredients.some(ingredient => {
+    const normalizedIngredientName = normalizeIngredientName(ingredient.name);
+    return ingredient.infinity && (
+      normalizedIngredientName === normalizedName ||
+      normalizedIngredientName.includes(normalizedName) ||
+      normalizedName.includes(normalizedIngredientName)
+    );
+  });
 };
 
 // 在庫が足りているかチェックする関数
@@ -154,7 +168,8 @@ const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, s
 export const generateShoppingListFromMealPlans = async (
   mealPlans: MealPlan[],
   stockItems: StockItem[],
-  existingShoppingItems: ShoppingListItem[] = []
+  existingShoppingItems: ShoppingListItem[] = [],
+  ingredients: Ingredient[] = []
 ): Promise<ShoppingListGenerationResult> => {
   try {
     console.log('🔍 [Debug] generateShoppingListFromMealPlans 開始');
@@ -226,6 +241,16 @@ export const generateShoppingListFromMealPlans = async (
         }
       }
       
+      // infinityフラグ（在庫消費なし）をチェック
+      const isInfinity = isInfinityIngredient(originalName, ingredients);
+      
+      if (isInfinity) {
+        // 無限食材（醤油・塩等）は買い物リストに追加不要
+        inStock++;
+        console.log(`🔍 [Debug] 無限食材のためスキップ: "${originalName}"`);
+        continue;
+      }
+      
       // 在庫チェック
       const matchingStock = findMatchingStock(originalName, stockItems);
       
@@ -292,7 +317,8 @@ export const generateShoppingListForPeriod = async (
   endDate: Date,
   allMealPlans: MealPlan[],
   stockItems: StockItem[],
-  existingShoppingItems: ShoppingListItem[] = []
+  existingShoppingItems: ShoppingListItem[] = [],
+  ingredients: Ingredient[] = []
 ): Promise<ShoppingListGenerationResult> => {
   const startDateStr = startDate.toISOString().split('T')[0];
   const endDateStr = endDate.toISOString().split('T')[0];
@@ -302,14 +328,15 @@ export const generateShoppingListForPeriod = async (
     plan.date >= startDateStr && plan.date <= endDateStr
   );
   
-  return generateShoppingListFromMealPlans(periodMealPlans, stockItems, existingShoppingItems);
+  return generateShoppingListFromMealPlans(periodMealPlans, stockItems, existingShoppingItems, ingredients);
 };
 
 // 今週の買い物リストを生成
 export const generateWeeklyShoppingList = async (
   allMealPlans: MealPlan[],
   stockItems: StockItem[],
-  existingShoppingItems: ShoppingListItem[] = []
+  existingShoppingItems: ShoppingListItem[] = [],
+  ingredients: Ingredient[] = []
 ): Promise<ShoppingListGenerationResult> => {
   const today = new Date();
   const startOfWeek = new Date(today);
@@ -318,7 +345,7 @@ export const generateWeeklyShoppingList = async (
   const endOfWeek = new Date(startOfWeek);
   endOfWeek.setDate(startOfWeek.getDate() + 6); // 土曜日
   
-  return generateShoppingListForPeriod(startOfWeek, endOfWeek, allMealPlans, stockItems, existingShoppingItems);
+  return generateShoppingListForPeriod(startOfWeek, endOfWeek, allMealPlans, stockItems, existingShoppingItems, ingredients);
 };
 
 // 次の数日分の買い物リストを生成
@@ -326,11 +353,12 @@ export const generateShoppingListForNextDays = async (
   days: number,
   allMealPlans: MealPlan[],
   stockItems: StockItem[],
-  existingShoppingItems: ShoppingListItem[] = []
+  existingShoppingItems: ShoppingListItem[] = [],
+  ingredients: Ingredient[] = []
 ): Promise<ShoppingListGenerationResult> => {
   const today = new Date();
   const endDate = new Date(today);
   endDate.setDate(today.getDate() + days - 1);
   
-  return generateShoppingListForPeriod(today, endDate, allMealPlans, stockItems, existingShoppingItems);
+  return generateShoppingListForPeriod(today, endDate, allMealPlans, stockItems, existingShoppingItems, ingredients);
 };

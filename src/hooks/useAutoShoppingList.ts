@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useMealPlans } from './useMealPlans';
 import { useStockItems } from './useStockItems';
 import { useShoppingList } from './useShoppingList';
+import { useIngredients } from './useIngredients';
 import { generateShoppingListForNextDays } from '../services/shoppingListGeneration';
 
 // 自動生成の結果型
@@ -28,6 +29,7 @@ export const useAutoShoppingList = () => {
   const { mealPlans } = useMealPlans();
   const { stockItems } = useStockItems();
   const { shoppingList, addShoppingItem } = useShoppingList();
+  const { ingredients } = useIngredients();
 
   // 自動生成実行
   const generateShoppingList = async (daysAhead: number = 7): Promise<AutoGenerationResult> => {
@@ -40,7 +42,8 @@ export const useAutoShoppingList = () => {
         daysAhead,
         mealPlans,
         stockItems,
-        shoppingList
+        shoppingList,
+        ingredients
       );
 
       if (!result.success) {
@@ -116,7 +119,8 @@ export const useAutoShoppingList = () => {
         daysAhead,
         mealPlans,
         stockItems,
-        shoppingList
+        shoppingList,
+        ingredients
       );
 
       if (result.success) {
@@ -180,7 +184,8 @@ export const useAutoShoppingList = () => {
     dataStatus: {
       mealPlansLoaded: mealPlans.length > 0,
       stockItemsLoaded: stockItems.length > 0,
-      shoppingListLoaded: shoppingList.length >= 0
+      shoppingListLoaded: shoppingList.length >= 0,
+      ingredientsLoaded: ingredients.length > 0
     }
   };
 };

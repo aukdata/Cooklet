@@ -2,6 +2,60 @@
 
 ## 2025-06-28
 
+### 【最新】UI統一とデザインルール策定
+
+#### 実装内容
+1. **設定画面のレイアウト修正**
+   - `Settings.tsx`のpadding統一（`p-4`追加）
+   - 他画面と同じレイアウト基準に統一
+
+2. **型安全性の向上**
+   - `IngredientDialog.tsx`で`infinity: false`プロパティ追加
+   - `ReceiptReader.tsx`で食材自動登録時の`infinity`プロパティ追加
+   - TypeScript型エラーの完全解決
+
+3. **デザインルールドキュメント化**
+   - `.claude/UI.md`に「3.6 レイアウト・スペーシング統一ルール」セクション追加
+   - `.claude/CODING.md`に「9. レイアウト・デザインルール」セクション追加
+
+#### デザイン統一項目
+**ページレベル統一**：
+- 全ページで`className="p-4"`必須
+- カード間margin `mb-4`統一
+- セクション間space `space-y-6`統一
+
+**適用対象ページ**：
+- Summary, MealPlans, Shopping, Recipes, Stock, Cost, Settings, IngredientManagement
+
+**カードデザイン統一**：
+```tsx
+<div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
+```
+
+**ヘッダー構造統一**：
+```tsx
+<div className="flex justify-between items-center mb-4">
+  <h2 className="text-lg font-semibold flex items-center">
+    <span className="mr-2">{/* 絵文字アイコン */}</span>
+    {/* タイトル */}
+  </h2>
+</div>
+```
+
+#### コード品質確認
+- `pnpm run lint`: 0 warnings, 0 errors ✅
+- `pnpm run build:netlify`: 正常完了 ✅
+- 型安全性: 全型エラー解決 ✅
+
+#### 引き継ぎ事項
+- 新規ページ作成時は必ず`p-4`padding適用
+- カードコンポーネント作成時は統一スタイル使用
+- UI/UXドキュメントとコーディングルールの両方を参照
+
+---
+
+## 2025-06-28
+
 ### 【最新】献立計画画面の適切な粒度でのコンポーネント化完了
 
 #### 実装内容
