@@ -135,7 +135,7 @@ export const commonValidationRules = {
   positiveNumber: <T>(field: keyof T): ValidationRule<T> => ({
     field,
     customValidator: (value) => {
-      const num = parseFloat(value);
+      const num = parseFloat(String(value));
       if (isNaN(num) || num <= 0) {
         return '正の数値を入力してください';
       }

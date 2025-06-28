@@ -52,8 +52,8 @@ export const NotificationSettingsSection: React.FC = () => {
   // 通知有効化処理
   const handleEnableNotifications = async () => {
     try {
-      const permission = await notificationService.requestPermission();
-      if (permission === 'granted') {
+      const permission = await notificationService.requestNotificationPermission();
+      if (permission) {
         await enableNotifications();
         showSuccess('通知を有効化しました');
       } else {

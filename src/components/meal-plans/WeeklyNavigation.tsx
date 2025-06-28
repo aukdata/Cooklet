@@ -52,16 +52,16 @@ export const WeeklyNavigation: React.FC<WeeklyNavigationProps> = ({
       </div>
 
       {/* 週間ナビゲーション */}
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex items-center justify-between mb-4 gap-2">
         <button
           onClick={onPreviousWeek}
-          className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
         >
           <span className="mr-1">‹</span>
           前週
         </button>
         
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-center flex-1 space-x-2">
           {!isCurrentWeek && (
             <button
               onClick={onThisWeek}
@@ -77,7 +77,7 @@ export const WeeklyNavigation: React.FC<WeeklyNavigationProps> = ({
         
         <button
           onClick={onNextWeek}
-          className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+          className="flex items-center px-3 py-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex-shrink-0"
         >
           次週
           <span className="ml-1">›</span>

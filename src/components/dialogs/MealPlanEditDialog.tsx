@@ -62,9 +62,10 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       if (initialData) {
         // 編集モード: 初期データをセット
         setMealType(initialData.meal_type);
-        setManualRecipeName(initialData.recipe_name || '');
+        // MealPlan型にはrecipe_nameがないため、URLから推測するか空文字に
+        setManualRecipeName(''); // recipe_nameプロパティは存在しない
         setManualRecipeUrl(initialData.recipe_url || '');
-        setServings(Number(initialData.servings) || 2);
+        setServings(2); // servingsプロパティは存在しないため固定値
         setMemo(initialData.memo || '');
         
         // 材料データを変換
@@ -119,11 +120,12 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       const ratio = newServings / (servings || 1);
       const adjustedIngredients = ingredients.map(ing => {
         const parsed = parseQuantity(ing.quantity);
-        if (parsed.amount !== null) {
-          const newAmount = parsed.amount * ratio;
+        const numericAmount = parseFloat(parsed.amount);
+        if (!isNaN(numericAmount)) {
+          const newAmount = numericAmount * ratio;
           return {
             ...ing,
-            quantity: formatQuantity(newAmount, parsed.unit || '')
+            quantity: formatQuantity(newAmount.toString(), parsed.unit)
           };
         }
         return ing;
@@ -143,18 +145,19 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
     setIsSaving(true);
     try {
       const mealPlan: MealPlan = {
-        id: initialData?.id,
+        id: initialData?.id || '', // 新規の場合は空文字、サーバー側でUUID生成
+        user_id: initialData?.user_id || '', // 既存データから取得、新規の場合はサーバー側で設定
         date: selectedDate,
         meal_type: mealType,
-        recipe_name: manualRecipeName,
-        recipe_url: manualRecipeUrl || null,
-        servings,
+        recipe_url: manualRecipeUrl || undefined,
         ingredients: ingredients.map(ing => ({
           name: ing.name,
           quantity: ing.quantity
         })),
         memo: memo || undefined,
-        consumed_status: 'pending'
+        consumed_status: 'pending',
+        created_at: initialData?.created_at || new Date().toISOString(),
+        updated_at: new Date().toISOString()
       };
 
       await onSave(mealPlan);
@@ -173,6 +176,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
         isOpen={isOpen}
         onClose={onClose}
         title={initialData ? '献立編集' : '献立追加'}
+        icon="🍽️"
       >
         <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
           {/* 食事タイプ選択 */}

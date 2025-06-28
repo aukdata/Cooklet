@@ -12,7 +12,11 @@ import { DatabaseError, NotFoundError, transformSupabaseError } from '../errors'
 export class SupabaseShoppingListRepository implements IShoppingListRepository {
   private readonly tableName = 'shopping_list';
 
-  constructor(private readonly client: SupabaseClient) {}
+  private readonly client: SupabaseClient;
+
+  constructor(client: SupabaseClient) {
+    this.client = client;
+  }
 
   /**
    * 指定ユーザーの全買い物リストアイテムを取得

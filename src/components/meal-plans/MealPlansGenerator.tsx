@@ -35,8 +35,11 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
 
       // TODO: MealGenerationSettingsの実際の構造に合わせて実装
       const settings = {
-        date: new Date().toISOString().split('T')[0],
-        mealTypes: ['朝', '昼', '夜'],
+        stockItems: [], // 実際の在庫データを後で追加
+        recipes: [], // 実際のレシピデータを後で追加
+        ingredients: [], // 実際の食材マスタデータを後で追加
+        days: 1,
+        mealTypes: [true, true, true] as [boolean, boolean, boolean], // [朝, 昼, 夜]
         temperature: 0.7
       };
 
@@ -65,9 +68,11 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
 
       // TODO: MealGenerationSettingsの実際の構造に合わせて実装
       const settings = {
-        startDate: new Date().toISOString().split('T')[0],
+        stockItems: [], // 実際の在庫データを後で追加
+        recipes: [], // 実際のレシピデータを後で追加
+        ingredients: [], // 実際の食材マスタデータを後で追加
         days: 7,
-        mealTypes: ['朝', '昼', '夜'],
+        mealTypes: [true, true, true] as [boolean, boolean, boolean], // [朝, 昼, 夜]
         temperature: 0.5
       };
 

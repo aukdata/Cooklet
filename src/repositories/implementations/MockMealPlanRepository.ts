@@ -131,8 +131,14 @@ export class MockMealPlanRepository implements IMealPlanRepository {
   async create(item: Omit<MealPlan, 'id' | 'created_at' | 'updated_at'>): Promise<MealPlan> {
     const now = this.getCurrentTimestamp();
     const newItem: MealPlan = {
-      ...item,
       id: this.generateId(),
+      user_id: item.user_id,
+      date: item.date,
+      meal_type: item.meal_type,
+      recipe_url: item.recipe_url || undefined,
+      ingredients: item.ingredients || [],
+      memo: item.memo || undefined,
+      consumed_status: item.consumed_status || 'pending',
       created_at: now,
       updated_at: now,
     };

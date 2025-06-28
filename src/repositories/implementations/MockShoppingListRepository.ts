@@ -71,8 +71,11 @@ export class MockShoppingListRepository implements IShoppingListRepository {
    */
   async create(item: Omit<ShoppingListItem, 'id' | 'created_at'>): Promise<ShoppingListItem> {
     const newItem: ShoppingListItem = {
-      ...item,
       id: this.generateId(),
+      user_id: item.user_id,
+      name: item.name,
+      checked: item.checked ?? false,
+      added_from: item.added_from || 'manual',
       created_at: this.getCurrentTimestamp(),
     };
     
@@ -206,8 +209,11 @@ export class MockShoppingListRepository implements IShoppingListRepository {
     
     for (const item of items) {
       const newItem: ShoppingListItem = {
-        ...item,
         id: this.generateId(),
+        user_id: item.user_id,
+        name: item.name,
+        checked: item.checked ?? false,
+        added_from: item.added_from || 'manual',
         created_at: this.getCurrentTimestamp(),
       };
       

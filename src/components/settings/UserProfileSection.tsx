@@ -105,10 +105,7 @@ export const UserProfileSection: React.FC = () => {
               </span>
               <EditButton
                 onClick={() => setIsEditing(true)}
-                className="ml-2"
-              >
-                編集
-              </EditButton>
+              />
             </div>
           )}
         </div>

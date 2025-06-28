@@ -45,7 +45,7 @@ export const useIngredients = () => {
   // 食材マスタを更新する関数
   const updateIngredient = async (id: string, updates: Partial<Omit<Ingredient, 'id' | 'userId' | 'createdAt'>>) => {
     // camelCaseをsnake_caseに変換
-    const dbUpdates: Record<string, unknown> = {};
+    const dbUpdates: Record<string, string | number> = {};
     
     if (updates.name !== undefined) dbUpdates.name = updates.name;
     if (updates.category !== undefined) dbUpdates.category = updates.category;

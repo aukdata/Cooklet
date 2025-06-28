@@ -28,7 +28,7 @@ export const AppInfoSection: React.FC = () => {
         {/* ビルド日時 */}
         <div className="flex justify-between items-center">
           <span className="text-gray-600">ビルド日時</span>
-          <span className="font-medium text-gray-900">{formatBuildDate() || '不明'}</span>
+          <span className="font-medium text-gray-900">{formatBuildDate || '不明'}</span>
         </div>
         
         {/* 甲武線 */}

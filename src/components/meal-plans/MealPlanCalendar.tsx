@@ -33,7 +33,7 @@ export const MealPlanCalendar: React.FC<MealPlanCalendarProps> = ({
   return (
     <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
       {/* カレンダービュー */}
-      <div className="grid grid-cols-7 gap-2">
+      <div className="grid grid-cols-7 gap-1 sm:gap-2">
         {weekDates.map((date) => {
           const dayMeals = getMealPlansForDate(date);
           const mealCount = dayMeals.length;
@@ -46,14 +46,14 @@ export const MealPlanCalendar: React.FC<MealPlanCalendarProps> = ({
             <button
               key={date.toDateString()}
               onClick={() => onDateSelect(date)}
-              className={`p-2 text-center rounded border transition-colors ${
+              className={`p-2 text-center rounded border transition-colors min-w-0 ${
                 isSelected 
                   ? 'bg-indigo-100 border-indigo-300' 
                   : 'border-gray-200 hover:bg-gray-50'
               } ${isToday(date) ? 'ring-2 ring-blue-300' : ''}`}
             >
-              <div className="text-xs text-gray-500 mb-1">{dayOfWeek}</div>
-              <div className={`font-medium ${isToday(date) ? 'text-blue-600' : 'text-gray-900'}`}>
+              <div className="text-xs text-gray-500 mb-1 truncate">{dayOfWeek}</div>
+              <div className={`font-medium text-sm ${isToday(date) ? 'text-blue-600' : 'text-gray-900'}`}>
                 {date.getDate()}
               </div>
               <div className="flex justify-center mt-1">

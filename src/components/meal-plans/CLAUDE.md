@@ -107,6 +107,7 @@ interface MealPlanDetailProps {
 - 前週・次週ボタンによる週間移動
 - 「今日」ボタンによる当日週への即座復帰
 - ローディング状態とエラー状態の表示
+- レスポンシブレイアウト修正（ボタンの文字切れ防止、flex-shrink-0適用）
 
 #### Props
 ```typescript
@@ -131,6 +132,8 @@ interface WeeklyNavigationProps {
 - 各日の献立有無をドット表示
 - 今日の日付を青リングで強調
 - 日付クリックによる選択状態変更
+- レスポンシブグリッド調整（gap-1 on mobile, gap-2 on larger screens）
+- 曜日文字の切り詰め対応（truncate適用）
 
 ### MealPlanDayDetail.tsx
 選択日の献立詳細表示コンポーネント - 朝昼夜の献立を統合表示。

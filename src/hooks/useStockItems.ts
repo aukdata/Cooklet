@@ -14,7 +14,6 @@ import type { StockItem } from '../types/index';
 export const useStockItems = () => {
   const { user } = useAuth();
   const stockRepository = useStockRepository();
-  const { markAsUpdated } = useTabRefresh();
 
   // 状態管理
   const [stockItems, setStockItems] = useState<StockItem[]>([]);
@@ -43,6 +42,9 @@ export const useStockItems = () => {
       setLoading(false);
     }
   }, [stockRepository, user?.id]);
+
+  // タブ切り替え時の自動更新機能
+  const { markAsUpdated } = useTabRefresh(fetchStockItems);
 
   /**
    * 在庫を追加

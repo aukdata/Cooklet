@@ -12,7 +12,11 @@ import { DatabaseError, NotFoundError, transformSupabaseError } from '../errors'
 export class SupabaseStockRepository implements IStockRepository {
   private readonly tableName = 'stock_items';
 
-  constructor(private readonly client: SupabaseClient) {}
+  private readonly client: SupabaseClient;
+
+  constructor(client: SupabaseClient) {
+    this.client = client;
+  }
 
   /**
    * 指定ユーザーの全在庫アイテムを取得

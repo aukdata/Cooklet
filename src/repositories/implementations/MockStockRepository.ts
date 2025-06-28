@@ -72,8 +72,14 @@ export class MockStockRepository implements IStockRepository {
   async create(item: Omit<StockItem, 'id' | 'created_at' | 'updated_at'>): Promise<StockItem> {
     const now = this.getCurrentTimestamp();
     const newItem: StockItem = {
-      ...item,
       id: this.generateId(),
+      user_id: item.user_id,
+      name: item.name,
+      quantity: item.quantity,
+      is_homemade: item.is_homemade ?? false,
+      best_before: item.best_before || undefined,
+      storage_location: item.storage_location || undefined,
+      memo: item.memo || undefined,
       created_at: now,
       updated_at: now,
     };

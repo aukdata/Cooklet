@@ -3,7 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
 // 買い物リストデータの型定義（CLAUDE.md仕様書準拠）
-export interface ShoppingListItem extends Record<string, unknown> {
+export interface ShoppingListItem {
   id?: string;
   user_id?: string;
   name: string;

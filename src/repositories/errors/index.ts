@@ -9,13 +9,18 @@
  * データベース操作の基本エラークラス
  */
 export class DatabaseError extends Error {
+  public readonly code?: string;
+  public readonly details?: string;
+  
   constructor(
     message: string,
-    public readonly code?: string,
-    public readonly details?: unknown
+    code?: string,
+    details?: string
   ) {
     super(message);
     this.name = 'DatabaseError';
+    this.code = code;
+    this.details = details;
   }
 }
 
@@ -33,9 +38,12 @@ export class NotFoundError extends DatabaseError {
  * バリデーションエラー
  */
 export class ValidationError extends DatabaseError {
-  constructor(message: string, public readonly field?: string) {
+  public readonly field?: string;
+  
+  constructor(message: string, field?: string) {
     super(message);
     this.name = 'ValidationError';
+    this.field = field;
   }
 }
 
@@ -48,6 +56,7 @@ export class DuplicateError extends DatabaseError {
     this.name = 'DuplicateError';
   }
 }
+
 
 /**
  * 権限エラー
@@ -70,29 +79,52 @@ export class ConnectionError extends DatabaseError {
 }
 
 /**
+ * Supabaseエラー型定義
+ */
+interface SupabaseError {
+  code: string;
+  message: string;
+  details?: string;
+  hint?: string;
+}
+
+/**
+ * エラーがSupabaseエラーかどうかを判定する型ガード
+ */
+const isSupabaseError = (error: unknown): error is SupabaseError => {
+  if (error === null || typeof error !== 'object') {
+    return false;
+  }
+  
+  const errorObj = error as Record<string, unknown>;
+  return 'code' in errorObj &&
+    'message' in errorObj &&
+    typeof errorObj.code === 'string' && 
+    typeof errorObj.message === 'string';
+};
+
+/**
  * Supabaseエラーを適切なRepositoryエラーに変換する関数
  * @param error Supabaseから返されたエラー
  * @param operation 実行していた操作名
  * @returns 適切なRepositoryエラー
  */
 export const transformSupabaseError = (error: unknown, operation: string): DatabaseError => {
-  if (error && typeof error === 'object' && 'code' in error) {
-    const supabaseError = error as { code: string; message: string; details?: string };
-    
-    switch (supabaseError.code) {
+  if (isSupabaseError(error)) {
+    switch (error.code) {
       case 'PGRST116': // 見つからない
-        return new NotFoundError('Record', 'unknown');
+        return new NotFoundError('Record', 'record_id');
       case '23505': // 一意制約違反
-        return new DuplicateError('Record', 'unknown', 'unknown');
+        return new DuplicateError('Record', 'field', 'value');
       case '23503': // 外部キー制約違反
         return new ValidationError('Foreign key constraint violation');
       case '42501': // 権限不足
         return new UnauthorizedError(operation);
       default:
         return new DatabaseError(
-          supabaseError.message || `Database error during ${operation}`,
-          supabaseError.code,
-          supabaseError.details
+          error.message || `Database error during ${operation}`,
+          error.code,
+          error.details
         );
     }
   }

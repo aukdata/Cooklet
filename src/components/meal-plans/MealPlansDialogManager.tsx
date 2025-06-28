@@ -77,10 +77,14 @@ export const MealPlansDialogManager: React.FC<MealPlansDialogManagerProps> = ({
       {dialogStates.processingMeal && (
         <CookedDialog
           isOpen={dialogStates.isConsumedDialogOpen}
-          mealPlan={dialogStates.processingMeal}
+          processingMeal={dialogStates.processingMeal}
           onClose={closeAllDialogs}
-          onConfirm={(isConsumed, isStored) => {
-            onConsumedConfirm(dialogStates.processingMeal!, isConsumed, isStored);
+          onCompleted={() => {
+            onConsumedConfirm(dialogStates.processingMeal!, true, false);
+            closeAllDialogs();
+          }}
+          onStoreMade={() => {
+            onConsumedConfirm(dialogStates.processingMeal!, true, true);
             closeAllDialogs();
           }}
         />
@@ -91,11 +95,13 @@ export const MealPlansDialogManager: React.FC<MealPlansDialogManagerProps> = ({
         <MealGenerationResultDialog
           isOpen={dialogStates.isGenerationResultDialogOpen}
           result={dialogStates.generationResult}
-          generationType={dialogStates.currentGenerationType}
-          temperature={dialogStates.currentTemperature}
           onClose={closeAllDialogs}
           onConfirm={() => {
             onGenerationConfirm(dialogStates.generationResult!);
+            closeAllDialogs();
+          }}
+          onRetry={() => {
+            // 再生成処理（必要に応じて実装）
             closeAllDialogs();
           }}
         />

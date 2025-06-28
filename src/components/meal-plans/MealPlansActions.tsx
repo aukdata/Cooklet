@@ -1,7 +1,7 @@
 import { useMealPlans } from '../../hooks';
 import { useStockItems } from '../../hooks/useStockItems';
 import { useToast } from '../../hooks/useToast.tsx';
-import { type MealPlan } from '../../types';
+import { type MealPlan, type MealType } from '../../types';
 import { type MealGenerationResult } from '../../utils/mealPlanGeneration';
 
 // 献立操作フックの戻り値型
@@ -19,7 +19,7 @@ export interface MealPlansActionsReturn {
   
   // ヘルパー関数
   getMealPlansForDate: (date: Date) => MealPlan[];
-  getMealPlan: (date: Date, mealType: string) => MealPlan | undefined;
+  getMealPlan: (date: Date, mealType: string) => MealPlan | null;
 }
 
 // 献立操作機能を提供するカスタムフック
@@ -89,7 +89,7 @@ export const useMealPlansActions = (): MealPlansActionsReturn => {
           // 作り置きとして在庫に追加
           for (const ingredient of meal.ingredients) {
             const stockData = {
-              name: `${meal.recipe_name || '手作り料理'}（作り置き）`,
+              name: `手作り料理（作り置き）`,
               quantity: ingredient.quantity || '1人前',
               unit: '人前',
               best_before: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 3日後
@@ -113,12 +113,25 @@ export const useMealPlansActions = (): MealPlansActionsReturn => {
   // AI生成結果確認処理
   const handleGenerationConfirm = async (result: MealGenerationResult): Promise<void> => {
     try {
-      if (result.generatedMealPlans) {
+      if (result.mealPlan) {
         // 生成された献立を一括保存
-        for (const mealPlan of result.generatedMealPlans) {
+        for (const _mealPlanItem of result.mealPlan) {
+          // MealPlanItemをMealPlanに変換して保存
+          const mealPlan: MealPlan = {
+            id: '', // 新規作成時は空
+            user_id: '', // 実際の実装では認証済みユーザーIDを設定
+            date: new Date().toISOString().split('T')[0], // 今日の日付
+            meal_type: '夜' as MealType, // デフォルトの食事タイプ
+            recipe_url: undefined,
+            ingredients: [],
+            memo: undefined,
+            consumed_status: 'pending',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          };
           await saveMealPlan(mealPlan);
         }
-        showSuccess(`${result.generatedMealPlans.length}件の献立を保存しました`);
+        showSuccess(`${result.mealPlan.length}件の献立を保存しました`);
       }
     } catch (err) {
       console.error('生成献立の保存に失敗しました:', err);
@@ -141,6 +154,6 @@ export const useMealPlansActions = (): MealPlansActionsReturn => {
     
     // ヘルパー関数
     getMealPlansForDate,
-    getMealPlan: (date: Date, mealType: MealType) => getMealPlan(date, mealType as string)
+    getMealPlan: (date: Date, mealType: string) => getMealPlan(date, mealType as MealType)
   };
 };

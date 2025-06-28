@@ -16,14 +16,14 @@ interface TableConfig {
 // CRUD操作のオプション
 interface CrudOptions {
   skipErrorAlert?: boolean;
-  additionalFields?: Record<string, unknown>;
+  additionalFields?: Record<string, string | number | boolean>;
 }
 
 /**
  * 汎用データCRUDフック
  * Supabaseテーブルとの共通CRUD操作パターンを抽象化
  */
-export const useDataHook = <T extends Record<string, unknown> & { id?: string }>(
+export const useDataHook = <T extends { id?: string; user_id?: string; created_at?: string; updated_at?: string }>(
   config: TableConfig,
   errorMessages: {
     fetch: string;
@@ -63,7 +63,7 @@ export const useDataHook = <T extends Record<string, unknown> & { id?: string }>
         throw fetchError;
       }
 
-      setData((fetchedData as unknown as T[]) || []);
+      setData((fetchedData as T[]) || []);
     } catch (err) {
       console.error(`${errorMessages.fetch}:`, err);
       setError(err instanceof Error ? err.message : errorMessages.fetch);

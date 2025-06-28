@@ -11,8 +11,11 @@ import { DatabaseError, NotFoundError, transformSupabaseError } from '../errors'
  */
 export class SupabaseMealPlanRepository implements IMealPlanRepository {
   private readonly tableName = 'meal_plans';
+  private readonly client: SupabaseClient;
 
-  constructor(private readonly client: SupabaseClient) {}
+  constructor(client: SupabaseClient) {
+    this.client = client;
+  }
 
   /**
    * 指定ユーザーの全献立計画を取得

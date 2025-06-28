@@ -12,7 +12,7 @@ export interface User {
 }
 
 // 食材マスタ情報を表すインターフェース（ユーザー認証対応）
-export interface Ingredient extends Record<string, unknown> {
+export interface Ingredient {
   id: string; // 食材ID（UUIDに変更）
   userId: string; // 所有ユーザーID
   name: string; // 食材名
@@ -26,7 +26,7 @@ export interface Ingredient extends Record<string, unknown> {
 }
 
 // 在庫アイテム情報を表すインターフェース（CLAUDE.md仕様書に準拠）
-export interface StockItem extends Record<string, unknown> {
+export interface StockItem {
   id: string; // 在庫ID（UUID）
   user_id: string; // 所有ユーザーID（DB形式）
   name: string; // 食材名
@@ -34,6 +34,7 @@ export interface StockItem extends Record<string, unknown> {
   best_before?: string; // 賞味期限（任意、DB形式）
   storage_location?: string; // 保存場所（任意、DB形式）
   is_homemade: boolean; // 作り置きフラグ（DB形式）
+  memo?: string; // メモ（任意）
   created_at: string; // 作成日時（DB形式）
   updated_at: string; // 更新日時（DB形式）
 }
@@ -65,7 +66,7 @@ export interface DatabaseRecipeIngredient {
 }
 
 // 献立計画情報を表すインターフェース（CLAUDE.md仕様書に準拠）
-export interface MealPlan extends Record<string, unknown> {
+export interface MealPlan {
   id: string; // 献立ID（UUID） 
   user_id: string; // ユーザーID（DB形式）
   date: string; // 予定日
@@ -79,7 +80,7 @@ export interface MealPlan extends Record<string, unknown> {
 }
 
 // 買い物リストアイテム情報を表すインターフェース（CLAUDE.md仕様書に準拠）
-export interface ShoppingListItem extends Record<string, unknown> {
+export interface ShoppingListItem {
   id: string; // 買い物リストID（UUID）
   user_id: string; // ユーザーID（DB形式）
   name: string; // 食材名
@@ -90,7 +91,7 @@ export interface ShoppingListItem extends Record<string, unknown> {
 }
 
 // コスト記録情報を表すインターフェース（CLAUDE.md仕様書で追加）
-export interface CostRecord extends Record<string, unknown> {
+export interface CostRecord {
   id?: string; // コスト記録ID（UUID）
   user_id?: string; // ユーザーID
   date: string; // 日付

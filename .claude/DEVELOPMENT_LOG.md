@@ -1,8 +1,126 @@
 # Cooklet 開発ログ
 
+## 2025-06-28
+
+### 【最新】献立計画画面を元デザインに復元完了（コミット755004e基準）
+
+#### 問題の解決
+- **レイアウト崩れ問題**: モジュール化によりデザインが壊れた問題を解決
+- **コンポーネント分離による複雑化**: 元の統合デザインに戻して操作性を改善
+
+#### 実装内容
+1. **MealPlans.tsxの完全復元**
+   - コミット755004e612d26620081db1dc3bd415697aebf30dの状態に完全復元
+   - 分離されたコンポーネント（WeeklyNavigation、MealPlanCalendar等）を1つのファイルに統合
+   - 元の安定したレイアウト・デザインを完全再現
+
+2. **元デザインの特徴**
+   - すべての機能が1つのファイルに統合された分かりやすい構成
+   - 週間ナビゲーション・カレンダー・詳細表示が一体化されたレイアウト
+   - 朝食・昼食・夕食の直感的な表示・編集インターフェース
+   - 完食・作り置きダイアログの統合実装
+
+#### 復元した機能
+```typescript
+// 統合された献立表示ロジック（朝昼夜）
+{(() => {
+  const breakfastPlan = getMealPlan(selectedDate, '朝');
+  const isCompleted = breakfastPlan?.consumed_status === 'completed';
+  const isStored = breakfastPlan?.consumed_status === 'stored';
+  const isDone = isCompleted || isStored;
+  
+  return (
+    <div className="flex justify-between items-start">
+      // 献立情報表示とアクションボタン
+    </div>
+  );
+})()}
+```
+
+#### UI/UX改善
+- **元の安定性**: 検証済みの元デザインで確実な動作
+- **直感的操作**: 分離による複雑化を解消し、シンプルなインターフェース
+- **完全機能**: 献立追加・編集・削除・状態変更すべてが統合実装
+
+#### 削除されたモジュール依存
+- WeeklyNavigationコンポーネント依存を削除
+- MealPlanCalendarコンポーネント依存を削除
+- MealPlanDayDetailコンポーネント依存を削除
+- useMealPlanCalendarフック依存を削除
+
+#### 品質確保
+- **コミット基準**: 動作実績のあるコミット755004eを完全踏襲
+- **機能完全性**: 献立管理の全機能が1つのファイルに統合され確実に動作
+- **レイアウト安定性**: 元の検証済みデザインで表示問題なし
+
+#### 引き継ぎ事項
+1. **統合アプローチ**: 複雑な分離よりも統合されたシンプルな構成を維持
+2. **元デザイン基準**: 今後の変更は755004eを基準として段階的に実施
+3. **モジュール化注意**: 過度な分離はレイアウト崩れの原因となるため慎重に
+4. **コミット参照**: デザイン変更時は動作実績のあるコミットを参考に
+
+### 【前回】献立計画画面レイアウト崩れ修正完了
+
+#### 問題の解決
+- **WeeklyNavigationボタン切れ問題**: 「次週」ボタンのテキストが切れていた問題を解決
+- **MealPlanCalendarグリッド問題**: 日付カレンダーのレスポンシブレイアウトが適切でない問題を解決
+
+#### 修正内容
+1. **WeeklyNavigation.tsx改善**
+   - flex-shrink-0クラスを前週・次週ボタンに追加（ボタンサイズの固定化）
+   - gap-2を追加してボタン間の適切な間隔を確保
+   - 中央部分にflex-1とjustify-centerを適用（中央寄せ配置の改善）
+
+2. **MealPlanCalendar.tsx改善**
+   - レスポンシブグリッドギャップの調整（gap-1 → sm:gap-2）
+   - min-w-0クラスを日付ボタンに追加（最小幅制限の解除）
+   - 曜日テキストにtruncateクラス追加（文字切れ防止）
+   - 日付のフォントサイズを調整（text-sm追加）
+
+#### 技術実装詳細
+```typescript
+// WeeklyNavigation.tsx - ボタン配置改善
+<div className="flex items-center justify-between mb-4 gap-2">
+  <button className="...flex-shrink-0">前週</button>
+  <div className="flex items-center justify-center flex-1 space-x-2">
+    // 中央コンテンツ
+  </div>
+  <button className="...flex-shrink-0">次週</button>
+</div>
+
+// MealPlanCalendar.tsx - レスポンシブグリッド改善
+<div className="grid grid-cols-7 gap-1 sm:gap-2">
+  <button className="...min-w-0">
+    <div className="...truncate">{dayOfWeek}</div>
+    <div className="font-medium text-sm">...</div>
+  </button>
+</div>
+```
+
+#### UI/UX改善
+- **ボタン表示安定性**: 画面幅に関係なく「前週」「次週」ボタンが常に完全表示
+- **レスポンシブ対応**: モバイル端末での狭い画面でも適切なレイアウト維持
+- **視認性向上**: 日付とテキストが適切に表示され、文字切れが発生しない
+
+#### 品質確保
+- **lint**: エラー・警告0件
+- **コンポーネント分離**: 修正は対象コンポーネントのみで他への影響なし
+- **CLAUDE.md更新**: 修正内容をドキュメントに反映
+
+#### 修正したファイル
+- `src/components/meal-plans/WeeklyNavigation.tsx`: ボタンレイアウト改善
+- `src/components/meal-plans/MealPlanCalendar.tsx`: グリッドレイアウト改善
+- `src/components/meal-plans/CLAUDE.md`: 修正内容の記録
+
+#### 引き継ぎ事項
+1. **レスポンシブ設計**: flex-shrink-0とmin-w-0の組み合わせでボタン配置を安定化
+2. **グリッドレイアウト**: gap-1（モバイル）→ gap-2（デスクトップ）のレスポンシブ対応
+3. **文字切れ対策**: truncateクラスによる確実な文字切れ防止
+4. **UI一貫性**: 既存のデザインシステムを維持しながら改善
+
 ## 2025-06-27
 
-### 【最新】レシピ生成確認ダイアログ実装完了（issue #64対応）
+### 【前回】レシピ生成確認ダイアログ実装完了（issue #64対応）
 
 #### 問題の解決
 - **直接反映問題**: レシピ生成ボタンを押すと生成結果が直接献立に反映されてしまう問題を解決

@@ -10,7 +10,7 @@ export type ErrorType = 'network' | 'validation' | 'auth' | 'server' | 'unknown'
 export interface ErrorInfo {
   type: ErrorType;
   message: string;
-  originalError?: unknown;
+  originalError?: Error;
 }
 
 /**

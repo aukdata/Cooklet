@@ -4,7 +4,6 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useStockItems } from '../hooks/useStockItems';
 import { RepositoryProvider } from '../contexts/RepositoryContext';
 import { createTestRepositoryContainer } from '../repositories/container';
-import { type StockItem } from '../types';
 
 // モックユーザー
 const mockUser = {
@@ -44,12 +43,10 @@ const createWrapper = () => {
 };
 
 describe('useStockItems', () => {
-  let testContainer: ReturnType<typeof createTestRepositoryContainer>;
   let wrapper: ReturnType<typeof createWrapper>;
 
   beforeEach(() => {
     wrapper = createWrapper();
-    testContainer = createTestRepositoryContainer();
   });
 
   it('should initialize with empty stock items', async () => {
