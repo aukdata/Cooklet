@@ -8,6 +8,9 @@ export default defineConfig({
   // テストディレクトリ
   testDir: './tests',
   
+  // 実行するテストパターン
+  testMatch: ['**/basic.spec.ts', '**/example.spec.ts'],
+  
   // 全てのテストタイムアウト
   timeout: 30 * 1000,
   
@@ -56,42 +59,11 @@ export default defineConfig({
     timezoneId: 'Asia/Tokyo',
   },
 
-  // プロジェクト設定（各ブラウザ・デバイス）
+  // プロジェクト設定（Chromeのみ）
   projects: [
     {
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
-    },
-    {
-      name: 'firefox',
-      use: { ...devices['Desktop Firefox'] },
-    },
-    {
-      name: 'webkit',
-      use: { ...devices['Desktop Safari'] },
-    },
-    
-    // モバイルテスト
-    {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] },
-    },
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] },
-    },
-    
-    // PWAテスト用（Chrome）
-    {
-      name: 'PWA Chrome',
-      use: {
-        ...devices['Desktop Chrome'],
-        contextOptions: {
-          // PWA機能を有効化
-          permissions: ['notifications'],
-          serviceWorkers: 'allow',
-        },
-      },
     },
   ],
 

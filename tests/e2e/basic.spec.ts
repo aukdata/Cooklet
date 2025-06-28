@@ -1,11 +1,11 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * 認証フローのE2Eテスト
- * 基本的なログインページの表示確認
+ * 基本機能のE2Eテスト
+ * 最小限の動作確認
  */
-test.describe('認証フロー', () => {
-  test('ログインページの基本表示', async ({ page }) => {
+test.describe('基本機能', () => {
+  test('ログインページが表示される', async ({ page }) => {
     await page.goto('/');
     
     // ログインフォームの基本要素を確認
@@ -13,5 +13,13 @@ test.describe('認証フロー', () => {
     await expect(page.getByPlaceholder('メールアドレス')).toBeVisible();
     await expect(page.getByPlaceholder('パスワード')).toBeVisible();
     await expect(page.getByRole('button', { name: 'ログイン' })).toBeVisible();
+  });
+
+  test('PWAマニフェストが存在する', async ({ page }) => {
+    await page.goto('/');
+    
+    // マニフェストファイルのリンクが存在することを確認
+    const manifestLink = page.locator('link[rel="manifest"]');
+    await expect(manifestLink).toBeAttached();
   });
 });
