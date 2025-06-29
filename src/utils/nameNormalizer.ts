@@ -21,6 +21,14 @@ export const normalizeProductName = (
   item: ReceiptItem,
   ingredients: Ingredient[]
 ): NameNormalizationResult => {
+  // originalNameが空の場合は正規化しない
+  if (!item.originalName || item.originalName.trim() === '') {
+    return {
+      item,
+      isNormalized: false
+    };
+  }
+
   // 完全一致で検索
   const exactMatch = ingredients.find(ingredient => 
     ingredient.original_name === item.originalName
@@ -37,26 +45,31 @@ export const normalizeProductName = (
     };
   }
 
-  // 正規表現一致で検索（大文字小文字を無視）
-  const regexMatch = ingredients.find(ingredient => {
+  // 部分一致で検索（大文字小文字を無視）
+  const partialMatch = ingredients.find(ingredient => {
     if (!ingredient.original_name) return false;
-    try {
-      const regex = new RegExp(ingredient.original_name, 'i');
-      return regex.test(item.originalName);
-    } catch {
-      // 正規表現が無効な場合は文字列一致にフォールバック
-      return ingredient.original_name.toLowerCase().includes(item.originalName.toLowerCase());
-    }
+    const originalLower = item.originalName.toLowerCase();
+    const ingredientLower = ingredient.original_name.toLowerCase();
+    const ingredientNameLower = ingredient.name.toLowerCase();
+    
+    // 1. レシート商品名が食材のoriginal_nameに含まれる
+    // 2. 食材のoriginal_nameがレシート商品名に含まれる  
+    // 3. レシート商品名が食材のnameに含まれる
+    // 4. 食材のnameがレシート商品名に含まれる
+    return originalLower.includes(ingredientLower) || 
+           ingredientLower.includes(originalLower) ||
+           originalLower.includes(ingredientNameLower) ||
+           ingredientNameLower.includes(originalLower);
   });
 
-  if (regexMatch) {
+  if (partialMatch) {
     return {
       item: {
         ...item,
-        name: regexMatch.name // 正規表現一致の場合はingredientsのnameを使用
+        name: partialMatch.name // 部分一致の場合はingredientsのnameを使用
       },
       isNormalized: true,
-      matchedIngredient: regexMatch
+      matchedIngredient: partialMatch
     };
   }
 
@@ -73,9 +86,45 @@ export const normalizeProductName = (
  * @param ingredients - ingredientsテーブルの食材マスタデータ
  * @returns 正規化されたアイテムリスト（元のアイテムデータ + 正規化情報）
  */
-export const normalizeReceiptItems = (
-  items: ReceiptItem[], 
+export const normalizeReceiptItems = <T extends ReceiptItem>(
+  items: T[], 
   ingredients: Ingredient[]
-): NameNormalizationResult[] => {
-  return items.map(item => normalizeProductName(item, ingredients));
+): Array<T & { normalizationResult: NameNormalizationResult }> => {
+  return items.map(item => {
+    const normalizationResult = normalizeProductName(item, ingredients);
+    return {
+      ...item,
+      ...normalizationResult.item,
+      normalizationResult
+    };
+  });
+};
+
+/**
+ * 正規化統計情報の型定義
+ */
+export interface Stats {
+  total: number;        // 総件数
+  normalized: number;   // 正規化された件数
+  unchanged: number;    // 変更されなかった件数
+  successRate: number;  // 正規化成功率（％）
+}
+
+/**
+ * 正規化統計情報を計算する関数
+ * @param results - 正規化結果のリスト
+ * @returns Stats - 統計情報
+ */
+export const getNormalizationStats = (results: NameNormalizationResult[]): Stats => {
+  const total = results.length;
+  const normalized = results.filter(result => result.isNormalized).length;
+  const unchanged = total - normalized;
+  const successRate = total > 0 ? Math.round((normalized / total) * 100) : 0;
+
+  return {
+    total,
+    normalized,
+    unchanged,
+    successRate
+  };
 };

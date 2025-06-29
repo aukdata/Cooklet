@@ -30,25 +30,13 @@ export const getExpiredPeriod = (expiredDate: string): string => {
   }
 };
 
-/**
- * 期間文字列から重み（数値）を取得する関数
- * @param period - 期間文字列（例: "今日", "1日前", "2ヶ月前"）
- * @returns ソート用の重み値
- */
-const getPeriodWeight = (period: string): number => {
-  if (period === '今日') return 0;
-  if (period.includes('日前')) return parseInt(period);
-  if (period.includes('ヶ月前')) return parseInt(period) * 30;
-  if (period.includes('年前')) return parseInt(period) * 365;
-  return 999999;
-};
 
 /**
  * 期限切れアイテムを期間別にグループ化する関数
  * @param expiredItems - 期限切れアイテムの配列
- * @returns 期間別にグループ化されたアイテム配列
+ * @returns 期間別にグループ化されたアイテムオブジェクト
  */
-export const groupExpiredItemsByPeriod = (expiredItems: StockItem[]) => {
+export const groupExpiredItemsByPeriod = (expiredItems: StockItem[]): Record<string, StockItem[]> => {
   const grouped: Record<string, StockItem[]> = {};
   
   expiredItems.forEach(item => {
@@ -61,8 +49,10 @@ export const groupExpiredItemsByPeriod = (expiredItems: StockItem[]) => {
     }
   });
   
-  // 期間順にソート（今日、1日前、2日前...1ヶ月前...1年前...）
-  return Object.entries(grouped).sort(([a], [b]) => {
-    return getPeriodWeight(a) - getPeriodWeight(b);
+  // 各グループ内のアイテムを名前順にソート
+  Object.keys(grouped).forEach(period => {
+    grouped[period].sort((a, b) => a.name.localeCompare(b.name));
   });
+  
+  return grouped;
 };

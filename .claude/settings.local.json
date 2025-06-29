@@ -26,7 +26,8 @@
       "Bash(oxlint:*)",
       "Bash(mv:*)",
       "Bash(npx similarity-ts:*)",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(pnpm test:*)"
     ],
     "deny": [
       "Bash(rm:*)"

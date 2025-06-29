@@ -63,9 +63,11 @@ export const readReceiptFromImage = async (
     if (ingredients && ingredients.length > 0) {
       const results = normalizeReceiptItems(receiptData.items, ingredients);
 
-      normalizedItems = results.map(result => (
-        result.item
-      ));
+      normalizedItems = results.map(result => ({
+        ...result,
+        // normalizationResultが存在する場合は、その中のitemを使用
+        ...(result.normalizationResult?.item || result)
+      }));
 
       // ここにそのうち単位換算処理を追加
     }

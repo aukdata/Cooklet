@@ -211,6 +211,19 @@
 
 ### ユーティリティ関数
 
+### Quantity型演算ユーティリティ（utils/quantityUtils.ts）
+- `addQuantities(q1: Quantity, q2: Quantity)` - Quantity型同士の加算（PLAN.md準拠）
+- `subtractQuantities(q1: Quantity, q2: Quantity)` - Quantity型同士の減算（PLAN.md準拠）
+- `areQuantitiesEqual(q1: Quantity, q2: Quantity)` - Quantity型の等価比較
+- `compareQuantities(q1: Quantity, q2: Quantity)` - Quantity型の大小比較
+- `normalizeAmount(amount: string)` - 文字列から数値への正規化（「適量」→0）
+- `convertToBaseUnit(amount: number, unit: string)` - 基本単位への変換
+- `areUnitsCompatible(unit1: string, unit2: string)` - 単位互換性チェック
+- `formatQuantityForDisplay(quantity: Quantity, precision?: number)` - 表示用フォーマット
+- `isValidQuantity(quantity: Quantity)` - 有効性チェック
+- `getUnitGroups()` - 基本単位別の単位グループ取得
+- `UNIT_CONVERSIONS` - 単位変換テーブル（重量・体積・個数系対応）
+
 ### 期限切れ管理ユーティリティ
 - `getExpiredPeriod(expiredDate)` - 期限切れ期間を計算（「今日」「1日前」「2ヶ月前」形式）
 - `groupExpiredItemsByPeriod(expiredItems)` - 期限切れアイテムを期間別にグループ化・ソート

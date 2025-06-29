@@ -1,186 +1,81 @@
-# 献立管理アプリ: 在庫活用自動献立生成アルゴリズム実装要件
+# Quantity型の演算に関する要求仕様
 
-## 概要
+## 1. 概要
 
-在庫から自動で献立を生成するアルゴリズムを実装してください。期限の近い食材を優先的に使用し、購入が必要な食材の種類を最小化することを目指します。
+`Quantity`型は、アプリケーション全体で食材の数量を表すために使用される。現在の実装では、`amount`プロパティは文字列型であり、数値だけでなく「適量」や「少々」といった表現も許容している。また、単位(`unit`)も多様である。
 
-## 入力データ構造
+このドキュメントでは、`Quantity`型同士の加算・減算を可能にするための仕様を定義する。これにより、在庫管理の精度向上や、買い物リストの自動生成機能の強化を目指す。
 
-### 1. 在庫情報 (Inventory)
+## 2. 背景
 
-```python
-inventory = {
-    "食材名": {
-        "quantity": 数量,
-        "unit": "単位(g, 個, etc)",
-        "expiry_date": "消費期限(YYYY-MM-DD)"
-    }
-}
+- **在庫管理:** ユーザーが購入した食材を在庫に追加（加算）したり、料理で使用した分を在庫から消費（減算）したりする際に、正確な数量計算が必要となる。
+- **買い物リスト:** 献立に必要な食材の総量から、現在の在庫量を差し引く（減算）ことで、不足分を自動的に買い物リストに追加する機能に必要となる。
 
-# 例
-inventory = {
-    "鶏胸肉": {"quantity": 300, "unit": "g", "expiry_date": "2025-06-28"},
-    "玉ねぎ": {"quantity": 2, "unit": "個", "expiry_date": "2025-07-05"},
-    "人参": {"quantity": 150, "unit": "g", "expiry_date": "2025-07-03"}
-}
-```
+## 3. `Quantity`型の現状
 
-### 2. レシピ情報 (Recipes)
+- **定義:**
+  ```typescript
+  export interface Quantity {
+    amount: string;
+    unit: string;
+  }
+  ```
+- **`amount`に取りうる値:**
+  - 数値文字列: "100", "2", "0.5"
+  - 分数表現: "1/2", "1/4"
+  - 混合数表現: "2+1/2"
+  - 漢数字・範囲表現: "少々", "適量", "ひとつまみ"
+- **`unit`に取りうる値:**
+  - 基本単位: "g", "kg", "ml", "l", "個", "本", "枚"
+  - 調理単位: "大さじ", "小さじ", "カップ"
+  - その他の単位: "缶", "パック", "束", "房", "かけ", "人分"
+  - 単位をつけない: "-"
 
-```python
-recipes = {
-    "レシピ名": {
-        "servings": 何人前,
-        "ingredients": {
-            "食材名": {"quantity": 必要量, "unit": "単位"}
-        }
-    }
-}
+## 4. 要求仕様
 
-# 例
-recipes = {
-    "鶏肉野菜炒め": {
-        "servings": 2,
-        "ingredients": {
-            "鶏胸肉": {"quantity": 200, "unit": "g"},
-            "玉ねぎ": {"quantity": 1, "unit": "個"},
-            "人参": {"quantity": 100, "unit": "g"}
-        }
-    }
-}
-```
+### 4.1. 数量の正規化
 
-### 3. 購入単位情報 (Purchase Units)
+- **目的:** 演算可能な数値形式に変換する。
+- **仕様:**
+  - `amount`の文字列を数値に変換するパーサーを実装する。
+    - "100" -> `100`
+    - "0.5" -> `0.5`
+    - "1/2" -> `0.5`
+    - "2+1/2" -> `2.5`
+  - 「適量」「少々」などの非数値表現は、特定のルールに基づき数値に変換するか、あるいは演算対象外として扱う。まずは`0`として扱うことを検討する。
 
-```python
-purchase_units = {
-    "食材名": {"quantity": 購入単位量, "unit": "単位"}
-}
+### 4.2. 単位の変換
 
-# 例
-purchase_units = {
-    "鶏胸肉": {"quantity": 300, "unit": "g"},
-    "玉ねぎ": {"quantity": 3, "unit": "個"},
-    "人参": {"quantity": 200, "unit": "g"}
-}
-```
+- **目的:** 異なる単位間での演算を可能にする。
+- **仕様:**
+  - 単位変換テーブルを定義する。
+    - `g` <-> `kg` (1kg = 1000g)
+    - `ml` <-> `l` (1l = 1000ml)
+    - `大さじ` <-> `ml` (大さじ1 = 15ml)
+    - `小さじ` <-> `ml` (小さじ1 = 5ml)
+    - `カップ` <-> `ml` (1カップ = 200ml)
+  - 変換不可能な単位同士の演算は`null`を返す。
+    - 例: `1個 + 100g` -> `null`
+  - まずは、重量(g, kg)と体積(ml, l, 大さじ, 小さじ, カップ)の基本的な単位変換を実装する。
+  - **結果の単位:** より小さい単位（この場合は`g`）に合わせる。
 
-## アルゴリズム仕様
+### 4.3. 加算・減算ロジック
 
-### メイン関数
+- **目的:** `Quantity`オブジェクト同士の加算・減算を行う関数を実装する。
+- **仕様:**
+  - `add(q1: Quantity, q2: Quantity): Quantity | null`
+  - `subtract(q1: Quantity, q2: Quantity): Quantity | null`
+  - **処理フロー:**
+    1. 各`Quantity`の`amount`を正規化する。
+    2. 単位を比較し、必要であれば変換可能な基本単位（例：`g`や`ml`）に揃える。
+    3. 単位が揃えられない場合は、`null`を返す。
+    4. 数値の加算・減算を行う。
+    5. 結果を`Quantity`オブジェクトとして返す。単位は計算に使用した基本単位とする。
 
-```python
-def generate_meal_plan(inventory, recipes, purchase_units, num_meals, alpha=1.0, beta=1.0, temperature=0.0):
-    """
-    在庫活用献立生成
-    
-    Args:
-        inventory: 現在の在庫情報
-        recipes: レシピ情報
-        purchase_units: 購入単位情報
-        num_meals: 生成する食事数
-        alpha: 購入コスト重み（大きいほど購入を避ける）
-        beta: 期限重み（大きいほど期限近い食材を優先）
-        temperature: ランダム性パラメータ（0.0-1.0、0.0は常に同じ結果）
-    
-    Returns:
-        tuple: (献立リスト, 購入リスト)
-    """
-```
+### 4.4. 実装方針
 
-### アルゴリズム手順
-
-1. **初期設定**
-- 暫定在庫 = 現在の在庫をディープコピー
-- 購入リスト = 空のリスト
-- 献立リスト = 空のリスト
-1. **各食事の処理ループ**
-   
-   **2-1. レシピ評価**
-   
-   ```python
-   for recipe_name, recipe_data in recipes.items():
-       purchase_cost = 0
-       expiry_penalty = 0
-       
-       for ingredient, needed in recipe_data["ingredients"].items():
-           # 1人前に換算
-           needed_amount = needed["quantity"] / recipe_data["servings"]
-           current_stock = temp_inventory.get(ingredient, {}).get("quantity", 0)
-           
-           # 購入必要コスト計算
-           if current_stock < needed_amount:
-               shortage = needed_amount - current_stock
-               purchase_units_needed = math.ceil(shortage / purchase_units[ingredient]["quantity"])
-               purchase_cost += purchase_units_needed
-           
-           # 期限ペナルティ計算
-           if current_stock >= needed_amount:
-               days_to_expiry = (datetime.strptime(temp_inventory[ingredient]["expiry_date"], "%Y-%m-%d") - datetime.now()).days
-               if days_to_expiry > 0:
-                   expiry_penalty += needed_amount * (1 / days_to_expiry)
-       
-       # 総合スコア = α×購入コスト - β×期限ペナルティ（小さいほど良い）
-       total_score = alpha * purchase_cost - beta * expiry_penalty
-       
-       # 温度パラメータによるランダム性追加
-       if temperature > 0:
-           import random
-           random_factor = random.uniform(-temperature, temperature)
-           total_score += random_factor
-   ```
-   
-   **2-2. 最適レシピ選択**
-- 総合スコアが最小のレシピを選択
-   
-   **2-3. 在庫更新と購入処理**
-   
-   ```python
-   for ingredient, needed in selected_recipe["ingredients"].items():
-       needed_amount = needed["quantity"] / selected_recipe["servings"]
-       
-       # 不足分の購入処理
-       if temp_inventory[ingredient]["quantity"] < needed_amount:
-           shortage = needed_amount - temp_inventory[ingredient]["quantity"]
-           units_to_buy = math.ceil(shortage / purchase_units[ingredient]["quantity"])
-           purchase_amount = units_to_buy * purchase_units[ingredient]["quantity"]
-           
-           # 購入リストに追加
-           purchase_list.append({
-               "ingredient": ingredient,
-               "quantity": purchase_amount,
-               "unit": purchase_units[ingredient]["unit"]
-           })
-           
-           # 暫定在庫に追加
-           temp_inventory[ingredient]["quantity"] += purchase_amount
-       
-       # 使用分を在庫から減算
-       temp_inventory[ingredient]["quantity"] -= needed_amount
-   ```
-1. **結果返却**
-- (献立リスト, 購入リスト) のタプルを返す
-
-## 出力形式
-
-### 献立リスト
-
-```python
-meal_plan = [
-    {"meal_number": 1, "recipe": "鶏肉野菜炒め"},
-    {"meal_number": 2, "recipe": "カレー"},
-    # ...
-]
-```
-
-### 購入リスト
-
-```python
-shopping_list = [
-    {"ingredient": "鶏胸肉", "quantity": 300, "unit": "g"},
-    {"ingredient": "玉ねぎ", "quantity": 3, "unit": "個"},
-    # ...
-]
-```
-
-完全に動作するコードを実装してください。
+1. **数量パーサーの実装:** `amount`文字列を数値に変換するユーティリティ関数を作成する。
+2. **単位変換テーブルの定義:** `src/constants/units.ts` などに単位変換情報を定義する。
+3. **単位変換ロジックの実装:** 単位変換を行うユーティリティ関数を作成する。
+4. **演算関数の実装:** `add`および`subtract`関数を`src/utils/quantityUtils.ts`（新規作成）に実装する。
+5. **テスト:** 上記の各機能について、十分なテストケースを作成し、`src/test/`配下に配置する。特に、エッジケース（非数値、単位不一致など）を網羅する。

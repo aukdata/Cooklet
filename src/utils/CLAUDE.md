@@ -5,6 +5,62 @@
 
 ## ファイル構成
 
+### quantityUtils.ts
+**PLAN.md準拠のQuantity型演算ユーティリティ実装ファイル**
+
+#### 概要
+Quantity型（`{amount: string, unit: string}`）同士の加算・減算を可能にする演算機能。在庫管理や買い物リスト自動生成での数量計算に使用。
+
+#### 実装内容
+
+**主要関数**
+- `addQuantities(q1, q2)`: Quantity型同士の加算
+- `subtractQuantities(q1, q2)`: Quantity型同士の減算
+- `areQuantitiesEqual(q1, q2)`: Quantity型の等価比較
+- `compareQuantities(q1, q2)`: Quantity型の大小比較
+- `normalizeAmount(amount)`: 文字列から数値への正規化
+- `convertToBaseUnit(amount, unit)`: 基本単位への変換
+- `areUnitsCompatible(unit1, unit2)`: 単位互換性チェック
+
+**特徴**
+- **PLAN.md完全準拠**: 要求仕様をすべて満たす実装
+- **単位変換対応**: 重量系（g, kg）、体積系（mL, L, 大さじ, 小さじ, カップ）の相互変換
+- **非数値表現対応**: 「適量」「少々」は0として処理
+- **エラーハンドリング**: 互換性のない単位同士はnullを返す
+- **高精度計算**: 浮動小数点誤差を考慮した比較処理
+
+**単位変換テーブル（UNIT_CONVERSIONS）**
+- **重量系**: g（基本）← kg（×1000）
+- **体積系**: mL（基本）← L（×1000）、大さじ（×15）、小さじ（×5）、カップ（×200）、合（×180）
+- **個数系**: 個、本、枚等（変換なし、単位ごとに独立）
+
+**型定義**
+- `Quantity`: `{amount: string, unit: string}`
+- `UnitConversion`: `{baseUnit: FoodUnit, factor: number}`
+
+#### 使用例
+```typescript
+// 加算例
+const q1: Quantity = { amount: '500', unit: 'g' };
+const q2: Quantity = { amount: '1', unit: 'kg' };
+const result = addQuantities(q1, q2); // { amount: '1500', unit: 'g' }
+
+// 減算例  
+const q3: Quantity = { amount: '1', unit: 'カップ' };
+const q4: Quantity = { amount: '2', unit: '大さじ' };
+const result2 = subtractQuantities(q3, q4); // { amount: '170', unit: 'mL' }
+
+// 互換性のない単位
+const q5: Quantity = { amount: '100', unit: 'g' };
+const q6: Quantity = { amount: '1', unit: '個' };
+const result3 = addQuantities(q5, q6); // null（エラー）
+```
+
+#### テスト仕様
+- **包括的テストケース**: 59テスト（すべて成功）
+- **エッジケーステスト**: 非数値表現、単位不一致、極端な値、浮動小数点精度
+- **PLAN.md要求対応**: 仕様書のすべての要件をテストで検証
+
 ### mealPlanGeneration.ts
 **PLAN.md準拠の在庫活用献立自動生成アルゴリズム実装ファイル**
 

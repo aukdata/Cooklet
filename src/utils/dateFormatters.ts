@@ -88,11 +88,11 @@ export const addDays = (date: Date, days: number): Date => {
  * 2つの日付の差分（日数）を計算
  * @param date1 - 比較日1
  * @param date2 - 比較日2
- * @returns 日数差分（date1 - date2）
+ * @returns 日数差分（date2 - date1）
  */
 export const getDaysDifference = (date1: Date, date2: Date): number => {
-  const timeDiff = date1.getTime() - date2.getTime();
-  return Math.ceil(timeDiff / (1000 * 3600 * 24));
+  const timeDiff = date2.getTime() - date1.getTime();
+  return Math.floor(timeDiff / (1000 * 3600 * 24));
 };
 
 /**

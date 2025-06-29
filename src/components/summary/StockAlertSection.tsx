@@ -27,7 +27,8 @@ export const StockAlertSection: React.FC<StockAlertSectionProps> = ({
   loading
 }) => {
   // 期限切れアイテムを期間別にグループ化
-  const groupedExpiredItems = groupExpiredItemsByPeriod(expiredItems);
+  const groupedExpiredItemsRecord = groupExpiredItemsByPeriod(expiredItems);
+  const groupedExpiredItems = Object.entries(groupedExpiredItemsRecord);
 
   // アラートがない場合
   const hasAlerts = expiredItems.length > 0 || expiringItems.length > 0;
