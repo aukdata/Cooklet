@@ -122,7 +122,7 @@ OCRテキスト:
 // レシピ抽出結果のバリデーションスキーマ
 const RecipeExtractionSchema = z.object({
   title: z.string().optional().default('レシピ'),
-  servings: z.number().int().min(1).max(100).optional().default(2),
+  servings: z.number().min(1).max(100).transform((val) => Math.floor(val)).optional().default(2),
   ingredients: z.array(z.object({
     name: z.string().min(1, '材料名は必須です'),
     quantity: z.union([z.string(), z.number()]).optional().default('適量'),
