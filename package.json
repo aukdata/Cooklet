@@ -11,7 +11,7 @@
     "lint": "oxlint src",
     "build": "tsc -b && vite build",
     "build:netlify": "pnpm run lint && pnpm run build",
-    "test": "playwright test",
+    "test:e2e": "playwright test",
     "test:headed": "playwright test --headed",
     "test:debug": "playwright test --debug",
     "test:report": "playwright show-report",
@@ -20,7 +20,7 @@
     "test:unit:ui": "vitest --ui",
     "test:unit:watch": "vitest --watch",
     "test:unit:coverage": "vitest --coverage",
-    "test:all": "pnpm run test:unit && pnpm run test"
+    "test:all": "pnpm run test:unit && pnpm run test:e2e"
   },
   "dependencies": {
     "@google-cloud/vision": "^5.2.0",
