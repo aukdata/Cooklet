@@ -1,9 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { NameQuantityUnitInput } from '../common/NameQuantityUnitInput';
 import { useToast } from '../../hooks/useToast.tsx';
+import { useAuth } from '../../contexts/AuthContext';
 import { readReceiptFromImage, validateImageFile, type ReceiptItem, type ReceiptResult } from '../../utils/receiptReader';
 import { type FoodUnit, parseQuantity } from '../../constants/units';
-import { type Ingredient } from '../../types';
+import { type Ingredient, type StockItem } from '../../types';
+import { mergeStockWithPurchases, convertReceiptItemsToPurchaseItems, createMergeReport } from '../../utils/stockMergeUtils';
 
 interface EditableReceiptItem {
   originalName?: string;
@@ -20,17 +22,27 @@ interface ReceiptReaderProps {
   addIngredient: (ingredient: Omit<Ingredient, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   /** 買い物リストアイテム追加関数 */
   addShoppingItem: (item: { name: string; quantity?: { amount: string; unit: string }; checked: boolean; added_from: 'manual' | 'auto' }) => Promise<void>;
+  /** 在庫データ（マージ機能用、任意） */
+  stockItems?: StockItem[];
+  /** 在庫追加関数（任意） */
+  addStockItem?: (stockItem: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<StockItem>;
+  /** 在庫更新関数（任意） */
+  updateStockItem?: (id: string, updates: Partial<Omit<StockItem, 'id' | 'user_id' | 'created_at'>>) => Promise<StockItem>;
 }
 
 /**
  * レシート読み取り機能コンポーネント
- * OCR処理、結果編集、買い物リスト追加を統合
+ * OCR処理、結果編集、買い物リスト・在庫追加を統合
  */
 export const ReceiptReader: React.FC<ReceiptReaderProps> = ({
   ingredients,
   addIngredient,
-  addShoppingItem
+  addShoppingItem,
+  stockItems,
+  addStockItem,
+  updateStockItem
 }) => {
+  const { user } = useAuth();
   const { showError, showSuccess } = useToast();
 
   // レシート読み取り関連の状態
@@ -178,6 +190,124 @@ export const ReceiptReader: React.FC<ReceiptReaderProps> = ({
     }
   };
 
+  // 編集したレシート結果を直接在庫に追加する関数（スマートマージ機能付き）
+  const handleAddReceiptItemsToStock = async () => {
+    if (editingReceiptItems.length === 0) return;
+    
+    if (!user?.id) {
+      showError('ユーザー情報が見つかりません');
+      return;
+    }
+    
+    if (!stockItems || !addStockItem || !updateStockItem) {
+      showError('在庫機能が利用できません');
+      return;
+    }
+
+    try {
+      let registeredCount = 0;
+
+      // 1. 未登録食材を自動登録
+      for (const item of editingReceiptItems) {
+        if (item.name.trim()) {
+          const originalNameForSearch = item.originalName || item.name;
+          const existingIngredient = ingredients.find(ing => 
+            ing.name === item.name || 
+            (ing.original_name && new RegExp(ing.original_name, 'i').test(originalNameForSearch))
+          );
+
+          if (!existingIngredient) {
+            try {
+              // 基本的な推測でカテゴリを決定
+              let category: 'vegetables' | 'meat' | 'seasoning' | 'others' = 'others';
+              const itemName = item.name.toLowerCase();
+              if (itemName.includes('野菜') || itemName.includes('レタス') || itemName.includes('人参') || 
+                  itemName.includes('玉ねぎ') || itemName.includes('じゃがいも') || itemName.includes('トマト')) {
+                category = 'vegetables';
+              } else if (itemName.includes('肉') || itemName.includes('魚') || itemName.includes('鶏') || 
+                         itemName.includes('豚') || itemName.includes('牛') || itemName.includes('まぐろ')) {
+                category = 'meat';
+              } else if (itemName.includes('塩') || itemName.includes('砂糖') || itemName.includes('醤油') || 
+                         itemName.includes('味噌') || itemName.includes('酢') || itemName.includes('油')) {
+                category = 'seasoning';
+              }
+
+              await addIngredient({
+                name: item.name,
+                category,
+                default_unit: item.unit !== '-' ? item.unit : '個',
+                typical_price: item.price,
+                infinity: false,
+                original_name: originalNameForSearch !== item.name ? originalNameForSearch : item.name
+              });
+              registeredCount++;
+            } catch (err) {
+              console.error(`食材マスタへの登録に失敗: ${item.name}`, err);
+            }
+          }
+        }
+      }
+
+      // 2. レシートアイテムを購入品アイテムに変換
+      const receiptItemsForConversion = editingReceiptItems.map(item => ({
+        name: item.name,
+        originalName: item.originalName,
+        quantity: item.quantity + item.unit,
+        price: item.price
+      }));
+
+      const purchaseItems = convertReceiptItemsToPurchaseItems(
+        receiptItemsForConversion,
+        new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後の賞味期限
+        '冷蔵庫' // デフォルト保存場所
+      );
+
+      // 3. 既存在庫と購入品をマージ
+      const mergeResult = mergeStockWithPurchases(
+        purchaseItems,
+        stockItems,
+        ingredients,
+        user.id
+      );
+
+      // 4. マージされた在庫アイテムを更新
+      for (const mergedItem of mergeResult.mergedItems) {
+        await updateStockItem(mergedItem.id, {
+          quantity: mergedItem.quantity,
+          best_before: mergedItem.best_before,
+          storage_location: mergedItem.storage_location,
+          is_homemade: mergedItem.is_homemade,
+          updated_at: mergedItem.updated_at
+        });
+      }
+
+      // 5. 新規在庫アイテムを追加
+      for (const newItem of mergeResult.newItems) {
+        await addStockItem(newItem);
+      }
+
+      // レシート読み取り結果をクリア
+      setReceiptResult(null);
+      setEditingReceiptItems([]);
+      
+      // 結果レポートを作成
+      const reports = [];
+      const stockReport = createMergeReport(mergeResult);
+      reports.push(stockReport);
+      
+      if (registeredCount > 0) {
+        reports.push(`🏷️ ${registeredCount}件の食材を自動登録しました`);
+      }
+      
+      showSuccess(reports.join('\n'));
+      
+      console.log('📦 [レシート→在庫マージ結果]', mergeResult);
+    } catch (err) {
+      console.error('在庫への追加に失敗しました:', err);
+      showError('在庫への追加に失敗しました');
+    }
+  };
+
   // レシート読み取り結果をキャンセルする関数
   const handleCancelReceiptResult = () => {
     setReceiptResult(null);
@@ -243,16 +373,26 @@ export const ReceiptReader: React.FC<ReceiptReaderProps> = ({
             </div>
           )}
           
-          <div className="flex gap-2">
-            <button
-              onClick={handleAddReceiptItemsToList}
-              className="px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700"
-            >
-              ✅ 完了済みリストに追加
-            </button>
+          <div className="flex flex-col gap-2">
+            <div className="flex gap-2">
+              <button
+                onClick={handleAddReceiptItemsToList}
+                className="flex-1 px-4 py-2 bg-green-600 text-white rounded text-sm hover:bg-green-700"
+              >
+                ✅ 完了済みリストに追加
+              </button>
+              {stockItems && addStockItem && updateStockItem && (
+                <button
+                  onClick={handleAddReceiptItemsToStock}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                >
+                  📦 直接在庫に追加
+                </button>
+              )}
+            </div>
             <button
               onClick={handleCancelReceiptResult}
-              className="px-4 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
+              className="w-full px-4 py-2 bg-gray-500 text-white rounded text-sm hover:bg-gray-600"
             >
               キャンセル
             </button>

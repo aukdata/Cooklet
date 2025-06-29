@@ -102,6 +102,69 @@ const result3 = addQuantities(q5, q6); // null（エラー）
 
 ## ファイル構成
 
+### stockMergeUtils.ts
+**購入品を既存在庫とマージする機能**
+
+#### 概要
+購入品を既存在庫と統合する際に、同名のアイテムを検索して数量を自動加算し、商品名正規化機能も統合したスマートマージシステム。
+
+#### 主要機能
+- **mergeStockWithPurchases()**: 購入品と既存在庫のマージ処理
+- **convertReceiptItemsToPurchaseItems()**: レシートアイテムから購入品への変換
+- **createMergeReport()**: マージ結果の日本語レポート生成
+
+#### マージロジック
+1. **商品名正規化**: nameNormalizer.tsを使用した商品名正規化
+2. **類似度チェック**: 商品名の完全一致・部分一致による既存在庫の検索
+3. **数量加算**: quantityUtils.tsのaddQuantities関数による型安全な数量加算
+4. **属性マージ**: 賞味期限は新しい方を優先、その他の属性は適切にマージ
+
+#### 型定義
+- `PurchaseItem`: 購入品アイテム（name, quantity: Quantity, best_before等）
+- `StockMergeResult`: マージ結果（mergedItems, newItems, stats）
+
+#### マージ統計機能
+- 処理した購入品総数
+- 既存在庫にマージされた数
+- 新規追加された数
+- 正規化された商品名の数
+
+#### 使用例
+```typescript
+const mergeResult = mergeStockWithPurchases(
+  purchaseItems,   // 購入品リスト
+  existingStock,   // 既存在庫リスト
+  ingredients,     // 食材マスタ（正規化用）
+  userId          // ユーザーID
+);
+
+// マージされた在庫を更新
+for (const mergedItem of mergeResult.mergedItems) {
+  await updateStockItem(mergedItem.id, mergedItem);
+}
+
+// 新規在庫を追加
+for (const newItem of mergeResult.newItems) {
+  await addStockItem(newItem);
+}
+
+// 結果レポート表示
+const report = createMergeReport(mergeResult);
+showSuccess(report);
+```
+
+#### 統合している既存関数
+- `addQuantities()` - quantityUtils.tsから数量の加算
+- `isValidQuantity()` - quantityUtils.tsから数量の妥当性チェック
+- `normalizeProductName()` - nameNormalizer.tsから商品名の正規化
+
+#### 特徴
+- **型安全性**: TypeScript厳密型定義による安全な演算
+- **商品名正規化**: 食材マスタとの照合による商品名統一
+- **単位変換対応**: 重量・体積系の自動単位変換
+- **エラーハンドリング**: 計算失敗時の適切な処理
+- **統計情報**: 詳細なマージ結果統計
+
 ### receiptReader.ts
 レシート読み取り機能の実装ファイル。Google Vision APIとGemini 自動抽出を組み合わせた高精度レシート解析。
 ingredientsテーブルのoriginal_nameと照らし合わせて商品名を一般名に自動変換。

@@ -32,6 +32,12 @@
 - 数量・単位の適切な結合処理
 - 一括追加機能
 
+**在庫直接追加機能（新機能）**
+- レシート読み取り結果を直接在庫にマージ
+- 既存在庫との自動統合（同名アイテムの数量加算）
+- 商品名正規化機能統合
+- 詳細なマージ結果レポート表示
+
 #### Props
 
 ```typescript
@@ -39,9 +45,15 @@ interface ReceiptReaderProps {
   /** 食材マスタデータ（商品名正規化用） */
   ingredients: Ingredient[];
   /** 食材マスタ追加関数 */
-  addIngredient: (ingredient: Omit<Ingredient, 'id' | 'userId' | 'createdAt'>) => Promise<void>;
+  addIngredient: (ingredient: Omit<Ingredient, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   /** 買い物リストアイテム追加関数 */
-  addShoppingItem: (item: { name: string; quantity?: string; checked: boolean; added_from: string }) => Promise<void>;
+  addShoppingItem: (item: { name: string; quantity?: { amount: string; unit: string }; checked: boolean; added_from: 'manual' | 'auto' }) => Promise<void>;
+  /** 在庫データ（マージ機能用、任意） */
+  stockItems?: StockItem[];
+  /** 在庫追加関数（任意） */
+  addStockItem?: (stockItem: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<StockItem>;
+  /** 在庫更新関数（任意） */
+  updateStockItem?: (id: string, updates: Partial<Omit<StockItem, 'id' | 'user_id' | 'created_at'>>) => Promise<StockItem>;
 }
 ```
 

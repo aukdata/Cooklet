@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { useShoppingList, useMealPlans, useStockItems, useAutoShoppingList, useIngredients } from '../../hooks';
-import { type StockItem, type Quantity } from '../../types/index';
+import { useAuth } from '../../contexts/AuthContext';
+import { type Quantity } from '../../types/index';
 import { type ShoppingListItem } from '../../types';
 import { QuantityInput } from '../../components/common/QuantityInput';
 import { ShoppingItemDialog } from '../../components/dialogs/ShoppingItemDialog';
 import { ReceiptReader } from '../../components/shopping/ReceiptReader';
 import { useToast } from '../../hooks/useToast.tsx';
 import { quantityToDisplay } from '../../utils/quantityDisplay';
+import { mergeStockWithPurchases, createMergeReport, type PurchaseItem } from '../../utils/stockMergeUtils';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
 export const Shopping: React.FC = () => {
+  const { user } = useAuth();
   const { showError, showSuccess, showInfo } = useToast();
 
   // useShoppingListフックを使用してデータを取得
@@ -26,7 +29,7 @@ export const Shopping: React.FC = () => {
 
   // 献立と在庫データを取得（自動作成機能用）
   const { mealPlans: _mealPlans } = useMealPlans();
-  const { stockItems: _stockItems, addStockItem } = useStockItems();
+  const { stockItems: _stockItems, addStockItem, updateStockItem } = useStockItems();
 
   // 自動生成フック
   const {
@@ -123,7 +126,7 @@ export const Shopping: React.FC = () => {
     }));
   };
 
-  // 完了済みアイテムを在庫に追加（ダイアログなしで直接追加）
+  // 完了済みアイテムを在庫に追加（スマートマージ機能付き）
   const handleAddToStock = async () => {
     const completedItems = getCompletedItems();
     if (completedItems.length === 0) {
@@ -131,21 +134,48 @@ export const Shopping: React.FC = () => {
       return;
     }
     
+    if (!user?.id) {
+      showError('ユーザー情報が見つかりません');
+      return;
+    }
+    
     try {
-      // 各完了アイテムを在庫に追加
-      for (const item of completedItems) {
+      // 完了済みアイテムを購入品アイテムに変換
+      const purchaseItems: PurchaseItem[] = completedItems.map((item) => {
         const editedQuantity = editingQuantities[item.id!];
         const quantity = editedQuantity || item.quantity || { amount: '1', unit: '個' };
         
-        const stockData: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
+        return {
           name: item.name,
           quantity: quantity,
           best_before: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 1週間後
           storage_location: '冷蔵庫',
           is_homemade: false
         };
-        
-        await addStockItem(stockData);
+      });
+      
+      // 既存在庫と購入品をマージ
+      const mergeResult = mergeStockWithPurchases(
+        purchaseItems,
+        _stockItems,
+        ingredients,
+        user.id
+      );
+      
+      // マージされた在庫アイテムを更新
+      for (const mergedItem of mergeResult.mergedItems) {
+        await updateStockItem(mergedItem.id, {
+          quantity: mergedItem.quantity,
+          best_before: mergedItem.best_before,
+          storage_location: mergedItem.storage_location,
+          is_homemade: mergedItem.is_homemade,
+          updated_at: mergedItem.updated_at
+        });
+      }
+      
+      // 新規在庫アイテムを追加
+      for (const newItem of mergeResult.newItems) {
+        await addStockItem(newItem);
       }
       
       // 在庫追加後、完了アイテムを削除
@@ -154,7 +184,11 @@ export const Shopping: React.FC = () => {
       // 編集中の量をクリア
       setEditingQuantities({});
       
-      showSuccess(`${completedItems.length}件のアイテムを在庫に追加しました`);
+      // マージ結果のレポートを表示
+      const report = createMergeReport(mergeResult);
+      showSuccess(report);
+      
+      console.log('📦 [マージ結果]', mergeResult);
     } catch (err) {
       console.error('在庫追加に失敗しました:', err);
       showError('在庫追加に失敗しました');
@@ -292,6 +326,9 @@ export const Shopping: React.FC = () => {
         ingredients={ingredients}
         addIngredient={addIngredient}
         addShoppingItem={addShoppingItem}
+        stockItems={_stockItems}
+        addStockItem={addStockItem}
+        updateStockItem={updateStockItem}
       />
 
       {/* 新規追加 */}
