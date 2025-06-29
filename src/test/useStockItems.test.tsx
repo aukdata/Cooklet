@@ -4,6 +4,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { useStockItems } from '../hooks/useStockItems';
 import { RepositoryProvider } from '../contexts/RepositoryContext';
 import { createTestRepositoryContainer } from '../repositories/container';
+import { parseQuantity } from '../constants/units';
 
 // モックユーザー
 const mockUser = {
@@ -65,7 +66,7 @@ describe('useStockItems', () => {
 
     const newStockItem = {
       name: 'テスト食材',
-      quantity: '100g',
+      quantity: parseQuantity('100g'),
       is_homemade: false,
     };
 
@@ -86,7 +87,7 @@ describe('useStockItems', () => {
     await act(async () => {
       await result.current.addStockItem({
         name: 'テスト食材',
-        quantity: '100g',
+        quantity: parseQuantity('100g'),
         is_homemade: false,
       });
     });
@@ -96,12 +97,12 @@ describe('useStockItems', () => {
     // 在庫を更新
     await act(async () => {
       await result.current.updateStockItem(itemId, {
-        quantity: '200g',
+        quantity: parseQuantity('200g'),
         best_before: '2024-12-31',
       });
     });
 
-    expect(result.current.stockItems[0].quantity).toBe('200g');
+    expect(result.current.stockItems[0].quantity).toEqual(parseQuantity('200g'));
     expect(result.current.stockItems[0].best_before).toBe('2024-12-31');
   });
 
@@ -112,7 +113,7 @@ describe('useStockItems', () => {
     await act(async () => {
       await result.current.addStockItem({
         name: 'テスト食材',
-        quantity: '100g',
+        quantity: parseQuantity('100g'),
         is_homemade: false,
       });
     });
@@ -139,7 +140,7 @@ describe('useStockItems', () => {
     await act(async () => {
       await result.current.addStockItem({
         name: '期限切れ食材',
-        quantity: '100g',
+        quantity: parseQuantity('100g'),
         best_before: yesterdayStr,
         is_homemade: false,
       });
@@ -161,7 +162,7 @@ describe('useStockItems', () => {
     await act(async () => {
       await result.current.addStockItem({
         name: '期限間近食材',
-        quantity: '100g',
+        quantity: parseQuantity('100g'),
         best_before: tomorrowStr,
         is_homemade: false,
       });
@@ -179,17 +180,17 @@ describe('useStockItems', () => {
     await act(async () => {
       await result.current.addStockItem({
         name: 'りんご',
-        quantity: '3個',
+        quantity: parseQuantity('3個'),
         is_homemade: false,
       });
       await result.current.addStockItem({
         name: 'みかん',
-        quantity: '5個',
+        quantity: parseQuantity('5個'),
         is_homemade: false,
       });
       await result.current.addStockItem({
         name: 'りんごジュース',
-        quantity: '1本',
+        quantity: parseQuantity('1本'),
         is_homemade: false,
       });
     });
@@ -206,7 +207,7 @@ describe('useStockItems', () => {
     // 無効なIDで更新を試行
     await act(async () => {
       try {
-        await result.current.updateStockItem('invalid-id', { quantity: '200g' });
+        await result.current.updateStockItem('invalid-id', { quantity: parseQuantity('200g') });
       } catch (error) {
         expect(error).toBeInstanceOf(Error);
         expect((error as Error).message).toContain('not found');
@@ -219,7 +220,7 @@ describe('useStockItems', () => {
 
     const stockItem = {
       name: '新しい食材',
-      quantity: '100g',
+      quantity: parseQuantity('100g'),
       is_homemade: false,
     };
 
@@ -238,7 +239,7 @@ describe('useStockItems', () => {
     await act(async () => {
       await result.current.addStockItem({
         name: '既存食材',
-        quantity: '100g',
+        quantity: parseQuantity('100g'),
         is_homemade: false,
       });
     });
@@ -249,11 +250,11 @@ describe('useStockItems', () => {
     await act(async () => {
       await result.current.saveStockItem({
         ...existingItem,
-        quantity: '200g',
+        quantity: parseQuantity('200g'),
       });
     });
 
-    expect(result.current.stockItems[0].quantity).toBe('200g');
+    expect(result.current.stockItems[0].quantity).toEqual(parseQuantity('200g'));
     expect(result.current.stockItems).toHaveLength(1); // 追加ではなく更新
   });
 });
