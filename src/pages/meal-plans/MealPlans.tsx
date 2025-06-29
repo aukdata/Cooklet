@@ -190,7 +190,7 @@ export const MealPlans: React.FC = () => {
       
       await addStockItem({
         name: dishName,
-        quantity: '1食分',
+        quantity: { amount: '1', unit: '食分' },
         best_before: tomorrow.toISOString().split('T')[0], // 明日まで
         storage_location: '冷蔵庫',
         is_homemade: true // 作り置きフラグをtrueに設定
@@ -243,7 +243,7 @@ export const MealPlans: React.FC = () => {
           meal_type: mealTypes[mealTypeIndex],
           source_type: 'recipe', // デフォルトはレシピ
           memo: meal.recipe,
-          ingredients: meal.ingredients ? meal.ingredients.map(ing => ({ name: ing, quantity: '適量' })) : [],
+          ingredients: meal.ingredients ? meal.ingredients.map(ing => ({ name: ing, quantity: { amount: '適量', unit: '' } })) : [],
           consumed_status: 'pending',
           created_at: '', // saveMealPlanで自動設定される
           updated_at: '' // saveMealPlanで自動設定される

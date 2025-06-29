@@ -2,16 +2,9 @@ import { useDataHook } from './useDataHook';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
-// 買い物リストデータの型定義（CLAUDE.md仕様書準拠）
-export interface ShoppingListItem {
-  id?: string;
-  user_id?: string;
-  name: string;
-  quantity?: string;
-  checked: boolean;
-  added_from: 'manual' | 'auto';
-  created_at?: string;
-}
+// 買い物リストデータの型定義（types/index.tsと統合）
+import type { ShoppingListItem } from '../types';
+export type { ShoppingListItem };
 
 // useShoppingListフック - useDataHookベースの買い物リスト管理
 export const useShoppingList = () => {

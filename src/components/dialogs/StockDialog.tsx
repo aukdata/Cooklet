@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { StockItem } from '../../types/index';
+import type { StockItem, Quantity } from '../../types/index';
 import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
 import { BaseDialog } from '../ui/BaseDialog';
@@ -7,7 +7,7 @@ import { BaseDialog } from '../ui/BaseDialog';
 // フォーム用の在庫データ型（UI表示用のcamelCase）
 interface StockFormData {
   name: string;
-  quantity: string;
+  quantity: Quantity;
   bestBefore?: string;
   storageLocation?: string;
   isHomemade: boolean;
@@ -41,7 +41,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
   // フォームデータの状態管理（UI用のcamelCase形式）
   const [formData, setFormData] = useState<StockFormData>({
     name: '',
-    quantity: '',
+    quantity: { amount: '', unit: '' },
     bestBefore: '',
     storageLocation: '冷蔵庫',
     isHomemade: false
@@ -58,7 +58,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
     if (initialData) {
       setFormData({
         name: initialData.name || '',
-        quantity: initialData.quantity || '',
+        quantity: initialData.quantity || { amount: '', unit: '' },
         bestBefore: initialData.best_before || '',
         storageLocation: initialData.storage_location || '冷蔵庫',
         isHomemade: initialData.is_homemade || false
@@ -67,7 +67,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
       // 新規作成時はフォームをリセット
       setFormData({
         name: '',
-        quantity: '',
+        quantity: { amount: '', unit: '' },
         bestBefore: '',
         storageLocation: '冷蔵庫',
         isHomemade: false
@@ -81,7 +81,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
       showError('食材名を入力してください');
       return;
     }
-    if (!formData.quantity?.trim()) {
+    if (!formData.quantity.amount?.trim()) {
       showError('数量を入力してください');
       return;
     }
@@ -156,7 +156,7 @@ export const StockDialog: React.FC<StockDialogProps> = ({
               📊 数量:
             </label>
             <QuantityInput
-              value={formData.quantity || ''}
+              value={formData.quantity}
               onChange={(value) => setFormData(prev => ({ ...prev, quantity: value }))}
               placeholder="数量"
               className="w-full"

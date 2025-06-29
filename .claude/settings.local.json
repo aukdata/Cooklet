@@ -25,7 +25,8 @@
       "Bash(similarity-ts:*)",
       "Bash(oxlint:*)",
       "Bash(mv:*)",
-      "Bash(npx similarity-ts:*)"
+      "Bash(npx similarity-ts:*)",
+      "Bash(npx tsc:*)"
     ],
     "deny": [
       "Bash(rm:*)"

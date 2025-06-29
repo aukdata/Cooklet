@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useShoppingList, useMealPlans, useStockItems, useAutoShoppingList, useIngredients } from '../../hooks';
-import { type StockItem } from '../../types/index';
+import { type StockItem, type Quantity } from '../../types/index';
 import { type ShoppingListItem } from '../../types';
 import { QuantityInput } from '../../components/common/QuantityInput';
 import { ShoppingItemDialog } from '../../components/dialogs/ShoppingItemDialog';
 import { ReceiptReader } from '../../components/shopping/ReceiptReader';
 import { useToast } from '../../hooks/useToast.tsx';
+import { quantityToDisplay } from '../../utils/quantityDisplay';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
 export const Shopping: React.FC = () => {
@@ -46,7 +47,7 @@ export const Shopping: React.FC = () => {
   const [showCompleted, setShowCompleted] = useState(false);
   
   // 完了アイテムの量編集状態
-  const [editingQuantities, setEditingQuantities] = useState<Record<string, string>>({});
+  const [editingQuantities, setEditingQuantities] = useState<Record<string, Quantity>>({});
 
   // 全選択状態の管理
   const [selectAll, setSelectAll] = useState(false);
@@ -68,8 +69,8 @@ export const Shopping: React.FC = () => {
   const handleAddItem = async (item: Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>) => {
     try {
       await addShoppingItem({
-        name: item.name as string,
-        quantity: item.quantity as string | undefined,
+        name: item.name,
+        quantity: item.quantity,
         checked: false,
         added_from: 'manual'
       });
@@ -115,7 +116,7 @@ export const Shopping: React.FC = () => {
 
 
   // 完了済みアイテムの量編集処理
-  const handleQuantityEdit = (itemId: string, newQuantity: string) => {
+  const handleQuantityEdit = (itemId: string, newQuantity: Quantity) => {
     setEditingQuantities(prev => ({
       ...prev,
       [itemId]: newQuantity
@@ -133,7 +134,8 @@ export const Shopping: React.FC = () => {
     try {
       // 各完了アイテムを在庫に追加
       for (const item of completedItems) {
-        const quantity = editingQuantities[item.id!] || item.quantity || '1個';
+        const editedQuantity = editingQuantities[item.id!];
+        const quantity = editedQuantity || item.quantity || { amount: '1', unit: '個' };
         
         const stockData: Omit<StockItem, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
           name: item.name,
@@ -333,7 +335,7 @@ export const Shopping: React.FC = () => {
                   <span className="text-gray-900">
                     {item.name}
                     {item.quantity && (
-                      <span className="text-gray-600 ml-1">({item.quantity})</span>
+                      <span className="text-gray-600 ml-1">({quantityToDisplay(item.quantity)})</span>
                     )}
                   </span>
                 </div>
@@ -398,7 +400,7 @@ export const Shopping: React.FC = () => {
                   {/* 量調整エディット */}
                   <div className="flex items-center ml-3">
                     <QuantityInput
-                      value={editingQuantities[item.id!] || item.quantity || ''}
+                      value={editingQuantities[item.id!] || item.quantity || { amount: '', unit: '' }}
                       onChange={(value) => handleQuantityEdit(item.id!, value)}
                       placeholder="数量"
                       className="w-32"

@@ -6,6 +6,7 @@ import { useStockItems } from './useStockItems';
 import { useShoppingList } from './useShoppingList';
 import { useIngredients } from './useIngredients';
 import { generateShoppingListForNextDays } from '../services/shoppingListGeneration';
+import { parseQuantity } from '../constants/units';
 
 // 自動生成の結果型
 export interface AutoGenerationResult {
@@ -70,7 +71,10 @@ export const useAutoShoppingList = () => {
         const shoppingItem = item as { name: string; quantity?: string; checked: boolean; added_from: 'manual' | 'auto' };
         
         try {
-          await addShoppingItem(shoppingItem);
+          await addShoppingItem({
+            ...shoppingItem,
+            quantity: shoppingItem.quantity ? parseQuantity(shoppingItem.quantity) : undefined
+          });
           itemsAdded++;
           console.log(`✅ [Debug] アイテム追加成功: ${shoppingItem.name}`);
           details.push({

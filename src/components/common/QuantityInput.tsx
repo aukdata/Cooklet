@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { FOOD_UNITS, type FoodUnit, parseQuantity, formatQuantity } from '../../constants/units';
+import { type Quantity } from '../../types';
 
 interface QuantityInputProps {
-  value: string;
-  onChange: (value: string) => void;
+  value: Quantity;
+  onChange: (value: Quantity) => void;
   placeholder?: string;
   className?: string;
   disabled?: boolean;
@@ -16,18 +17,16 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
   className = "",
   disabled = false
 }) => {
-  const { amount, unit } = parseQuantity(value);
-  
   // 入力中の数値を一時的に保持
-  const [tempAmount, setTempAmount] = useState(amount);
+  const [tempAmount, setTempAmount] = useState(value.amount);
   const [isEditing, setIsEditing] = useState(false);
   
   // valueが外部から変更されたときにtempAmountを更新
   useEffect(() => {
     if (!isEditing) {
-      setTempAmount(amount);
+      setTempAmount(value.amount);
     }
-  }, [amount, isEditing]);
+  }, [value.amount, isEditing]);
 
   const handleAmountChange = (newAmount: string) => {
     setTempAmount(newAmount);
@@ -36,10 +35,11 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
   const handleAmountBlur = () => {
     // 空の値の場合は修正しない
     if (tempAmount.trim() === '') {
-      onChange('');
+      onChange({ amount: '', unit: value.unit });
     } else {
-      const formattedValue = formatQuantity(tempAmount.trim(), unit);
-      onChange(formattedValue);
+      const formattedQuantityString = formatQuantity(tempAmount.trim(), value.unit as FoodUnit);
+      const { amount, unit } = parseQuantity(formattedQuantityString);
+      onChange({ amount, unit });
     }
     setIsEditing(false);
   };
@@ -48,10 +48,11 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
     if (e.key === 'Enter') {
       // 空の値の場合は修正しない
       if (tempAmount.trim() === '') {
-        onChange('');
+        onChange({ amount: '', unit: value.unit });
       } else {
-        const formattedValue = formatQuantity(tempAmount.trim(), unit);
-        onChange(formattedValue);
+        const formattedQuantityString = formatQuantity(tempAmount.trim(), value.unit as FoodUnit);
+        const { amount, unit } = parseQuantity(formattedQuantityString);
+        onChange({ amount, unit });
       }
       setIsEditing(false);
       e.currentTarget.blur();
@@ -63,13 +64,14 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
   };
 
   const handleUnitChange = (newUnit: FoodUnit) => {
-    const currentAmount = isEditing ? tempAmount.trim() : amount;
+    const currentAmount = isEditing ? tempAmount.trim() : value.amount;
     // 空の値の場合は単位のみ設定しない
     if (currentAmount === '') {
-      onChange('');
+      onChange({ amount: '', unit: newUnit });
     } else {
-      const formattedValue = formatQuantity(currentAmount, newUnit);
-      onChange(formattedValue);
+      const formattedQuantityString = formatQuantity(currentAmount, newUnit);
+      const { amount, unit } = parseQuantity(formattedQuantityString);
+      onChange({ amount, unit });
     }
     setIsEditing(false);
   };
@@ -79,7 +81,7 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
       {/* 数値入力 */}
       <input
         type="text"
-        value={isEditing ? tempAmount : amount}
+        value={isEditing ? tempAmount : value.amount}
         onChange={(e) => handleAmountChange(e.target.value)}
         onBlur={handleAmountBlur}
         onFocus={handleAmountFocus}
@@ -91,7 +93,7 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
       
       {/* 単位選択 */}
       <select
-        value={unit}
+        value={value.unit}
         onChange={(e) => handleUnitChange(e.target.value as FoodUnit)}
         disabled={disabled}
         className="text-sm border border-gray-300 rounded px-1 py-1 bg-white"

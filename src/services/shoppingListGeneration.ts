@@ -1,8 +1,9 @@
 // 買い物リスト自動生成サービス - CLAUDE.md仕様書に準拠
 // 献立から買い物リストを自動生成し、在庫との突合を行う機能
 
-import { type MealPlan, type StockItem, type Ingredient } from '../types/index';
+import { type MealPlan, type StockItem, type Ingredient, type Quantity, type IngredientItem } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
+import { quantityToDisplay } from '../utils/quantityDisplay';
 
 export interface ShoppingListGenerationResult {
   success: boolean;
@@ -16,21 +17,21 @@ export interface ShoppingListGenerationResult {
 }
 
 // 食材の数量を正規化する関数
-const normalizeQuantity = (quantity: string): { value: number; unit: string } => {
-  // "2個", "200g", "1本"等から数値と単位を分離
-  const match = quantity.match(/^(\d+(?:\.\d+)?)(.*)$/);
+const normalizeQuantity = (quantity: Quantity): { value: number; unit: string } => {
+  // Quantity型から数値と単位を分離
+  const match = quantity.amount.match(/^(\d+(?:\.\d+)?)(.*)$/);
   
   if (match) {
     return {
       value: parseFloat(match[1]),
-      unit: match[2].trim() || '個'
+      unit: quantity.unit || match[2].trim() || '個'
     };
   }
   
   // 数値が見つからない場合は適量として扱う
   return {
     value: 1,
-    unit: quantity || '適量'
+    unit: quantity.unit || '適量'
   };
 };
 
@@ -71,8 +72,8 @@ const isInfinityIngredient = (ingredientName: string, ingredients: Ingredient[])
 
 // 在庫が足りているかチェックする関数
 const isStockSufficient = (
-  requiredQuantity: string, 
-  stockQuantity: string
+  requiredQuantity: Quantity, 
+  stockQuantity: Quantity
 ): boolean => {
   const required = normalizeQuantity(requiredQuantity);
   const stock = normalizeQuantity(stockQuantity);
@@ -88,8 +89,8 @@ const isStockSufficient = (
 };
 
 // 献立から必要な食材を集計する関数
-const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, string> => {
-  const aggregatedIngredients = new Map<string, string>();
+const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, Quantity> => {
+  const aggregatedIngredients = new Map<string, Quantity>();
   
   console.log('🔍 [Debug] aggregateIngredientsFromMealPlans 開始');
   
@@ -127,7 +128,7 @@ const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, s
       return;
     }
     
-    ingredients.forEach((ingredient: { name: string; quantity: string } | unknown, ingredientIndex) => {
+    ingredients.forEach((ingredient: IngredientItem | unknown, ingredientIndex) => {
       console.log(`🔍 [Debug] 献立 ${planIndex + 1} 食材 ${ingredientIndex + 1}:`, ingredient);
       
       // 型ガードで安全にアクセス
@@ -136,7 +137,7 @@ const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, s
         return;
       }
 
-      const typedIngredient = ingredient as { name: string; quantity: string };
+      const typedIngredient = ingredient as IngredientItem;
       
       const normalizedName = normalizeIngredientName(typedIngredient.name);
       console.log(`🔍 [Debug] 正規化された食材名: "${typedIngredient.name}" → "${normalizedName}"`);
@@ -149,7 +150,7 @@ const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, s
         
         if (existing.unit === current.unit) {
           const totalValue = existing.value + current.value;
-          aggregatedIngredients.set(normalizedName, `${totalValue}${existing.unit}`);
+          aggregatedIngredients.set(normalizedName, { amount: totalValue.toString(), unit: existing.unit });
         } else {
           // 単位が異なる場合は新しい量を採用
           aggregatedIngredients.set(normalizedName, typedIngredient.quantity);
@@ -212,7 +213,7 @@ export const generateShoppingListFromMealPlans = async (
     // 各食材について在庫チェック
     for (const [normalizedName, quantity] of aggregatedIngredients) {
       totalIngredients++;
-      console.log(`🔍 [Debug] 処理中の食材: "${normalizedName}" (${quantity})`);
+      console.log(`🔍 [Debug] 処理中の食材: "${normalizedName}" (${quantityToDisplay(quantity)})`);
       
       // 元の食材名を復元（最初に見つかった名前を使用）
       let originalName = normalizedName;
@@ -277,7 +278,7 @@ export const generateShoppingListFromMealPlans = async (
           
           if (required.unit === stock.unit) {
             const shortage = Math.max(0, required.value - stock.value);
-            finalQuantity = shortage > 0 ? `${shortage}${required.unit}` : quantity;
+            finalQuantity = shortage > 0 ? { amount: shortage.toString(), unit: required.unit } : quantity;
           }
         }
         

@@ -1,11 +1,12 @@
 // 食材編集コンポーネント - 食材リストの追加・編集・削除機能を統一
 
 import { QuantityInput } from '../common/QuantityInput';
+import { type Quantity } from '../../types';
 
 // 食材データの型定義
 export interface Ingredient {
   name: string;
-  quantity: string;
+  quantity: Quantity;
 }
 
 export interface IngredientsEditorProps {
@@ -50,7 +51,7 @@ export const IngredientsEditor = ({
       return;
     }
     
-    const newIngredients = [...ingredients, { name: '', quantity: '' }];
+    const newIngredients = [...ingredients, { name: '', quantity: { amount: '', unit: '' } }];
     onChange(newIngredients);
   };
 
@@ -68,7 +69,7 @@ export const IngredientsEditor = ({
   };
 
   // 食材の数量を更新
-  const updateIngredientQuantity = (index: number, quantity: string) => {
+  const updateIngredientQuantity = (index: number, quantity: Quantity) => {
     const newIngredients = [...ingredients];
     newIngredients[index] = { ...newIngredients[index], quantity };
     onChange(newIngredients);
@@ -96,7 +97,7 @@ export const IngredientsEditor = ({
 
   // 表示する食材リスト（空の項目表示オプション対応）
   const displayIngredients = showEmptyItem && ingredients.length === 0 
-    ? [{ name: '', quantity: '' }] 
+    ? [{ name: '', quantity: { amount: '', unit: '' } }] 
     : ingredients;
 
   const canAddMore = !maxItems || ingredients.length < maxItems;
@@ -214,6 +215,6 @@ export const cleanIngredients = (ingredients: Ingredient[]): Ingredient[] => {
 export const normalizeIngredients = (ingredients: Ingredient[]): Ingredient[] => {
   return ingredients.map(ing => ({
     name: ing.name.trim(),
-    quantity: ing.quantity.trim() || '適量'
+    quantity: ing.quantity.amount.trim() ? ing.quantity : { amount: '適量', unit: '' }
   })).filter(ing => ing.name !== '');
 };

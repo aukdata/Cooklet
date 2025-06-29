@@ -1,7 +1,8 @@
 import { useDataHook } from './useDataHook';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import type { SavedRecipe, CreateRecipeData, UpdateRecipeData, RecipeIngredient } from '../types/recipe';
+import type { SavedRecipe, CreateRecipeData, UpdateRecipeData } from '../types/recipe';
+import type { IngredientItem } from '../types';
 
 // 再エクスポート（後方互換性のため）
 export type { SavedRecipe } from '../types/recipe';
@@ -32,7 +33,7 @@ export const useRecipes = () => {
   });
 
   // 材料をingredientsマスタテーブルに追加する補助関数
-  const addIngredientsToMaster = async (ingredients: RecipeIngredient[]) => {
+  const addIngredientsToMaster = async (ingredients: IngredientItem[]) => {
     if (!user || !ingredients.length) return;
 
     try {
@@ -51,7 +52,7 @@ export const useRecipes = () => {
           user_id: user.id,
           name: ing.name.trim(),
           category: '自動追加', // 自動抽出材料のデフォルトカテゴリ
-          default_unit: ing.quantity.match(/[a-zA-Zぁ-んァ-ヶー]/g)?.join('') || '個', // 数量から単位を抽出
+          default_unit: ing.quantity.unit || '個', // Quantity型から単位を取得
         }));
 
       if (newIngredients.length > 0) {

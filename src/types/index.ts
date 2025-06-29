@@ -1,6 +1,18 @@
 // 食事タイプを表す型定義
 export type MealType = '朝' | '昼' | '夜' | '間食';
 
+// 数量と単位を表すインターフェース
+export interface Quantity {
+  amount: string; // 数量（文字列形式）
+  unit: string; // 単位
+}
+
+// 食材項目（Quantity型使用）
+export interface IngredientItem {
+  name: string; // 食材名
+  quantity: Quantity; // 数量と単位
+}
+
 // ユーザー情報を表すインターフェース
 export interface User {
   id: string; // ユーザーID（UUID）
@@ -32,7 +44,7 @@ export interface StockItem {
   id: string; // 在庫ID（UUID）
   user_id: string; // 所有ユーザーID（DB形式）
   name: string; // 食材名
-  quantity: string; // 数量（文字列形式）
+  quantity: Quantity; // 数量（Quantity型）
   best_before?: string; // 賞味期限（任意、DB形式）
   storage_location?: string; // 保存場所（任意、DB形式）
   is_homemade: boolean; // 作り置きフラグ（DB形式）
@@ -53,19 +65,19 @@ export interface Recipe {
   notes?: string; // メモ（任意）
   createdAt: string; // 作成日時
   updatedAt: string; // 更新日時
-  recipeIngredients?: DatabaseRecipeIngredient[]; // レシピ食材リスト（JOIN結果）
+  recipeIngredients?: RecipeIngredient[]; // レシピ食材リスト（JOIN結果）
 }
 
-// データベース用のレシピ食材情報を表すインターフェース
-export interface DatabaseRecipeIngredient {
+// レシピ食材情報を表すインターフェース
+export interface RecipeIngredient {
   id: number; // レシピ食材ID
   recipeId: number; // レシピID
   ingredientId: number; // 食材ID
   ingredient?: Ingredient; // 食材情報（JOIN結果）
-  quantity: number; // 必要数量
-  unit: string; // 単位
+  quantity: Quantity; // 必要数量（Quantity型）
   isOptional: boolean; // 任意フラグ
 }
+
 
 // 献立ソースタイプを表す型定義
 export type MealSourceType = 'recipe' | 'stock';
@@ -79,7 +91,7 @@ export interface MealPlan {
   source_type: MealSourceType; // 献立ソースタイプ（recipe: レシピ、stock: 在庫、DB形式）
   recipe_url?: string; // レシピURL（任意、DB形式）
   stock_id?: string; // 在庫ID（source_typeがstockの場合、DB形式）
-  ingredients: { name: string; quantity: string }[]; // 食材リスト
+  ingredients: IngredientItem[]; // 食材リスト（Quantity型使用）
   memo?: string; // メモ（任意）
   consumed_status: 'pending' | 'completed' | 'stored'; // 消費状態（未完了・完食・作り置き、DB形式）
   created_at: string; // 作成日時（DB形式）
@@ -91,7 +103,7 @@ export interface ShoppingListItem {
   id: string; // 買い物リストID（UUID）
   user_id: string; // ユーザーID（DB形式）
   name: string; // 食材名
-  quantity?: string; // 数量（任意）
+  quantity?: Quantity; // 数量（任意、Quantity型）
   checked: boolean; // 完了フラグ
   added_from: 'manual' | 'auto'; // 追加方法（手動・自動、DB形式）
   created_at: string; // 作成日時（DB形式）
@@ -117,7 +129,7 @@ export interface SavedRecipe {
   url: string; // レシピURL
   servings: number; // 何人前
   tags: string[]; // タグ
-  ingredients: { name: string; quantity: string }[]; // 食材リスト
+  ingredients: IngredientItem[]; // 食材リスト（Quantity型使用）
   createdAt: string; // 作成日時
 }
 

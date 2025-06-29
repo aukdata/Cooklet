@@ -7,10 +7,12 @@ import { RecipeSelector } from './RecipeSelector';
 import { ManualRecipeInput } from './ManualRecipeInput';
 import { MealIngredientsEditor } from './MealIngredientsEditor';
 import { ConfirmDialog } from './ConfirmDialog';
-import { parseQuantity, formatQuantity } from '../../constants/units';
+import { parseQuantity } from '../../constants/units';
 import type { Ingredient } from '../ui/IngredientsEditor';
+import type { Quantity } from '../../types';
+import { quantityToDisplay } from '../../utils/quantityDisplay';
 
-// レシピデータ型
+// レシピデータ型（型互換性のためlocal interface）
 interface Recipe {
   id: string;
   title: string;
@@ -51,7 +53,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
   const [selectedRecipeId, setSelectedRecipeId] = useState<string>('');
   const [selectedStockId, setSelectedStockId] = useState<string>('');
-  const [stockConsumeQuantity, setStockConsumeQuantity] = useState<string>('');
+  const [stockConsumeQuantity, setStockConsumeQuantity] = useState<Quantity>({ amount: '', unit: '' });
   const [searchQuery, setSearchQuery] = useState('');
   const [manualRecipeName, setManualRecipeName] = useState('');
   const [manualRecipeUrl, setManualRecipeUrl] = useState('');
@@ -74,7 +76,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
         
         // 在庫数量は材料リストから取得
         if (initialData.source_type === 'stock' && initialData.ingredients.length > 0) {
-          setStockConsumeQuantity(initialData.ingredients[0].quantity || '');
+          setStockConsumeQuantity(initialData.ingredients[0].quantity || { amount: '', unit: '' });
         }
         // 在庫ベースの場合は材料名から、レシピベースの場合は空文字
         if (initialData.source_type === 'stock' && initialData.ingredients.length > 0) {
@@ -99,7 +101,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
         setSelectedRecipe(null);
         setSelectedRecipeId('');
         setSelectedStockId('');
-        setStockConsumeQuantity('');
+        setStockConsumeQuantity({ amount: '', unit: '' });
         setSearchQuery('');
         setManualRecipeName('');
         setManualRecipeUrl('');
@@ -124,7 +126,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       if (recipe.ingredients && recipe.ingredients.length > 0) {
         const recipeIngredients = recipe.ingredients.map(ing => ({
           name: ing.name,
-          quantity: ing.quantity
+          quantity: parseQuantity(ing.quantity)
         }));
         setIngredients(recipeIngredients);
       }
@@ -154,13 +156,13 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       setIngredients(stockIngredients);
     } else {
       // 手動入力モード: 材料をクリア
-      setStockConsumeQuantity('');
+      setStockConsumeQuantity({ amount: '', unit: '' });
       setIngredients([]);
     }
   };
   
   // 在庫消費数量変更処理
-  const handleStockConsumeQuantityChange = (quantity: string) => {
+  const handleStockConsumeQuantityChange = (quantity: Quantity) => {
     setStockConsumeQuantity(quantity);
     
     // 材料リストも更新
@@ -179,13 +181,12 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       // 数量を比例調整
       const ratio = newServings / (servings || 1);
       const adjustedIngredients = ingredients.map(ing => {
-        const parsed = parseQuantity(ing.quantity);
-        const numericAmount = parseFloat(parsed.amount);
+        const numericAmount = parseFloat(ing.quantity.amount);
         if (!isNaN(numericAmount)) {
           const newAmount = numericAmount * ratio;
           return {
             ...ing,
-            quantity: formatQuantity(newAmount.toString(), parsed.unit)
+            quantity: { amount: newAmount.toString(), unit: ing.quantity.unit }
           };
         }
         return ing;
@@ -207,7 +208,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
       return;
     }
 
-    if (sourceType === 'stock' && !stockConsumeQuantity.trim()) {
+    if (sourceType === 'stock' && !stockConsumeQuantity.amount.trim()) {
       alert('消費数量を入力してください');
       return;
     }
@@ -253,7 +254,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
         onDelete={initialData && onDelete ? () => setShowConfirmDelete(true) : undefined}
         showDelete={!!(initialData && onDelete)}
         saveText={isSaving ? '保存中...' : (initialData ? '更新' : '追加')}
-        disabled={isSaving || !manualRecipeName.trim() || (sourceType === 'stock' && (!selectedStockId || !stockConsumeQuantity.trim()))}
+        disabled={isSaving || !manualRecipeName.trim() || (sourceType === 'stock' && (!selectedStockId || !stockConsumeQuantity.amount.trim()))}
       >
         <div className="space-y-4">
           {/* 食事タイプ選択 */}
@@ -312,7 +313,15 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
           {/* レシピ選択 */}
           {sourceType === 'recipe' && (
             <RecipeSelector
-              recipes={recipes}
+              recipes={recipes.map(r => ({
+                id: r.id,
+                title: r.title,
+                url: r.url,
+                ingredients: r.ingredients.map(ing => ({
+                  name: ing.name,
+                  quantity: `${ing.quantity.amount}${ing.quantity.unit}`
+                }))
+              }))}
               selectedRecipeId={selectedRecipeId}
               searchQuery={searchQuery}
               onRecipeSelect={handleRecipeSelect}
@@ -342,7 +351,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
                   .filter(item => item.is_homemade)
                   .map(item => (
                     <option key={item.id} value={item.id}>
-                      🍲 {item.name} ({item.quantity})
+                      🍲 {item.name} ({quantityToDisplay(item.quantity)})
                     </option>
                   ))
                 }
@@ -351,7 +360,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
                   .filter(item => !item.is_homemade)
                   .map(item => (
                     <option key={item.id} value={item.id}>
-                      {item.name} ({item.quantity})
+                      {item.name} ({quantityToDisplay(item.quantity)})
                     </option>
                   ))
                 }
@@ -390,8 +399,8 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
                 </label>
                 <input
                   type="text"
-                  value={stockConsumeQuantity}
-                  onChange={(e) => handleStockConsumeQuantityChange(e.target.value)}
+                  value={quantityToDisplay(stockConsumeQuantity)}
+                  onChange={(e) => handleStockConsumeQuantityChange(parseQuantity(e.target.value))}
                   placeholder="例: 200g, 1個, 半分"
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
                 />

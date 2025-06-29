@@ -1,7 +1,7 @@
 import type { StockItem, Ingredient } from '../types';
 import type { SavedRecipe } from '../types/recipe';
 import type { MealType } from '../types';
-import { parseQuantity } from '../constants/units';
+// parseQuantity は使用しないため削除
 
 // 購入単位情報を表すインターフェース
 export interface PurchaseUnit {
@@ -256,7 +256,7 @@ export const generateMealPlan = async (settings: MealGenerationSettings): Promis
     // 1. データ変換: CookletのデータをPLAN.mdのアルゴリズム用形式に変換
     const inventory: { [key: string]: InventoryItem } = {};
     settings.stockItems.forEach(stock => {
-      const parsed = parseQuantity(stock.quantity);
+      const parsed = { amount: stock.quantity.amount, unit: stock.quantity.unit };
       // 食材マスタからinfinityフラグを取得
       const ingredientMaster = settings.ingredients.find(ing => ing.name === stock.name);
       
@@ -276,22 +276,21 @@ export const generateMealPlan = async (settings: MealGenerationSettings): Promis
       const processedIngredients: { name: string; quantity: number; unit: string }[] = [];
       
       recipe.ingredients.forEach(ingredient => {
-        const parsed = parseQuantity(ingredient.quantity);
-        const amount = parseFloat(parsed.amount);
+        const amount = parseFloat(ingredient.quantity.amount);
         
         // 数値として解析できた場合のみアルゴリズムで使用
         if (!isNaN(amount) && amount > 0) {
           processedIngredients.push({
             name: ingredient.name.trim(),
             quantity: amount,
-            unit: parsed.unit
+            unit: ingredient.quantity.unit
           });
         } else {
           // 適量、少々などの場合はデフォルト値を設定
           processedIngredients.push({
             name: ingredient.name.trim(),
             quantity: 1, // デフォルト数量
-            unit: "適量" // 特殊単位
+            unit: ingredient.quantity.unit || "適量" // 特殊単位
           });
         }
       });

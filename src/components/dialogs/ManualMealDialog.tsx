@@ -67,7 +67,10 @@ export const ManualMealDialog: React.FC<ManualMealDialogProps> = ({
         ingredients: extraction.ingredients.length > 0 ? 
           extraction.ingredients.map(ing => ({
             name: ing.name,
-            quantity: ing.unit ? `${ing.quantity}${ing.unit}` : ing.quantity
+            quantity: { 
+              amount: String(ing.quantity), 
+              unit: ing.unit || '' 
+            }
           })) : prev.ingredients
       }));
 

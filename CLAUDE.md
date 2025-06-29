@@ -102,3 +102,15 @@
 
 ### 新規追加ファイル（2025-06-27整理）
 - **ドキュメントテンプレート**: `.claude/DOC_TEMPLATES.md` - 標準的な文書作成テンプレート
+
+### 最新の型安全性改善（2025-06-29）
+- **Quantity型の導入**: `{amount: string, unit: string}`形式の新しい数量管理型
+- **QuantityInputコンポーネント**: Quantity型を使用するように変更完了
+- **完全型統合**: 全ての数量関連型をQuantity型に完全移行完了
+  - StockItem.quantity: Quantity
+  - ShoppingListItem.quantity?: Quantity
+  - MealPlan.ingredients: IngredientItem[]
+  - SavedRecipe.ingredients: IngredientItem[]
+  - RecipeFormData.ingredients: IngredientItem[]
+  - IngredientsEditor: Quantity型対応完了
+- **型安全性**: 文字列ベースの数量管理を完全廃止し、型安全な数量管理を実現

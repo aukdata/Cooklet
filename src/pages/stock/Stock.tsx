@@ -5,6 +5,7 @@ import { StockDialog } from '../../components/dialogs/StockDialog';
 import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 import { EditButton, AddButton } from '../../components/ui/Button';
 import { useToast } from '../../hooks/useToast.tsx';
+import { quantityToDisplay } from '../../utils/quantityDisplay';
 
 // 在庫管理画面コンポーネント - issue #3対応
 export const Stock: React.FC = () => {
@@ -128,7 +129,7 @@ export const Stock: React.FC = () => {
     setDeletingStock({
       id: 'bulk-delete',
       name: `期限切れ食材 (${expiredItems.length}件)`,
-      quantity: '',
+      quantity: { amount: '', unit: '' },
       user_id: '',
       storage_location: '',
       is_homemade: false,
@@ -278,7 +279,7 @@ export const Stock: React.FC = () => {
                   <div className="text-sm text-gray-600 space-y-1">
                     <div className="flex items-center">
                       <span className="mr-1">📊</span>
-                      数量: {item.quantity}
+                      数量: {quantityToDisplay(item.quantity)}
                     </div>
                     <div className="flex items-center">
                       <span className="mr-1">🏠</span>

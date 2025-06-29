@@ -1,6 +1,7 @@
 import React from 'react';
 import type { SavedRecipe } from '../../hooks/useRecipes';
 import { Button, DeleteButton } from '../../components/ui/Button';
+import { quantityToDisplay } from '../../utils/quantityDisplay';
 
 interface RecipeDetailDialogProps {
   isOpen: boolean;
@@ -113,7 +114,7 @@ export const RecipeDetailDialog: React.FC<RecipeDetailDialogProps> = ({
               <div className="pl-6 space-y-1">
                 {recipe.ingredients.map((ingredient, index) => (
                   <p key={index} className="text-sm text-gray-700">
-                    • {ingredient.name} {ingredient.quantity}
+                    • {ingredient.name} {quantityToDisplay(ingredient.quantity)}
                   </p>
                 ))}
               </div>

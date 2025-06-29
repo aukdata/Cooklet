@@ -51,7 +51,7 @@ interface SavedRecipe {
   url: string;
   servings: number;
   tags: string[];
-  ingredients: { name: string; quantity: string }[]; // 材料情報
+  ingredients: IngredientItem[]; // 材料情報（Quantity型使用）
   created_at: string;
 }
 ```

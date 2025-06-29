@@ -36,8 +36,8 @@
 - 自動的な値の正規化・フォーマット
 
 **Props**:
-- `value: string` - 現在の値（"数値単位"形式）
-- `onChange: (value: string) => void` - 値変更時のコールバック
+- `value: Quantity` - 現在の値（Quantity型）
+- `onChange: (value: Quantity) => void` - 値変更時のコールバック
 - `placeholder?: string` - プレースホルダー
 - `className?: string` - カスタムクラス名
 - `disabled?: boolean` - 無効化状態
@@ -64,6 +64,7 @@
 - `FoodUnit` - 単位型（constants/units.tsから）
 - `parseQuantity` - 数量パース関数（constants/units.tsから）
 - `formatQuantity` - 数量フォーマット関数（constants/units.tsから）
+- `Quantity` - 数量と単位型（types/index.tsから）
 
 ## 設計方針
 

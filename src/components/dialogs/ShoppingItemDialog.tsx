@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BaseDialog } from '../ui/BaseDialog';
 import { QuantityInput } from '../common/QuantityInput';
-import { type ShoppingListItem } from '../../types';
+import { type ShoppingListItem, type Quantity } from '../../types';
 
 // 買い物リストアイテムダイアログのProps型定義
 interface ShoppingItemDialogProps {
@@ -22,7 +22,7 @@ export const ShoppingItemDialog: React.FC<ShoppingItemDialogProps> = ({
 }) => {
   // フォーム状態管理
   const [name, setName] = useState('');
-  const [quantity, setQuantity] = useState('');
+  const [quantity, setQuantity] = useState<Quantity>({ amount: '', unit: '' });
   const [isLoading, setIsLoading] = useState(false);
 
   // 編集モードかどうかの判定
@@ -32,17 +32,17 @@ export const ShoppingItemDialog: React.FC<ShoppingItemDialogProps> = ({
   useEffect(() => {
     if (initialData) {
       setName(initialData.name || '');
-      setQuantity(initialData.quantity || '');
+      setQuantity(initialData.quantity || { amount: '', unit: '' });
     } else {
       setName('');
-      setQuantity('');
+      setQuantity({ amount: '', unit: '' });
     }
   }, [initialData, isOpen]);
 
   // フォームリセット
   const resetForm = () => {
     setName('');
-    setQuantity('');
+    setQuantity({ amount: '', unit: '' });
   };
 
   // 保存処理
@@ -51,9 +51,12 @@ export const ShoppingItemDialog: React.FC<ShoppingItemDialogProps> = ({
 
     setIsLoading(true);
     try {
+      // Quantity型をそのまま使用、空の場合はundefinedに
+      const quantityToSave = quantity.amount.trim() === '' ? undefined : quantity;
+      
       await onSave({
         name: name.trim(),
-        quantity: quantity.trim() || undefined,
+        quantity: quantityToSave,
         checked: initialData?.checked || false,
         added_from: initialData?.added_from || 'manual'
       });

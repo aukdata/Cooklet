@@ -1,10 +1,5 @@
 // レシピ関連の共通型定義
-
-// レシピの材料情報
-export interface RecipeIngredient {
-  name: string;
-  quantity: string;
-}
+import { type IngredientItem } from './index';
 
 // 保存されたレシピデータ（CLAUDE.md仕様書準拠）
 export interface SavedRecipe {
@@ -14,7 +9,7 @@ export interface SavedRecipe {
   url: string;
   servings: number;
   tags: string[];
-  ingredients: RecipeIngredient[];
+  ingredients: IngredientItem[];
   created_at: string;
 }
 
@@ -23,7 +18,7 @@ export interface RecipeFormData {
   title: string;
   url: string;
   servings: number;
-  ingredients: RecipeIngredient[];
+  ingredients: IngredientItem[];
   tags: string[];
 }
 

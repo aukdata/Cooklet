@@ -19,7 +19,7 @@ interface ReceiptReaderProps {
   /** 食材マスタ追加関数 */
   addIngredient: (ingredient: Omit<Ingredient, 'id' | 'user_id' | 'created_at' | 'updated_at'>) => Promise<void>;
   /** 買い物リストアイテム追加関数 */
-  addShoppingItem: (item: { name: string; quantity?: string; checked: boolean; added_from: 'manual' | 'auto' }) => Promise<void>;
+  addShoppingItem: (item: { name: string; quantity?: { amount: string; unit: string }; checked: boolean; added_from: 'manual' | 'auto' }) => Promise<void>;
 }
 
 /**
@@ -152,10 +152,10 @@ export const ReceiptReader: React.FC<ReceiptReaderProps> = ({
           }
 
           // 3. 買い物リストに完了済みとして追加
-          const combinedQuantity = item.unit !== '-' ? `${item.quantity}${item.unit}` : item.quantity;
+          const quantityObj = item.quantity ? { amount: item.quantity, unit: item.unit !== '-' ? item.unit : '' } : undefined;
           await addShoppingItem({
             name: item.name.trim(),
-            quantity: combinedQuantity || undefined,
+            quantity: quantityObj,
             checked: true, // 完了済みとして追加
             added_from: 'manual' // レシートから追加したものは手動扱い
           });

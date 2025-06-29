@@ -3,6 +3,7 @@ import { QuantityInput } from '../common/QuantityInput';
 import { useToast } from '../../hooks/useToast.tsx';
 import { useRecipeExtraction } from '../../hooks/useRecipeExtraction';
 import type { RecipeFormData } from '../../types/recipe';
+import type { Quantity } from '../../types';
 
 // レシピ編集ダイアログのプロパティ - CLAUDE.md仕様書に準拠
 interface RecipeDialogProps {
@@ -31,7 +32,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
     title: '',
     url: '',
     servings: 2,
-    ingredients: [{ name: '', quantity: '' }],
+    ingredients: [{ name: '', quantity: { amount: '', unit: '' } }],
     tags: []
   });
 
@@ -45,7 +46,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
         title: initialData.title || '',
         url: initialData.url || '',
         servings: initialData.servings || 2,
-        ingredients: initialData.ingredients || [{ name: '', quantity: '' }],
+        ingredients: initialData.ingredients || [{ name: '', quantity: { amount: '', unit: '' } }],
         tags: initialData.tags || []
       });
     } else {
@@ -54,7 +55,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
         title: '',
         url: '',
         servings: 2,
-        ingredients: [{ name: '', quantity: '' }],
+        ingredients: [{ name: '', quantity: { amount: '', unit: '' } }],
         tags: []
       });
     }
@@ -64,7 +65,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   const addIngredient = () => {
     setFormData(prev => ({
       ...prev,
-      ingredients: [...prev.ingredients, { name: '', quantity: '' }]
+      ingredients: [...prev.ingredients, { name: '', quantity: { amount: '', unit: '' } }]
     }));
   };
 
@@ -77,7 +78,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
   };
 
   // 食材を更新する関数
-  const updateIngredient = (index: number, field: 'name' | 'quantity', value: string) => {
+  const updateIngredient = (index: number, field: 'name' | 'quantity', value: string | Quantity) => {
     setFormData(prev => ({
       ...prev,
       ingredients: prev.ingredients.map((ingredient, i) => 
@@ -106,7 +107,7 @@ export const RecipeDialog: React.FC<RecipeDialogProps> = ({
         ingredients: extraction.ingredients.length > 0 ? 
           extraction.ingredients.map(ing => ({
             name: ing.name,
-            quantity: ing.unit ? `${ing.quantity}${ing.unit}` : ing.quantity
+            quantity: { amount: ing.quantity, unit: ing.unit || '' }
           })) : prev.ingredients,
         tags: extraction.isRecipeSite && extraction.suggestedTags.length > 0 ?
           [...new Set([...prev.tags, ...extraction.suggestedTags])] : prev.tags

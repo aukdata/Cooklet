@@ -1,6 +1,6 @@
 // 献立から買い物リスト自動生成のユーティリティ（CLAUDE.md仕様書準拠）
 
-import { type MealPlan, type StockItem } from '../types/index';
+import { type MealPlan, type StockItem, type IngredientItem, type Quantity } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 
 // 食材名の正規化（類似食材をマッチングするため）
@@ -31,7 +31,7 @@ export const extractQuantity = (ingredientText: string): { name: string; quantit
 // 在庫と必要量を比較して不足をチェック
 export const checkIngredientStock = (
   ingredientName: string, 
-  _requiredQuantity: string, 
+  _requiredQuantity: Quantity, 
   stockItems: StockItem[]
 ): boolean => {
   const normalizedIngredient = normalizeIngredientName(ingredientName);
@@ -57,7 +57,7 @@ export const extractIngredientsFromMealPlans = (
   mealPlans: MealPlan[],
   startDate: Date,
   endDate: Date
-): Array<{ name: string; quantity: string; source: string }> => {
+): Array<{ name: string; quantity: Quantity; source: string }> => {
   const startDateStr = startDate.toISOString().split('T')[0];
   const endDateStr = endDate.toISOString().split('T')[0];
   
@@ -66,11 +66,11 @@ export const extractIngredientsFromMealPlans = (
     return plan.date >= startDateStr && plan.date <= endDateStr;
   });
   
-  const ingredientMap = new Map<string, { quantity: string; sources: string[] }>();
+  const ingredientMap = new Map<string, { quantity: Quantity; sources: string[] }>();
   
   // 各献立から食材を抽出
   relevantMealPlans.forEach(plan => {
-    plan.ingredients.forEach((ingredient: { name: string; quantity: string }) => {
+    plan.ingredients.forEach((ingredient: IngredientItem) => {
       const { name, quantity } = extractQuantity(ingredient.name);
       const normalizedName = normalizeIngredientName(name);
       const source = `${plan.date}${plan.meal_type}`;
@@ -80,7 +80,7 @@ export const extractIngredientsFromMealPlans = (
         existing.sources.push(source);
       } else {
         ingredientMap.set(normalizedName, {
-          quantity: ingredient.quantity || quantity,
+          quantity: ingredient.quantity || { amount: quantity, unit: '' },
           sources: [source]
         });
       }
@@ -97,9 +97,9 @@ export const extractIngredientsFromMealPlans = (
 
 // 不足している食材を特定
 export const findMissingIngredients = (
-  requiredIngredients: Array<{ name: string; quantity: string; source: string }>,
+  requiredIngredients: Array<{ name: string; quantity: Quantity; source: string }>,
   stockItems: StockItem[]
-): Array<{ name: string; quantity: string; source: string }> => {
+): Array<{ name: string; quantity: Quantity; source: string }> => {
   return requiredIngredients.filter(ingredient => {
     return !checkIngredientStock(ingredient.name, ingredient.quantity, stockItems);
   });
@@ -107,7 +107,7 @@ export const findMissingIngredients = (
 
 // 買い物リストアイテムを生成
 export const generateShoppingListItems = (
-  missingIngredients: Array<{ name: string; quantity: string; source: string }>,
+  missingIngredients: Array<{ name: string; quantity: Quantity; source: string }>,
   existingShoppingList: ShoppingListItem[]
 ): Array<Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>> => {
   const existingItemNames = existingShoppingList.map(item => 
