@@ -51,8 +51,38 @@ export const MealGenerationResultDialog = ({
       title="💡 献立生成結果"
       icon="💡"
       size="lg"
+      actions={
+        <div className="flex flex-col space-y-3">
+          {/* 決定ボタン */}
+          <button
+            onClick={onConfirm}
+            disabled={isGenerating}
+            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isGenerating ? '適用中...' : '✅ 決定（献立に反映）'}
+          </button>
+
+          {/* やり直しボタン */}
+          <button
+            onClick={onRetry}
+            disabled={isGenerating}
+            className="w-full bg-orange-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {isGenerating ? '生成中...' : '🔄 やり直し（別のレシピで再生成）'}
+          </button>
+
+          {/* キャンセルボタン */}
+          <button
+            onClick={onClose}
+            disabled={isGenerating}
+            className="w-full bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            キャンセル
+          </button>
+        </div>
+      }
     >
-      <div className="max-h-[70vh] overflow-y-auto space-y-6">
+      <div className="space-y-6">
         {/* 生成された献立一覧 */}
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
@@ -130,35 +160,6 @@ export const MealGenerationResultDialog = ({
         )}
 
 
-        {/* アクションボタン */}
-        <div className="flex flex-col space-y-3 pt-4 border-t sticky bottom-0 bg-white">
-          {/* 決定ボタン */}
-          <button
-            onClick={onConfirm}
-            disabled={isGenerating}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isGenerating ? '適用中...' : '✅ 決定（献立に反映）'}
-          </button>
-
-          {/* やり直しボタン */}
-          <button
-            onClick={onRetry}
-            disabled={isGenerating}
-            className="w-full bg-orange-600 text-white py-3 px-4 rounded-lg font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            {isGenerating ? '生成中...' : '🔄 やり直し（別のレシピで再生成）'}
-          </button>
-
-          {/* キャンセルボタン */}
-          <button
-            onClick={onClose}
-            disabled={isGenerating}
-            className="w-full bg-gray-300 text-gray-700 py-3 px-4 rounded-lg font-medium hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          >
-            キャンセル
-          </button>
-        </div>
       </div>
     </BaseDialog>
   );

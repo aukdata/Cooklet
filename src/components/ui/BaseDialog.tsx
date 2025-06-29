@@ -66,9 +66,9 @@ export const BaseDialog = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-[100]">
-      <div className={`bg-white rounded-lg p-6 w-full ${sizeClasses[size]}`}>
+      <div className={`bg-white rounded-lg w-full ${sizeClasses[size]} max-h-[90vh] flex flex-col`}>
         {/* ヘッダー */}
-        <div className="flex justify-between items-center mb-4">
+        <div className="flex justify-between items-center p-6 pb-4 flex-shrink-0">
           <h2 className="text-lg font-semibold flex items-center">
             <span className="mr-2">{icon}</span>
             {title}
@@ -82,45 +82,47 @@ export const BaseDialog = ({
           </button>
         </div>
 
-        {/* コンテンツエリア */}
-        <div className="space-y-4 mb-6">
+        {/* コンテンツエリア（スクロール可能） */}
+        <div className="space-y-4 px-6 overflow-y-auto flex-1">
           {children}
         </div>
 
-        {/* ボタンエリア */}
-        {actions || (
-          <div className="flex gap-3 pt-4">
-            {/* 左側：削除ボタン（編集時のみ表示） */}
-            {showDelete && onDelete && (
-              <button
-                onClick={onDelete}
-                className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                type="button"
-              >
-                削除
-              </button>
-            )}
+        {/* ボタンエリア（固定表示） */}
+        <div className="p-6 pt-4 flex-shrink-0 border-t bg-white">
+          {actions || (
+            <div className="flex gap-3">
+              {/* 左側：削除ボタン（編集時のみ表示） */}
+              {showDelete && onDelete && (
+                <button
+                  onClick={onDelete}
+                  className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                  type="button"
+                >
+                  削除
+                </button>
+              )}
 
-            {/* 右側：キャンセル・保存ボタン */}
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
-              type="button"
-            >
-              {cancelText}
-            </button>
-            {onSave && (
+              {/* 右側：キャンセル・保存ボタン */}
               <button
-                onClick={onSave}
-                disabled={disabled}
-                className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                onClick={onClose}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
                 type="button"
               >
-                {saveText}
+                {cancelText}
               </button>
-            )}
-          </div>
-        )}
+              {onSave && (
+                <button
+                  onClick={onSave}
+                  disabled={disabled}
+                  className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                  type="button"
+                >
+                  {saveText}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
