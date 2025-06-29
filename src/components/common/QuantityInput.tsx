@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FOOD_UNITS, type FoodUnit, parseQuantity, formatQuantity } from '../../constants/units';
 
 interface QuantityInputProps {
@@ -17,15 +17,61 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
   disabled = false
 }) => {
   const { amount, unit } = parseQuantity(value);
+  
+  // 入力中の数値を一時的に保持
+  const [tempAmount, setTempAmount] = useState(amount);
+  const [isEditing, setIsEditing] = useState(false);
+  
+  // valueが外部から変更されたときにtempAmountを更新
+  useEffect(() => {
+    if (!isEditing) {
+      setTempAmount(amount);
+    }
+  }, [amount, isEditing]);
 
   const handleAmountChange = (newAmount: string) => {
-    const formattedValue = formatQuantity(newAmount, unit);
-    onChange(formattedValue);
+    setTempAmount(newAmount);
+  };
+  
+  const handleAmountBlur = () => {
+    // 空の値の場合は修正しない
+    if (tempAmount.trim() === '') {
+      onChange('');
+    } else {
+      const formattedValue = formatQuantity(tempAmount.trim(), unit);
+      onChange(formattedValue);
+    }
+    setIsEditing(false);
+  };
+  
+  const handleAmountKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      // 空の値の場合は修正しない
+      if (tempAmount.trim() === '') {
+        onChange('');
+      } else {
+        const formattedValue = formatQuantity(tempAmount.trim(), unit);
+        onChange(formattedValue);
+      }
+      setIsEditing(false);
+      e.currentTarget.blur();
+    }
+  };
+  
+  const handleAmountFocus = () => {
+    setIsEditing(true);
   };
 
   const handleUnitChange = (newUnit: FoodUnit) => {
-    const formattedValue = formatQuantity(amount, newUnit);
-    onChange(formattedValue);
+    const currentAmount = isEditing ? tempAmount.trim() : amount;
+    // 空の値の場合は単位のみ設定しない
+    if (currentAmount === '') {
+      onChange('');
+    } else {
+      const formattedValue = formatQuantity(currentAmount, newUnit);
+      onChange(formattedValue);
+    }
+    setIsEditing(false);
   };
 
   return (
@@ -33,8 +79,11 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
       {/* 数値入力 */}
       <input
         type="text"
-        value={amount}
+        value={isEditing ? tempAmount : amount}
         onChange={(e) => handleAmountChange(e.target.value)}
+        onBlur={handleAmountBlur}
+        onFocus={handleAmountFocus}
+        onKeyDown={handleAmountKeyDown}
         placeholder="数量"
         disabled={disabled}
         className="flex-1 text-sm border border-gray-300 rounded px-2 py-1 min-w-0"

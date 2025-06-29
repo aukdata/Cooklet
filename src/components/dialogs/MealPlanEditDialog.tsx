@@ -177,8 +177,13 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
         onClose={onClose}
         title={initialData ? '献立編集' : '献立追加'}
         icon="🍽️"
+        onSave={handleSave}
+        onDelete={initialData && onDelete ? () => setShowConfirmDelete(true) : undefined}
+        showDelete={!!(initialData && onDelete)}
+        saveText={isSaving ? '保存中...' : (initialData ? '更新' : '追加')}
+        disabled={isSaving || !manualRecipeName.trim()}
       >
-        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }} className="space-y-4">
+        <div className="space-y-4">
           {/* 食事タイプ選択 */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -256,35 +261,7 @@ export const MealPlanEditDialog: React.FC<MealPlanEditDialogProps> = ({
             />
           </div>
 
-          {/* ボタンエリア */}
-          <div className="flex gap-3 pt-4">
-            {initialData && onDelete && (
-              <button
-                type="button"
-                onClick={() => setShowConfirmDelete(true)}
-                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
-              >
-                削除
-              </button>
-            )}
-            
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-            >
-              キャンセル
-            </button>
-            
-            <button
-              type="submit"
-              disabled={isSaving || !manualRecipeName.trim()}
-              className="flex-1 px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isSaving ? '保存中...' : initialData ? '更新' : '追加'}
-            </button>
-          </div>
-        </form>
+        </div>
       </BaseDialog>
 
       {/* 削除確認ダイアログ */}

@@ -50,7 +50,7 @@ export const parseQuantity = (quantity: string): { amount: string; unit: FoodUni
     if (quantity.endsWith(unit)) {
       const amount = quantity.slice(0, -unit.length).trim();
       return {
-        amount: amount || '',
+        amount: amount.trim() || '',
         unit: unit
       };
     }
@@ -58,18 +58,19 @@ export const parseQuantity = (quantity: string): { amount: string; unit: FoodUni
   
   // 単位が見つからない場合
   // 1. 全て数値・分数・「適量」系の場合は amount として扱う
-  if (/^[\d/.]+$/.test(quantity) || ['適量', 'お好み', '少々', 'ひとつまみ', 'ひとかけ'].includes(quantity)) {
-    return { amount: quantity, unit: '-' };
+  if (/^[\d/.\s]+$/.test(quantity) || ['適量', 'お好み', '少々', 'ひとつまみ', 'ひとかけ'].includes(quantity)) {
+    return { amount: quantity.trim(), unit: '-' };
   }
   
   // 2. その他の場合も amount として扱う（自由入力を許可）
-  return { amount: quantity, unit: '-' };
+  return { amount: quantity.trim(), unit: '-' };
 };
 
 // 数値と単位を結合する関数
 export const formatQuantity = (amount: string, unit: FoodUnit): string => {
-  if (!amount && !unit) return '';
-  if (!amount) return unit;
-  if (!unit) return amount;
+  // 空の値やハイフン単位の特別処理
+  if (!amount || amount.trim() === '') return '';
+  if (!unit || unit === '-') return amount;
+  
   return `${amount}${unit}`;
 };
