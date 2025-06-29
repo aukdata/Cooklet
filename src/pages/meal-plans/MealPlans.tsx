@@ -45,6 +45,7 @@ export const MealPlans: React.FC = () => {
   const [generationResult, setGenerationResult] = useState<MealGenerationResult | null>(null);
   const [currentGenerationType, setCurrentGenerationType] = useState<'today' | 'weekly'>('today');
   const [currentTemperature, setCurrentTemperature] = useState(0.7);
+  const [generationStartDate, setGenerationStartDate] = useState<Date>(new Date());
   const [isGenerating, setIsGenerating] = useState(false);
 
   // 指定した週の開始日から7日分の日付を取得
@@ -210,10 +211,11 @@ export const MealPlans: React.FC = () => {
   };
 
   // 献立生成結果受信処理
-  const handleGenerationResult = (result: MealGenerationResult, type: 'today' | 'weekly', temperature: number) => {
+  const handleGenerationResult = (result: MealGenerationResult, type: 'today' | 'weekly', temperature: number, startDate: Date) => {
     setGenerationResult(result);
     setCurrentGenerationType(type);
     setCurrentTemperature(temperature);
+    setGenerationStartDate(startDate);
     setIsGenerationResultDialogOpen(true);
   };
 
@@ -224,14 +226,14 @@ export const MealPlans: React.FC = () => {
     try {
       setIsGenerating(true);
       
-      // 生成結果を実際の献立に反映
+      // 生成結果を選択された日付・週に反映
       for (const meal of generationResult.mealPlan) {
         const dayIndex = Math.floor((meal.mealNumber - 1) / 3);
         const mealTypeIndex = (meal.mealNumber - 1) % 3;
         const mealTypes = ['朝', '昼', '夜'] as const;
         
-        const date = new Date();
-        date.setDate(date.getDate() + dayIndex);
+        const date = new Date(generationStartDate);
+        date.setDate(generationStartDate.getDate() + dayIndex);
         const dateStr = date.toISOString().split('T')[0];
         
         const newMealPlan: MealPlan = {
@@ -251,7 +253,8 @@ export const MealPlans: React.FC = () => {
       
       setIsGenerationResultDialogOpen(false);
       setGenerationResult(null);
-      showSuccess(`${currentGenerationType === 'today' ? '今日' : '週間'}の献立を追加しました！`);
+      const dateStr = generationStartDate.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+      showSuccess(`${currentGenerationType === 'today' ? dateStr : `${dateStr}からの週間`}の献立を追加しました！`);
     } catch (err) {
       console.error('献立の反映に失敗しました:', err);
       showError('献立の反映に失敗しました');
@@ -295,6 +298,7 @@ export const MealPlans: React.FC = () => {
     setIsGenerationResultDialogOpen(false);
     setGenerationResult(null);
     setIsGenerating(false);
+    setGenerationStartDate(new Date());
   };
 
   // ステータス変更ハンドラ
@@ -378,6 +382,8 @@ export const MealPlans: React.FC = () => {
         stockItems={stockItems}
         recipes={recipes}
         ingredients={ingredients}
+        selectedDate={selectedDate}
+        weekDates={weekDates}
         onGenerationResult={handleGenerationResult}
       />
 

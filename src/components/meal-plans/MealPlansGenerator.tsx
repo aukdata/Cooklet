@@ -13,7 +13,9 @@ interface MealPlansGeneratorProps {
   stockItems: StockItem[];
   recipes: SavedRecipe[];
   ingredients: Ingredient[];
-  onGenerationResult: (result: MealGenerationResult, type: 'today' | 'weekly', temperature: number) => void;
+  selectedDate: Date;
+  weekDates: Date[];
+  onGenerationResult: (result: MealGenerationResult, type: 'today' | 'weekly', temperature: number, startDate: Date) => void;
 }
 
 // 献立自動生成機能を担当するコンポーネント
@@ -22,6 +24,8 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
   stockItems,
   recipes,
   ingredients,
+  selectedDate,
+  weekDates,
   onGenerationResult
 }) => {
   const { showInfo, showError } = useToast();
@@ -29,13 +33,14 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
   
   // データはProps経由で受け取り
 
-  // 今日の献立を自動生成
+  // 選択された日の献立を自動生成
   const handleGenerateToday = async () => {
     if (isGenerating) return;
     
     try {
       setIsGenerating(true);
-      showInfo('今日の献立を生成中...');
+      const dateStr = selectedDate.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+      showInfo(`${dateStr}の献立を生成中...`);
 
       // 実際のデータを使用して献立生成設定を作成
       const settings = {
@@ -56,7 +61,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
       const result = await generateMealPlan(settings);
 
       if (result) {
-        onGenerationResult(result, 'today', 0.7);
+        onGenerationResult(result, 'today', 0.7, selectedDate);
       } else {
         throw new Error('生成に失敗しました');
       }
@@ -68,13 +73,15 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
     }
   };
 
-  // 今週の献立を自動生成
+  // 選択された週の献立を自動生成
   const handleGenerateWeekly = async () => {
     if (isGenerating) return;
     
     try {
       setIsGenerating(true);
-      showInfo('今週の献立を生成中...');
+      const weekStartStr = weekDates[0].toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+      const weekEndStr = weekDates[6].toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
+      showInfo(`${weekStartStr}～${weekEndStr}の献立を生成中...`);
 
       // 実際のデータを使用して献立生成設定を作成
       const settings = {
@@ -95,7 +102,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
       const result = await generateMealPlan(settings);
 
       if (result) {
-        onGenerationResult(result, 'weekly', 0.5);
+        onGenerationResult(result, 'weekly', 0.5, weekDates[0]);
       } else {
         throw new Error('生成に失敗しました');
       }
@@ -115,7 +122,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
         className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
       >
         <span>💡</span>
-        {isGenerating ? '生成中...' : '今日の献立を自動生成'}
+        {isGenerating ? '生成中...' : 'この日の献立を生成'}
       </button>
       
       <button
@@ -124,7 +131,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
       >
         <span>📅</span>
-        {isGenerating ? '生成中...' : '今週の献立を自動生成'}
+        {isGenerating ? '生成中...' : 'この週の献立を生成'}
       </button>
     </div>
   );
