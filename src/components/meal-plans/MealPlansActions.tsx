@@ -122,6 +122,7 @@ export const useMealPlansActions = (): MealPlansActionsReturn => {
             user_id: '', // 実際の実装では認証済みユーザーIDを設定
             date: new Date().toISOString().split('T')[0], // 今日の日付
             meal_type: '夜' as MealType, // デフォルトの食事タイプ
+            source_type: 'recipe', // デフォルトはレシピ
             recipe_url: undefined,
             ingredients: [],
             memo: undefined,

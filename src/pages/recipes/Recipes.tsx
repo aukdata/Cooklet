@@ -153,6 +153,7 @@ export const Recipes: React.FC = () => {
       await addMealPlan({
         date,
         meal_type: mealType,
+        source_type: 'recipe', // レシピから追加
         recipe_url: recipe.url,
         ingredients: recipe.ingredients || [], // レシピの材料データをコピー
         memo: recipe.title,
@@ -175,6 +176,7 @@ export const Recipes: React.FC = () => {
       await addMealPlan({
         date: replacementData.date,
         meal_type: replacementData.mealType,
+        source_type: 'recipe', // レシピから追加
         recipe_url: replacementData.recipe.url,
         ingredients: replacementData.recipe.ingredients || [], // レシピの材料データをコピー
         memo: replacementData.recipe.title,

@@ -241,6 +241,7 @@ export const MealPlans: React.FC = () => {
           user_id: '', // saveMealPlanで自動設定される
           date: dateStr,
           meal_type: mealTypes[mealTypeIndex],
+          source_type: 'recipe', // デフォルトはレシピ
           memo: meal.recipe,
           ingredients: meal.ingredients ? meal.ingredients.map(ing => ({ name: ing, quantity: '適量' })) : [],
           consumed_status: 'pending',

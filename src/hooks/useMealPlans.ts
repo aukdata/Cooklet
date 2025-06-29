@@ -60,7 +60,9 @@ export const useMealPlans = () => {
             user_id: user.id,
             date: mealPlan.date,
             meal_type: mealPlan.meal_type,
+            source_type: mealPlan.source_type || 'recipe',
             recipe_url: mealPlan.recipe_url,
+            stock_id: mealPlan.stock_id,
             ingredients: mealPlan.ingredients,
             memo: mealPlan.memo,
             consumed_status: mealPlan.consumed_status || 'pending'

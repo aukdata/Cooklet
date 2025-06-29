@@ -70,6 +70,7 @@ interface SavedRecipe {
 
 #### 特徴
 - meal_plansテーブルへの直接アクセス
+- **在庫ベース献立対応**: source_type、stock_idフィールドをサポート
 - 消費状態（consumed_status）管理
 - 日本語食事タイプ（朝・昼・夜・間食）
 - 食材情報のJSONB形式管理

@@ -135,7 +135,9 @@ export class MockMealPlanRepository implements IMealPlanRepository {
       user_id: item.user_id,
       date: item.date,
       meal_type: item.meal_type,
+      source_type: item.source_type || 'recipe', // デフォルトはレシピ
       recipe_url: item.recipe_url || undefined,
+      stock_id: item.stock_id || undefined,
       ingredients: item.ingredients || [],
       memo: item.memo || undefined,
       consumed_status: item.consumed_status || 'pending',

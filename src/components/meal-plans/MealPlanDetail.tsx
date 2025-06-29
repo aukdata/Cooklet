@@ -47,8 +47,13 @@ export const MealPlanDetail: React.FC<MealPlanDetailProps> = ({
         <div className="flex items-center mb-1">
           <span className="mr-2">{config.icon}</span>
           <span className="font-medium">{config.name}:</span>
+          {mealPlan?.source_type === 'stock' && (
+            <span className="ml-2 mr-1 text-xs bg-orange-100 text-orange-700 px-1 py-0.5 rounded">
+              🥘 在庫
+            </span>
+          )}
           <span className={`ml-2 ${isDone ? 'text-gray-500 line-through' : ''}`}>
-            {mealPlan ? (mealPlan.memo || config.defaultMenu) : '［未設定］'}
+            {mealPlan ? (mealPlan.memo || mealPlan.ingredients[0]?.name || config.defaultMenu) : '［未設定］'}
           </span>
           {isDone && mealPlan && (
             <button 
@@ -62,18 +67,31 @@ export const MealPlanDetail: React.FC<MealPlanDetailProps> = ({
         </div>
         {mealPlan && (
           <div className={`ml-6 text-sm text-gray-600 ${isDone ? 'opacity-50' : ''}`}>
-            📋 材料: {mealPlan.ingredients.map(ing => ing.name).join(', ')}
+            {mealPlan.source_type === 'stock' ? (
+              <>
+                🍽️ 消費量: {mealPlan.ingredients.map(ing => `${ing.name} ${ing.quantity}`).join(', ')}
+              </>
+            ) : (
+              <>
+                📋 材料: {mealPlan.ingredients.map(ing => `${ing.name} ${ing.quantity}`).join(', ')}
+              </>
+            )}
           </div>
         )}
       </div>
       <div className="flex flex-col gap-2">
-        {mealPlan?.recipe_url && (
+        {mealPlan?.source_type === 'recipe' && mealPlan?.recipe_url && (
           <button 
             onClick={() => window.open(mealPlan.recipe_url, '_blank')}
             className="text-sm text-blue-600 hover:text-blue-500"
           >
             🌐 レシピ
           </button>
+        )}
+        {mealPlan?.source_type === 'stock' && (
+          <span className="text-xs text-orange-600">
+            📦 在庫より
+          </span>
         )}
         {mealPlan && !isDone && (
           <button 

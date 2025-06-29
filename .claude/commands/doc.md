@@ -16,13 +16,7 @@ Read all project design documents and specifications to understand the complete 
    - `.claude/ELEMENTS.md` - Comprehensive list of types, components, and functions
    - `.claude/CODING.md` - Coding standards and best practices
 
-### Additional Project Files
-- `README.md` - Project overview and setup instructions
-- `DEVELOPMENT.md` - Development guidelines and workflows
-- `DEPLOY.md` - Deployment procedures and configurations
-- `PLAN.md` - Project planning and roadmap
-- `database/README.md` - Database setup and migration instructions
-- `tests/README.md` - Testing guidelines and procedures
+Do not read other *.md at this time. Read other *.md files when you need.
 
 ### Feature-Specific Documentation
 - Page modules: `src/pages/{auth,recipes,cost,summary,settings,shopping,meal-plans,stock}/CLAUDE.md`
