@@ -4,26 +4,30 @@ import React, { useState } from 'react';
 // import { useIngredients } from '../../hooks/useIngredients';
 import { useToast } from '../../hooks/useToast.tsx';
 import { generateMealPlan, type MealGenerationResult } from '../../utils/mealPlanGeneration';
-import { type MealPlan } from '../../types';
+import { type MealPlan, type StockItem, type Ingredient } from '../../types';
+import { type SavedRecipe } from '../../types/recipe';
 
 // 献立自動生成コンポーネントのProps
 interface MealPlansGeneratorProps {
   mealPlans: MealPlan[];
+  stockItems: StockItem[];
+  recipes: SavedRecipe[];
+  ingredients: Ingredient[];
   onGenerationResult: (result: MealGenerationResult, type: 'today' | 'weekly', temperature: number) => void;
 }
 
 // 献立自動生成機能を担当するコンポーネント
 export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
   mealPlans: _mealPlans,
+  stockItems,
+  recipes,
+  ingredients,
   onGenerationResult
 }) => {
   const { showInfo, showError } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   
-  // TODO: データ取得フックは後で使用
-  // const { stockItems } = useStockItems();
-  // const { recipes } = useRecipes();
-  // const { ingredients } = useIngredients();
+  // データはProps経由で受け取り
 
   // 今日の献立を自動生成
   const handleGenerateToday = async () => {
@@ -33,15 +37,21 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
       setIsGenerating(true);
       showInfo('今日の献立を生成中...');
 
-      // TODO: MealGenerationSettingsの実際の構造に合わせて実装
+      // 実際のデータを使用して献立生成設定を作成
       const settings = {
-        stockItems: [], // 実際の在庫データを後で追加
-        recipes: [], // 実際のレシピデータを後で追加
-        ingredients: [], // 実際の食材マスタデータを後で追加
+        stockItems,
+        recipes,
+        ingredients,
         days: 1,
         mealTypes: [true, true, true] as [boolean, boolean, boolean], // [朝, 昼, 夜]
         temperature: 0.7
       };
+      
+      console.log('献立生成設定:', { 
+        stockItemsCount: stockItems.length, 
+        recipesCount: recipes.length, 
+        ingredientsCount: ingredients.length 
+      });
 
       const result = await generateMealPlan(settings);
 
@@ -66,15 +76,21 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
       setIsGenerating(true);
       showInfo('今週の献立を生成中...');
 
-      // TODO: MealGenerationSettingsの実際の構造に合わせて実装
+      // 実際のデータを使用して献立生成設定を作成
       const settings = {
-        stockItems: [], // 実際の在庫データを後で追加
-        recipes: [], // 実際のレシピデータを後で追加
-        ingredients: [], // 実際の食材マスタデータを後で追加
+        stockItems,
+        recipes,
+        ingredients,
         days: 7,
         mealTypes: [true, true, true] as [boolean, boolean, boolean], // [朝, 昼, 夜]
         temperature: 0.5
       };
+      
+      console.log('献立生成設定:', { 
+        stockItemsCount: stockItems.length, 
+        recipesCount: recipes.length, 
+        ingredientsCount: ingredients.length 
+      });
 
       const result = await generateMealPlan(settings);
 
@@ -98,7 +114,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
         disabled={isGenerating}
         className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
       >
-        <span>🤖</span>
+        <span>💡</span>
         {isGenerating ? '生成中...' : '今日の献立を自動生成'}
       </button>
       

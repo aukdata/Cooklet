@@ -375,6 +375,9 @@ export const MealPlans: React.FC = () => {
       {/* 献立生成ボタン */}
       <MealPlansGenerator
         mealPlans={mealPlans}
+        stockItems={stockItems}
+        recipes={recipes}
+        ingredients={ingredients}
         onGenerationResult={handleGenerationResult}
       />
 
