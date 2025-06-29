@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { BaseDialog } from '../ui/BaseDialog';
+import { ConfirmDialog } from './ConfirmDialog';
 import { type Ingredient } from '../../types';
 import { FOOD_UNITS } from '../../constants/units';
 import { useConfirmDialog } from '../../hooks/useConfirmDialog';
@@ -39,7 +40,7 @@ export const IngredientDialog = ({
 }: IngredientDialogProps) => {
   // フック
   const { showError } = useToast();
-  const { ConfirmDialog, showConfirm } = useConfirmDialog();
+  const { showConfirm, isOpen: confirmIsOpen, handleConfirm, closeConfirm, config } = useConfirmDialog();
 
   // フォーム状態管理
   const [originalName, setOriginalName] = useState<string>('');
@@ -122,25 +123,27 @@ export const IngredientDialog = ({
   };
 
   // 削除処理
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!ingredient || !onDelete) return;
 
-    const confirmed = await showConfirm(
-      `材料「${ingredient.name}」を削除しますか？`,
-      '削除すると復元できません。本当に削除してもよろしいですか？'
-    );
-    if (!confirmed) return;
-
-    try {
-      setIsLoading(true);
-      await onDelete(ingredient.id);
-      handleClose();
-    } catch (error) {
-      console.error('材料の削除に失敗しました:', error);
-      showError('材料の削除に失敗しました');
-    } finally {
-      setIsLoading(false);
-    }
+    showConfirm({
+      title: '材料削除',
+      message: '削除すると復元できません。本当に削除してもよろしいですか？',
+      itemName: ingredient.name,
+      onConfirm: async () => {
+        try {
+          setIsLoading(true);
+          await onDelete(ingredient.id);
+          handleClose();
+        } catch (error) {
+          console.error('材料の削除に失敗しました:', error);
+          showError('削除に失敗しました');
+        } finally {
+          setIsLoading(false);
+        }
+      },
+      isDestructive: true
+    });
   };
 
   // バリデーション
@@ -311,7 +314,17 @@ export const IngredientDialog = ({
     </BaseDialog>
 
     {/* 削除確認ダイアログ */}
-    <ConfirmDialog />
+    <ConfirmDialog
+      isOpen={confirmIsOpen}
+      title={config.title}
+      message={config.message}
+      itemName={config.itemName}
+      onConfirm={handleConfirm}
+      onCancel={closeConfirm}
+      confirmText={config.confirmText}
+      cancelText={config.cancelText}
+      isDestructive={config.isDestructive}
+    />
   </>
   );
 };
