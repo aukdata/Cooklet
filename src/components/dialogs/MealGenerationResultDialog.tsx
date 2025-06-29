@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BaseDialog } from '../ui/BaseDialog';
 import { type MealGenerationResult } from '../../utils/mealPlanGeneration';
 
@@ -35,6 +36,9 @@ export const MealGenerationResultDialog = ({
   onRetry,
   isGenerating = false,
 }: MealGenerationResultDialogProps) => {
+  // 買い物リストの折りたたみ状態
+  const [isShoppingListCollapsed, setIsShoppingListCollapsed] = useState(true);
+  
   // 生成結果がない場合は何も表示しない
   if (!result) {
     return null;
@@ -48,7 +52,7 @@ export const MealGenerationResultDialog = ({
       icon="💡"
       size="lg"
     >
-      <div className="space-y-6">
+      <div className="max-h-[70vh] overflow-y-auto space-y-6">
         {/* 生成された献立一覧 */}
         <div>
           <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
@@ -93,47 +97,41 @@ export const MealGenerationResultDialog = ({
           )}
         </div>
 
-        {/* 必要な買い物リスト */}
+        {/* 必要な買い物リスト（折りたたみ式） */}
         {result.shoppingList && result.shoppingList.length > 0 && (
           <div>
-            <h4 className="text-lg font-semibold text-gray-900 mb-3 flex items-center">
-              🛒 必要な買い物
-            </h4>
-            <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
-              <div className="space-y-1">
-                {result.shoppingList.map((item, index) => (
-                  <div key={index} className="flex items-center">
-                    <span className="text-yellow-600 mr-2">•</span>
-                    <span className="text-gray-800">
-                      {item.ingredient} {item.quantity && `(${item.quantity}${item.unit})`}
-                    </span>
-                  </div>
-                ))}
+            <button
+              onClick={() => setIsShoppingListCollapsed(!isShoppingListCollapsed)}
+              className="w-full text-left text-lg font-semibold text-gray-900 mb-3 flex items-center justify-between hover:text-blue-600 transition-colors"
+            >
+              <span className="flex items-center">
+                🛒 必要な買い物 ({result.shoppingList.length}件)
+              </span>
+              <span className="text-sm">
+                {isShoppingListCollapsed ? '▶' : '▼'}
+              </span>
+            </button>
+            
+            {!isShoppingListCollapsed && (
+              <div className="bg-yellow-50 p-3 rounded-lg border border-yellow-200">
+                <div className="space-y-1">
+                  {result.shoppingList.map((item, index) => (
+                    <div key={index} className="flex items-center">
+                      <span className="text-yellow-600 mr-2">•</span>
+                      <span className="text-gray-800">
+                        {item.ingredient} {item.quantity && `(${item.quantity}${item.unit})`}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
         )}
 
-        {/* 警告メッセージ */}
-        {result.warnings && result.warnings.length > 0 && (
-          <div>
-            <h4 className="text-lg font-semibold text-orange-700 mb-3 flex items-center">
-              ⚠️ 注意事項
-            </h4>
-            <div className="bg-orange-50 p-3 rounded-lg border border-orange-200">
-              <div className="space-y-1">
-                {result.warnings.map((warning, index) => (
-                  <div key={index} className="text-orange-800">
-                    • {warning}
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* アクションボタン */}
-        <div className="flex flex-col space-y-3 pt-4 border-t">
+        <div className="flex flex-col space-y-3 pt-4 border-t sticky bottom-0 bg-white">
           {/* 決定ボタン */}
           <button
             onClick={onConfirm}
