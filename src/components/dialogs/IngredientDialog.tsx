@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { BaseDialog } from '../ui/BaseDialog';
 import { type Ingredient } from '../../types';
 import { FOOD_UNITS } from '../../constants/units';
+import { useConfirmDialog } from '../../hooks/useConfirmDialog';
+import { useToast } from '../../hooks/useToast';
 
 interface IngredientDialogProps {
   /** ダイアログの表示状態 */
@@ -35,6 +37,10 @@ export const IngredientDialog = ({
   onSave,
   onDelete
 }: IngredientDialogProps) => {
+  // フック
+  const { showError } = useToast();
+  const { ConfirmDialog, showConfirm } = useConfirmDialog();
+
   // フォーム状態管理
   const [originalName, setOriginalName] = useState<string>('');
   const [name, setName] = useState<string>('');
@@ -90,7 +96,7 @@ export const IngredientDialog = ({
   // 保存処理
   const handleSave = async () => {
     if (!name.trim() || !defaultUnit.trim()) {
-      alert('材料名とデフォルト単位は必須です');
+      showError('材料名とデフォルト単位は必須です');
       return;
     }
 
@@ -109,7 +115,7 @@ export const IngredientDialog = ({
       handleClose();
     } catch (error) {
       console.error('材料の保存に失敗しました:', error);
-      alert('材料の保存に失敗しました');
+      showError('材料の保存に失敗しました');
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +125,10 @@ export const IngredientDialog = ({
   const handleDelete = async () => {
     if (!ingredient || !onDelete) return;
 
-    const confirmed = confirm(`材料「${ingredient.name}」を削除しますか？`);
+    const confirmed = await showConfirm(
+      `材料「${ingredient.name}」を削除しますか？`,
+      '削除すると復元できません。本当に削除してもよろしいですか？'
+    );
     if (!confirmed) return;
 
     try {
@@ -128,7 +137,7 @@ export const IngredientDialog = ({
       handleClose();
     } catch (error) {
       console.error('材料の削除に失敗しました:', error);
-      alert('材料の削除に失敗しました');
+      showError('材料の削除に失敗しました');
     } finally {
       setIsLoading(false);
     }
@@ -138,18 +147,19 @@ export const IngredientDialog = ({
   const isValid = name?.trim() && defaultUnit?.trim();
 
   return (
-    <BaseDialog
-      isOpen={isOpen}
-      onClose={handleClose}
-      title={isEditing ? '材料を編集' : '材料を追加'}
-      icon="🥕"
-      size="md"
-      onSave={handleSave}
-      onDelete={isEditing ? handleDelete : undefined}
-      showDelete={isEditing}
-      disabled={!isValid || isLoading}
-      saveText={isLoading ? '保存中...' : '保存'}
-    >
+    <>
+      <BaseDialog
+        isOpen={isOpen}
+        onClose={handleClose}
+        title={isEditing ? '材料を編集' : '材料を追加'}
+        icon="🥕"
+        size="md"
+        onSave={handleSave}
+        onDelete={isEditing ? handleDelete : undefined}
+        showDelete={isEditing}
+        disabled={!isValid || isLoading}
+        saveText={isLoading ? '保存中...' : '保存'}
+      >
       {/* 商品名入力（original_name） */}
       <div>
         <label htmlFor="ingredient-original-name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -299,5 +309,9 @@ export const IngredientDialog = ({
         </label>
       </div>
     </BaseDialog>
+
+    {/* 削除確認ダイアログ */}
+    <ConfirmDialog />
+  </>
   );
 };
