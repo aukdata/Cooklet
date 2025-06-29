@@ -5,14 +5,15 @@ import { WeeklyNavigation } from '../../components/meal-plans/WeeklyNavigation';
 import { WeeklyCalendar } from '../../components/meal-plans/WeeklyCalendar';
 import { DayDetail } from '../../components/meal-plans/DayDetail';
 import { WeeklySummary } from '../../components/meal-plans/WeeklySummary';
-import { MealSuggestions } from '../../components/meal-plans/MealSuggestions';
+import { MealPlansGenerator } from '../../components/meal-plans/MealPlansGenerator';
+import { MealGenerationResultDialog } from '../../components/dialogs/MealGenerationResultDialog';
 import { useMealPlans } from '../../hooks';
 import { type MealType, type MealPlan } from '../../types';
 import { useStockItems } from '../../hooks/useStockItems';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useIngredients } from '../../hooks/useIngredients';
 import { useToast } from '../../hooks/useToast.tsx';
-import { generateMealPlan, type MealGenerationSettings } from '../../utils/mealPlanGeneration';
+import { generateMealPlan, type MealGenerationSettings, type MealGenerationResult } from '../../utils/mealPlanGeneration';
 
 /**
  * 献立計画ページコンポーネント
@@ -38,6 +39,13 @@ export const MealPlans: React.FC = () => {
   // 作った選択ダイアログの状態
   const [isConsumedDialogOpen, setIsConsumedDialogOpen] = useState(false);
   const [processingMeal, setProcessingMeal] = useState<MealPlan | null>(null);
+  
+  // 献立生成結果ダイアログの状態
+  const [isGenerationResultDialogOpen, setIsGenerationResultDialogOpen] = useState(false);
+  const [generationResult, setGenerationResult] = useState<MealGenerationResult | null>(null);
+  const [currentGenerationType, setCurrentGenerationType] = useState<'today' | 'weekly'>('today');
+  const [currentTemperature, setCurrentTemperature] = useState(0.7);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   // 指定した週の開始日から7日分の日付を取得
   const getWeekDates = (weekStart: Date) => {
@@ -201,52 +209,92 @@ export const MealPlans: React.FC = () => {
     setProcessingMeal(null);
   };
 
-  // 今日の献立提案処理
-  const handleTodayMealSuggestion = async () => {
+  // 献立生成結果受信処理
+  const handleGenerationResult = (result: MealGenerationResult, type: 'today' | 'weekly', temperature: number) => {
+    setGenerationResult(result);
+    setCurrentGenerationType(type);
+    setCurrentTemperature(temperature);
+    setIsGenerationResultDialogOpen(true);
+  };
+
+  // 献立生成結果確認処理（決定ボタン）
+  const handleConfirmGeneration = async () => {
+    if (!generationResult) return;
+    
     try {
-      const settings: MealGenerationSettings = {
-        stockItems,
-        recipes,
-        ingredients,
-        days: 1, // 今日1日分
-        mealTypes: [true, true, true] // 朝昼夜すべて
-      };
+      setIsGenerating(true);
       
-      const result = await generateMealPlan(settings);
-      
-      if (result.warnings.length > 0) {
-        showInfo(result.warnings.join(', '));
-      } else {
-        showSuccess('今日の献立を提案しました！');
+      // 生成結果を実際の献立に反映
+      for (const meal of generationResult.mealPlan) {
+        const dayIndex = Math.floor((meal.mealNumber - 1) / 3);
+        const mealTypeIndex = (meal.mealNumber - 1) % 3;
+        const mealTypes = ['朝', '昼', '夜'] as const;
+        
+        const date = new Date();
+        date.setDate(date.getDate() + dayIndex);
+        const dateStr = date.toISOString().split('T')[0];
+        
+        const newMealPlan: MealPlan = {
+          id: '', // saveMealPlanで自動生成される
+          user_id: '', // saveMealPlanで自動設定される
+          date: dateStr,
+          meal_type: mealTypes[mealTypeIndex],
+          memo: meal.recipe,
+          ingredients: meal.ingredients ? meal.ingredients.map(ing => ({ name: ing, quantity: '適量' })) : [],
+          consumed_status: 'pending',
+          created_at: '', // saveMealPlanで自動設定される
+          updated_at: '' // saveMealPlanで自動設定される
+        };
+        
+        await saveMealPlan(newMealPlan);
       }
+      
+      setIsGenerationResultDialogOpen(false);
+      setGenerationResult(null);
+      showSuccess(`${currentGenerationType === 'today' ? '今日' : '週間'}の献立を追加しました！`);
     } catch (err) {
-      console.error('献立提案に失敗しました:', err);
-      showError('献立提案に失敗しました');
+      console.error('献立の反映に失敗しました:', err);
+      showError('献立の反映に失敗しました');
+    } finally {
+      setIsGenerating(false);
     }
   };
 
-  // 週間献立提案処理
-  const handleWeeklyMealSuggestion = async () => {
+  // 献立生成やり直し処理
+  const handleRetryGeneration = async () => {
+    if (!generationResult) return;
+    
     try {
+      setIsGenerating(true);
+      const newTemperature = Math.min(currentTemperature + 0.1, 1.0);
+      
       const settings: MealGenerationSettings = {
         stockItems,
         recipes,
         ingredients,
-        days: 7, // 7日分
-        mealTypes: [true, true, true] // 朝昼夜すべて
+        days: currentGenerationType === 'today' ? 1 : 7,
+        mealTypes: [true, true, true],
+        temperature: newTemperature
       };
       
       const result = await generateMealPlan(settings);
+      setGenerationResult(result);
+      setCurrentTemperature(newTemperature);
       
-      if (result.warnings.length > 0) {
-        showInfo(result.warnings.join(', '));
-      } else {
-        showSuccess('週間献立を提案しました！');
-      }
+      showInfo(`ランダム性を${Math.round(newTemperature * 100)}%に上げて再生成しました`);
     } catch (err) {
-      console.error('週間献立提案に失敗しました:', err);
-      showError('週間献立提案に失敗しました');
+      console.error('再生成に失敗しました:', err);
+      showError('再生成に失敗しました');
+    } finally {
+      setIsGenerating(false);
     }
+  };
+
+  // 献立生成結果ダイアログを閉じる処理
+  const handleCloseGenerationDialog = () => {
+    setIsGenerationResultDialogOpen(false);
+    setGenerationResult(null);
+    setIsGenerating(false);
   };
 
   // ステータス変更ハンドラ
@@ -324,10 +372,10 @@ export const MealPlans: React.FC = () => {
         summaryData={weeklySummary}
       />
 
-      {/* 献立の提案ボタン */}
-      <MealSuggestions
-        onTodayMealSuggestion={handleTodayMealSuggestion}
-        onWeeklyMealSuggestion={handleWeeklyMealSuggestion}
+      {/* 献立生成ボタン */}
+      <MealPlansGenerator
+        mealPlans={mealPlans}
+        onGenerationResult={handleGenerationResult}
       />
 
       {/* 献立編集ダイアログ */}
@@ -397,6 +445,16 @@ export const MealPlans: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* 献立生成結果確認ダイアログ */}
+      <MealGenerationResultDialog
+        isOpen={isGenerationResultDialogOpen}
+        onClose={handleCloseGenerationDialog}
+        result={generationResult}
+        onConfirm={handleConfirmGeneration}
+        onRetry={handleRetryGeneration}
+        isGenerating={isGenerating}
+      />
     </div>
   );
 };
