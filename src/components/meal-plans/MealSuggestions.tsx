@@ -10,7 +10,7 @@ interface MealSuggestionsProps {
 
 /**
  * 献立提案コンポーネント
- * AI献立生成ボタン群を表示
+ * 献立自動生成ボタン群を表示
  */
 export const MealSuggestions: React.FC<MealSuggestionsProps> = ({
   onTodayMealSuggestion,

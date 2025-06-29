@@ -6,13 +6,13 @@ import { useToast } from '../../hooks/useToast.tsx';
 import { generateMealPlan, type MealGenerationResult } from '../../utils/mealPlanGeneration';
 import { type MealPlan } from '../../types';
 
-// AI生成コンポーネントのProps
+// 献立自動生成コンポーネントのProps
 interface MealPlansGeneratorProps {
   mealPlans: MealPlan[];
   onGenerationResult: (result: MealGenerationResult, type: 'today' | 'weekly', temperature: number) => void;
 }
 
-// AI献立生成機能を担当するコンポーネント
+// 献立自動生成機能を担当するコンポーネント
 export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
   mealPlans: _mealPlans,
   onGenerationResult
@@ -25,7 +25,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
   // const { recipes } = useRecipes();
   // const { ingredients } = useIngredients();
 
-  // 今日の献立をAI生成
+  // 今日の献立を自動生成
   const handleGenerateToday = async () => {
     if (isGenerating) return;
     
@@ -51,14 +51,14 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
         throw new Error('生成に失敗しました');
       }
     } catch (error) {
-      console.error('AI献立生成エラー:', error);
+      console.error('献立自動生成エラー:', error);
       showError('献立の生成に失敗しました');
     } finally {
       setIsGenerating(false);
     }
   };
 
-  // 今週の献立をAI生成
+  // 今週の献立を自動生成
   const handleGenerateWeekly = async () => {
     if (isGenerating) return;
     
@@ -84,7 +84,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
         throw new Error('生成に失敗しました');
       }
     } catch (error) {
-      console.error('AI献立生成エラー:', error);
+      console.error('献立自動生成エラー:', error);
       showError('献立の生成に失敗しました');
     } finally {
       setIsGenerating(false);
@@ -99,7 +99,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
         className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
       >
         <span>🤖</span>
-        {isGenerating ? '生成中...' : '今日の献立をAI生成'}
+        {isGenerating ? '生成中...' : '今日の献立を自動生成'}
       </button>
       
       <button
@@ -108,7 +108,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
         className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
       >
         <span>📅</span>
-        {isGenerating ? '生成中...' : '今週の献立をAI生成'}
+        {isGenerating ? '生成中...' : '今週の献立を自動生成'}
       </button>
     </div>
   );

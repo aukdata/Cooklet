@@ -1,4 +1,4 @@
-// レシート読み取り機能 - Google Vision API + Gemini AI使用
+// レシート読み取り機能 - Google Vision API + Gemini 自動抽出使用
 import { createVisionClient, OCRError } from '../lib/vision/vision-client';
 import type { OCRResult } from '../lib/vision/vision-client';
 import { AIProviderFactory } from '../lib/ai/provider-factory';
@@ -23,7 +23,7 @@ export const calculateTotalPrice = (items: ReceiptItem[]): number => {
 
 /**
  * レシート画像を読み取って商品リストを返す関数
- * Google Vision API の DOCUMENT_TEXT_DETECTION + Gemini AI構造化を使用
+ * Google Vision API の DOCUMENT_TEXT_DETECTION + Gemini 自動構造化を使用
  * ingredientsテーブルのoriginal_nameと照らし合わせて商品名を一般名に変換
  * @param file - アップロードされた画像ファイル
  * @param ingredients - 商品名正規化用の食材マスタデータ（任意）
@@ -45,7 +45,7 @@ export const readReceiptFromImage = async (
     console.log('処理時刻:', ocrResult.processedAt);
     console.log('================');
     
-    // Step 2: Gemini AI でテキストを構造化
+    // Step 2: Gemini でテキストを自動構造化
     const aiProvider = AIProviderFactory.createFromEnvironment();
     const receiptData: ReceiptResult = await aiProvider.extractReceiptFromText(ocrResult.fullText);
     
@@ -55,7 +55,7 @@ export const readReceiptFromImage = async (
     console.log('購入日:', receiptData.date);
     console.log('商品一覧:', receiptData.items);
     console.log('抽出された商品数:', receiptData.items.length);
-    console.log('AI信頼度:', receiptData.confidence);
+    console.log('自動抽出信頼度:', receiptData.confidence);
     
     // Step 3: 商品名正規化処理（ingredientsテーブルとの照らし合わせ）
     let normalizedItems = receiptData.items;
@@ -91,7 +91,7 @@ export const readReceiptFromImage = async (
     }
     
     if (error instanceof ReceiptExtractionError) {
-      throw new Error(`AI構造化に失敗しました: ${error.message}`);
+      throw new Error(`自動構造化に失敗しました: ${error.message}`);
     }
     
     throw new Error('レシート読み取り中に予期しないエラーが発生しました');

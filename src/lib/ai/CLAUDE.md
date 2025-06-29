@@ -1,13 +1,13 @@
-# AI ディレクトリ
+# 自動抽出 ディレクトリ
 
 ## 概要
-レシピURLからの食材自動抽出とレシートOCRテキストからの構造化データ抽出機能を実現するAIプロバイダー抽象化レイヤー。
-複数のAI APIを統一インターフェースで利用できるよう設計されています。
+レシピURLからの食材自動抽出とレシートOCRテキストからの構造化データ抽出機能を実現する自動抽出プロバイダー抽象化レイヤー。
+複数の自動抽出 APIを統一インターフェースで利用できるよう設計されています。
 
 ## ファイル構成
 
 ### types.ts
-AI関連の型定義とインターフェースを定義。
+自動抽出関連の型定義とインターフェースを定義。
 
 #### 主要な型定義
 
@@ -21,8 +21,8 @@ AI関連の型定義とインターフェースを定義。
 - isRecipeSite: レシピサイト判定フラグ
 - suggestedTags: 提案タグ配列
 
-**AIProviderConfig型**
-- AI Provider設定情報
+**AutoExtractionProviderConfig型**
+- 自動抽出 Provider設定情報
 - provider: 'gemini' | 'claude' | 'openai' | 'groq'
 - apiKey: API Key
 - model: 使用モデル名（任意）
@@ -36,8 +36,8 @@ AI関連の型定義とインターフェースを定義。
 - date: 購入日
 - confidence: 抽出結果の信頼度（0-1）
 
-**AIProvider型**
-- AI Provider抽象化インターフェース
+**AutoExtractionProvider型**
+- 自動抽出 Provider抽象化インターフェース
 - extractRecipeFromHtml(): HTML→レシピ情報抽出
 - extractReceiptFromText(): OCRテキスト→レシート構造化データ抽出
 - getProviderName(): プロバイダー名取得
@@ -55,7 +55,7 @@ AI関連の型定義とインターフェースを定義。
 - originalError: 元エラー（任意）
 
 ### base-provider.ts
-AI Provider基底クラスの実装。
+自動抽出 Provider基底クラスの実装。
 
 #### 機能
 - 各プロバイダーの共通処理を定義
@@ -64,7 +64,7 @@ AI Provider基底クラスの実装。
 - レスポンス正規化
 
 ### provider-factory.ts
-AI Providerのファクトリークラス。
+自動抽出 Providerのファクトリークラス。
 
 #### 機能
 - プロバイダー選択ロジック
@@ -73,10 +73,10 @@ AI Providerのファクトリークラス。
 - 環境変数からの設定読み込み
 
 ### providers/gemini-provider.ts
-Google Gemini AIプロバイダーの実装。
+Google Gemini 自動抽出プロバイダーの実装。
 
 #### 機能
-- Gemini API連携
+- Gemini 自動抽出 API連携
 - HTMLから食材抽出（レシピサイト）
 - OCRテキストからレシート構造化
 - 日本語対応
@@ -92,7 +92,7 @@ Google Gemini AIプロバイダーの実装。
 ## 設計原則
 
 ### プロバイダー抽象化
-- 複数のAI APIを統一インターフェースで管理
+- 複数の自動抽出 APIを統一インターフェースで管理
 - プロバイダー切り替えの容易性
 - 新規プロバイダー追加の簡便性
 
@@ -110,40 +110,40 @@ Google Gemini AIプロバイダーの実装。
 
 ### レシピ抽出
 ```typescript
-import { AIProviderFactory } from './provider-factory';
+import { AutoExtractionProviderFactory } from './provider-factory';
 
-const provider = AIProviderFactory.createFromEnvironment();
+const provider = AutoExtractionProviderFactory.createFromEnvironment();
 const recipeResult = await provider.extractRecipeFromHtml(html, url);
 ```
 
 ### レシート構造化
 ```typescript
-import { AIProviderFactory } from './provider-factory';
+import { AutoExtractionProviderFactory } from './provider-factory';
 
-const provider = AIProviderFactory.createFromEnvironment();
+const provider = AutoExtractionProviderFactory.createFromEnvironment();
 const receiptResult = await provider.extractReceiptFromText(ocrText);
 ```
 
 ### 手動設定
 ```typescript
-import { AIProviderFactory } from './provider-factory';
-import type { AIProviderConfig } from './types';
+import { AutoExtractionProviderFactory } from './provider-factory';
+import type { AutoExtractionProviderConfig } from './types';
 
-const config: AIProviderConfig = {
+const config: AutoExtractionProviderConfig = {
   provider: 'gemini',
   apiKey: process.env.VITE_GOOGLE_CLOUD_API_KEY!,
   model: 'gemini-2.5-flash',
   temperature: 0.05
 };
 
-const provider = AIProviderFactory.createProvider(config);
+const provider = AutoExtractionProviderFactory.createProvider(config);
 const result = await provider.extractRecipeFromHtml(html, url);
 ```
 
 ## 環境変数
 
 ```env
-# Gemini AI
+# Gemini 自動抽出
 VITE_GOOGLE_CLOUD_API_KEY=your_gemini_api_key
 
 # 将来対応予定

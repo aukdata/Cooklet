@@ -110,7 +110,7 @@ export const useMealPlansActions = (): MealPlansActionsReturn => {
     }
   };
 
-  // AI生成結果確認処理
+  // 自動生成結果確認処理
   const handleGenerationConfirm = async (result: MealGenerationResult): Promise<void> => {
     try {
       if (result.mealPlan) {

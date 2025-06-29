@@ -3,7 +3,7 @@
 ## 概要
 Netlify Functions経由でGoogle Vision API を使用したOCR（光学文字認識）機能を提供するディレクトリ。
 レシート画像からプレーンテキストを抽出する機能を実装。
-構造化処理はクライアント側のGemini AIが担当。
+構造化処理はクライアント側のGemini 自動抽出が担当。
 セキュリティのためAPIキーはサーバーサイドで管理。
 
 ## ファイル構成
@@ -109,9 +109,9 @@ console.log('抽出テキスト:', result.fullText);
 console.log('信頼度:', result.confidence);
 console.log('処理時刻:', result.processedAt);
 
-// 構造化処理は別途AIプロバイダーで実行
-// import { AIProviderFactory } from '../ai/provider-factory';
-// const aiProvider = AIProviderFactory.createFromEnvironment();
+// 構造化処理は別途自動抽出プロバイダーで実行
+// import { AutoExtractionProviderFactory } from '../ai/provider-factory';
+// const aiProvider = AutoExtractionProviderFactory.createFromEnvironment();
 // const receiptData = await aiProvider.extractReceiptFromText(result.fullText);
 ```
 

@@ -79,7 +79,7 @@
 - 予算情報の表示
 
 #### MealSuggestions.tsx（新規）
-献立提案コンポーネント - AI献立生成ボタン群。
+献立提案コンポーネント - 献立自動生成ボタン群。
 
 **Props:**
 - `onTodayMealSuggestion: () => void` - 今日の献立提案ハンドラー
@@ -231,7 +231,7 @@ interface WeeklyNavigationProps {
 - 各食事タイプのハンドラー統一管理
 
 ### MealPlanSuggestion.tsx
-献立提案機能コンポーネント - AI献立生成と週間サマリー表示。
+献立提案機能コンポーネント - 献立自動生成と週間サマリー表示。
 
 #### 実装済み機能
 - 週間サマリー表示（自炊・外食回数、予算）

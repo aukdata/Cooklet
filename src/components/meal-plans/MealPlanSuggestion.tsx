@@ -21,7 +21,7 @@ interface MealPlanSuggestionProps {
 
 /**
  * 献立提案コンポーネント
- * AI献立生成機能と週間サマリー情報を提供
+ * 献立自動生成機能と週間サマリー情報を提供
  */
 export const MealPlanSuggestion: React.FC<MealPlanSuggestionProps> = ({
   onTodayMealSuggestion,

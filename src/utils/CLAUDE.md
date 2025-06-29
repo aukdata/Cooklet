@@ -47,7 +47,7 @@
 ## ファイル構成
 
 ### receiptReader.ts
-レシート読み取り機能の実装ファイル。Google Vision APIとGemini AIを組み合わせた高精度レシート解析。
+レシート読み取り機能の実装ファイル。Google Vision APIとGemini 自動抽出を組み合わせた高精度レシート解析。
 ingredientsテーブルのoriginal_nameと照らし合わせて商品名を一般名に自動変換。
 
 ### nameNormalizer.ts
@@ -73,7 +73,7 @@ interface ReceiptResult {
   totalPrice?: number;     // 計算された合計金額（任意）
   storeName?: string;      // 店舗名（任意）
   date?: string;          // 購入日（任意）
-  confidence?: number;     // AI構造化の信頼度（任意）
+  confidence?: number;     // 自動構造化の信頼度（任意）
 }
 ```
 
@@ -82,7 +82,7 @@ interface ReceiptResult {
 **readReceiptFromImage(file: File, ingredients?: Ingredient[]): Promise<ReceiptResult>**
 - レシート画像を読み取って商品リストを返す関数
 - Step 1: Google Vision APIでOCR処理（プレーンテキスト抽出）
-- Step 2: Gemini AIでテキスト構造化（商品・店舗・日付抽出）
+- Step 2: Gemini でテキスト自動構造化（商品・店舗・日付抽出）
 - Step 3: 商品名正規化処理（ingredientsテーブルのoriginal_nameと照らし合わせ）
 - Step 4: 商品価格から合計金額を自動計算
 - デバッグ用のコンソール出力機能付き（正規化統計を含む）
@@ -134,7 +134,7 @@ try {
   console.log('店舗名:', result.storeName);
   console.log('購入日:', result.date);
   console.log('合計金額:', result.totalPrice);
-  console.log('AI信頼度:', result.confidence);
+  console.log('自動抽出信頼度:', result.confidence);
   
   // 個別の商品詳細（正規化情報付き）
   result.items.forEach((item, index) => {
@@ -155,15 +155,15 @@ try {
 - Netlify Functions経由でセキュアなAPI利用
 - 高精度なテキスト抽出
 
-**AI構造化**
-- Google Gemini AI（gemini-2.5-flash）
+**自動構造化**
+- Google Gemini 自動抽出（gemini-2.5-flash）
 - JSON Schema指定による構造化レスポンス
 - 商品名、数量、価格の正確な抽出
 - 店舗名、日付の自動識別
 
 **エラーハンドリング**
 - OCR処理エラー対応
-- AI構造化エラー対応
+- 自動構造化エラー対応
 - ネットワークエラー対応
 - 詳細なエラーメッセージ
 
@@ -183,7 +183,7 @@ try {
 
 ### API利用制限
 - Google Vision API: 月間制限と課金に注意
-- Google Gemini AI: リクエスト頻度制限あり
+- Google Gemini 自動抽出: リクエスト頻度制限あり
 - 環境変数による適切な設定管理が必要
 
 ### セキュリティ
@@ -194,4 +194,4 @@ try {
 ### 精度について
 - レシート画質により結果が変動
 - 手書き文字や特殊フォントの認識精度に限界
-- AI構造化の信頼度を参考に結果を判断
+- 自動構造化の信頼度を参考に結果を判断

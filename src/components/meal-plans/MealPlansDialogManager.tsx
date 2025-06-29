@@ -90,7 +90,7 @@ export const MealPlansDialogManager: React.FC<MealPlansDialogManagerProps> = ({
         />
       )}
 
-      {/* AI生成結果ダイアログ */}
+      {/* 自動生成結果ダイアログ */}
       {dialogStates.generationResult && (
         <MealGenerationResultDialog
           isOpen={dialogStates.isGenerationResultDialogOpen}

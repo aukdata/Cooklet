@@ -119,7 +119,7 @@
 - `WeeklyNavigation` - 週間ナビゲーションコンポーネント（ヘッダー表示・週間移動・今日ボタン）
 - `MealPlanCalendar` - 献立カレンダーコンポーネント（週間日付表示・献立有無インジケーター・日付選択）
 - `MealPlanDayDetail` - 選択日の献立詳細表示コンポーネント（朝昼夜の献立統合表示）
-- `MealPlanSuggestion` - 献立提案コンポーネント（週間サマリー・AI献立生成ボタン）
+- `MealPlanSuggestion` - 献立提案コンポーネント（週間サマリー・献立自動生成ボタン）
 - `CookedDialog` - 「作った！」ダイアログコンポーネント（完食・作り置き選択・在庫自動追加）
 
 ## サマリー関連コンポーネント（components/summary/）
@@ -204,8 +204,8 @@
 
 ## ライブラリ・ユーティリティ（lib/, utils/）
 
-### AI・OCR関連
-- `AIProvider` - AI Provider抽象化インターフェース（extractRecipeFromHtml, extractReceiptFromText）
+### 自動抽出・OCR関連
+- `AutoExtractionProvider` - 自動抽出 Provider抽象化インターフェース（extractRecipeFromHtml, extractReceiptFromText）
 - `VisionClient` - Google Vision APIを使用するOCRクライアント（extractTextFromImage）
 - `WebFetcher` - Webサイトからコンテンツを取得するクライアント（fetchWebsite）
 
@@ -216,7 +216,7 @@
 - `groupExpiredItemsByPeriod(expiredItems)` - 期限切れアイテムを期間別にグループ化・ソート
 
 ### レシート・画像処理
-- `readReceiptFromImage(file, ingredients)` - レシート画像読み取り（OCR + AI構造化 + 商品名正規化）
+- `readReceiptFromImage(file, ingredients)` - レシート画像読み取り（OCR + 自動構造化 + 商品名正規化）
 - `normalizeProductName(originalName, ingredients)` - 商品名正規化
 - `validateImageFile(file)` - 画像ファイル妥当性チェック
 - `calculateTotalPrice(items)` - レシートアイテムから合計金額計算

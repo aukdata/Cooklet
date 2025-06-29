@@ -50,7 +50,7 @@ export const useRecipes = () => {
         .map(ing => ({
           user_id: user.id,
           name: ing.name.trim(),
-          category: '自動追加', // AI抽出材料のデフォルトカテゴリ
+          category: '自動追加', // 自動抽出材料のデフォルトカテゴリ
           default_unit: ing.quantity.match(/[a-zA-Zぁ-んァ-ヶー]/g)?.join('') || '個', // 数量から単位を抽出
         }));
 
