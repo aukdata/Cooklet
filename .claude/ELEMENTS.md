@@ -25,6 +25,12 @@
 
 ## UI共通コンポーネント
 
+### エラー・通知管理コンポーネント
+- `ErrorBoundary` - React エラー境界コンポーネント（予期しないエラーのキャッチと表示）
+- `LoadingErrorDisplay` - ローディング・エラー表示の統一コンポーネント（loading状態とエラー表示の統一）
+- `MorningNotificationManager` - 朝の通知管理コンポーネント（定期通知スケジュール管理）
+- `NotificationManager` - 通知管理コンポーネント（Web Push通知の統合管理）
+
 ### 共通入力コンポーネント（components/common/）
 
 #### NameQuantityUnitInput.tsx
@@ -92,7 +98,6 @@
 
 ### 主要ダイアログ
 - `MealPlanEditDialog` - 献立編集ダイアログ（日付・食事タイプ・レシピ・人数・メモの編集、レシピ選択時の食材自動設定、人数変更時の数量自動調整機能付き）
-- `MealPlanDialog` - 献立ダイアログ（CLAUDE.md仕様書準拠の献立編集機能）
 - `ManualMealDialog` - 手動献立入力ダイアログ（料理名・レシピURL・人数・メモの入力）
 - `AddToMealPlanDialog` - レシピから献立追加ダイアログ（GitHub issue #31対応、日付・食事タイプ選択）
 - `RecipeDetailDialog` - レシピ詳細表示ダイアログ（基本情報表示・編集・削除アクション）
@@ -105,6 +110,11 @@
 - `CookedDialog` - 「作った！」ダイアログ（献立完了時の状態選択、完食・作り置き選択）
 - `MealGenerationResultDialog` - 献立生成結果確認ダイアログ（issue #64対応、生成結果表示・決定・やり直し・キャンセル機能）
 
+### 入力・編集コンポーネント
+- `ManualRecipeInput` - 手動レシピ入力コンポーネント（料理名・URL・人数入力）
+- `MealIngredientsEditor` - 献立食材編集コンポーネント（食材リスト編集機能）
+- `RecipeSelector` - レシピ選択コンポーネント（保存済みレシピからの選択）
+
 ### 共通仕様
 - `useConfirmDialog` - 確認ダイアログフック
 
@@ -116,10 +126,16 @@
 ## 献立関連コンポーネント（components/meal-plans/）
 
 - `MealPlanDetail` - 個別の献立詳細表示コンポーネント（食事タイプごとの献立表示・編集・状態変更）
+- `MealPlanHeader` - 献立ヘッダーコンポーネント（タイトル・週範囲・ステータス表示）
 - `WeeklyNavigation` - 週間ナビゲーションコンポーネント（ヘッダー表示・週間移動・今日ボタン）
-- `MealPlanCalendar` - 献立カレンダーコンポーネント（週間日付表示・献立有無インジケーター・日付選択）
-- `MealPlanDayDetail` - 選択日の献立詳細表示コンポーネント（朝昼夜の献立統合表示）
+- `WeeklyCalendar` - 週間カレンダーコンポーネント（7日間の日付表示・献立有無インジケーター・日付選択）
+- `DayDetail` - 選択日詳細コンポーネント（朝昼夜の献立統合表示・アクションボタン）
+- `WeeklySummary` - 週間サマリーコンポーネント（週間統計・概要表示）
+- `MealSuggestions` - 献立提案コンポーネント（自動生成ボタン・提案機能）
 - `MealPlanSuggestion` - 献立提案コンポーネント（週間サマリー・献立自動生成ボタン）
+- `MealPlansActions` - 献立アクションコンポーネント（献立操作機能）
+- `MealPlansDialogManager` - 献立ダイアログ管理コンポーネント（複数ダイアログの状態管理）
+- `MealPlansGenerator` - 献立生成コンポーネント（AI献立生成機能）
 - `CookedDialog` - 「作った！」ダイアログコンポーネント（完食・作り置き選択・在庫自動追加）
 
 ## サマリー関連コンポーネント（components/summary/）
@@ -158,6 +174,17 @@
 - `DialogContext` - ダイアログ表示状態の管理（isDialogOpen, setIsDialogOpen）
 - `NavigationContext` - アプリ内ナビゲーションの管理（activeTab, setActiveTab, navigate）
 
+## 設定関連コンポーネント（components/settings/）
+
+- `AppInfoSection` - アプリ情報セクションコンポーネント（バージョン・ビルド情報表示）
+- `NotificationSettingsSection` - 通知設定セクションコンポーネント（期限通知・朝の通知設定）
+- `UserProfileSection` - ユーザープロフィールセクションコンポーネント（ユーザー情報表示・編集）
+- `SettingsActions` - 設定アクションコンポーネント（ログアウト・その他アクション）
+
+## 買い物関連コンポーネント（components/shopping/）
+
+- `ReceiptReader` - レシート読み取りコンポーネント（OCR機能・商品名正規化・自動構造化）
+
 ## ページコンポーネント（pages/）
 
 ### 主要ページ
@@ -195,12 +222,19 @@
 - `isStockSufficient(requiredQuantity, stockQuantity)` - 在庫充足性チェック
 - `aggregateIngredientsFromMealPlans(mealPlans)` - 複数献立からの食材集計
 
+## ユーティリティ関数（utils/）
+
 ### mealPlanGeneration.ts
 - `MealGenerationSettings` - 献立生成設定の型定義（在庫・レシピ・食材マスタ・日数・食事タイプ）
 - `MealGenerationResult` - 献立生成結果の型定義（生成献立・使用食材・警告メッセージ）
-- `generateMealPlan(settings)` - 献立自動生成関数（現在は仮実装でログ出力のみ）
+- `generateMealPlan(settings)` - 献立自動生成関数（PLAN.md準拠の完全実装）
 - `getMealTypeFromIndex(index)` - 食事タイプインデックスから日本語表記に変換
 - `getGenerationDates(days)` - 生成期間の日付配列を取得
+
+### stockMergeUtils.ts
+- `mergeStockWithPurchases` - 購入品と既存在庫のスマートマージ機能
+- `convertReceiptItemsToPurchaseItems` - レシートアイテムから購入品への変換
+- `createMergeReport` - マージ結果の日本語レポート生成
 
 ## ライブラリ・ユーティリティ（lib/, utils/）
 

@@ -49,8 +49,6 @@
 
 詳細な技術仕様は以下のファイルを参照：
 - **技術アーキテクチャ**: `.claude/TECH_SPECS.md`
-- **TypeScript型定義**: `.claude/TYPESCRIPT_MIGRATION.md`
-- **レシートOCR設計**: `.claude/RECEIPT_OCR_DESIGN.md`
 - **UI設計**: `.claude/UI.md`
 - **セキュリティ**: `.claude/SECURITY.md`
 
@@ -95,14 +93,9 @@
 - **要素定義**: `.claude/ELEMENTS.md` - 型・コンポーネント・関数の包括リスト
 - **コーディングルール**: `.claude/CODING.md` - コーディング標準・ベストプラクティス
 
-### 削除済みファイル（2025-06-27整理）
-- ~~`.claude/DESIGN.md`~~ → `.claude/UI.md`に統合済み（内容削除）
-- ~~`.claude/DEVELOPMENT_PLAN.md`~~ → 古い計画のため削除済み（内容削除）
-- ~~`.claude/TYPESCRIPT_MIGRATION.md`~~ → 移行完了のため不要
-- ~~`.claude/RECEIPT_OCR_DESIGN.md`~~ → 実装完了のため不要
-
-### 新規追加ファイル（2025-06-27整理）
+### ドキュメント構成管理
 - **ドキュメントテンプレート**: `.claude/DOC_TEMPLATES.md` - 標準的な文書作成テンプレート
+- **コマンド統合**: 古いコマンドファイル（doc.md、lint.md、refactor.md）を削除、doc-update.mdに統合（2025-07-01）
 
 ### 最新の型安全性改善（2025-06-29）
 - **Quantity型の導入**: `{amount: string, unit: string}`形式の新しい数量管理型
