@@ -165,6 +165,54 @@ showSuccess(report);
 - **エラーハンドリング**: 計算失敗時の適切な処理
 - **統計情報**: 詳細なマージ結果統計
 
+### shoppingStockMerge.ts
+**買い物リスト完了済みアイテムの在庫統合サービス**
+
+#### 概要
+Shopping.tsx からリファクタリングで分離された、買い物リストの完了済みアイテムを在庫に統合するビジネスロジック。単一責任原則に基づく設計でテスタビリティと保守性を向上。
+
+#### 主要機能
+- **ShoppingStockMergeService**: 買い物リストと在庫の統合処理を行うサービスクラス
+- **mergeCompletedItemsToStock()**: 完了済みアイテムの在庫統合メイン処理
+- **型安全性**: 厳密なTypeScript型定義によるエラー防止
+
+#### 処理フロー
+1. **変換処理**: 完了済み買い物アイテムを購入品アイテムに変換
+2. **マージ処理**: stockMergeUtils.tsを使用した既存在庫との統合
+3. **更新処理**: マージされた在庫アイテムの更新と新規アイテムの追加
+4. **クリーンアップ**: 完了済みアイテムの削除
+5. **レポート生成**: マージ結果の日本語レポート生成
+
+#### 使用例
+```typescript
+import { ShoppingStockMergeService } from '../utils/shoppingStockMerge';
+
+try {
+  const { report } = await ShoppingStockMergeService.mergeCompletedItemsToStock(
+    completedItems,
+    editingQuantities,
+    stockItems,
+    ingredients,
+    userId,
+    {
+      updateStockItem,
+      addStockItem,
+      deleteCompletedItems
+    }
+  );
+  
+  showSuccess(report);
+} catch (err) {
+  showError('在庫追加に失敗しました');
+}
+```
+
+#### リファクタリング効果
+- **コード分離**: Shopping.tsx から65行の複雑なロジックを分離
+- **テスタビリティ**: 独立したユニットテストが可能
+- **再利用性**: 他のコンポーネントからも利用可能
+- **保守性**: 単一責任による理解しやすいコード
+
 ### receiptReader.ts
 レシート読み取り機能の実装ファイル。Google Vision APIとGemini 自動抽出を組み合わせた高精度レシート解析。
 ingredientsテーブルのoriginal_nameと照らし合わせて商品名を一般名に自動変換。

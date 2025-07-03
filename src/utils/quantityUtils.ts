@@ -136,14 +136,21 @@ export function areUnitsCompatible(unit1: string, unit2: string): boolean {
 }
 
 /**
- * Quantity型同士の加算
- * PLAN.md 4.3 加算・減算ロジックに対応
- * 
- * @param q1 - 加算する数量1
- * @param q2 - 加算する数量2
- * @returns 加算結果、変換不可能な場合はnull
+ * 2つのQuantity型を正規化・変換して基本単位で比較可能な状態にする共通ヘルパー
  */
-export function addQuantities(q1: Quantity, q2: Quantity): Quantity | null {
+interface ConvertedQuantityPair {
+  amount1: number;
+  amount2: number;
+  baseUnit: FoodUnit;
+}
+
+/**
+ * 2つのQuantity型を正規化・変換する共通処理
+ * @param q1 - 数量1
+ * @param q2 - 数量2
+ * @returns 変換結果、変換不可能な場合はnull
+ */
+function convertQuantityPair(q1: Quantity, q2: Quantity): ConvertedQuantityPair | null {
   // 1. 各Quantityのamountを正規化
   const amount1 = normalizeAmount(q1.amount);
   const amount2 = normalizeAmount(q2.amount);
@@ -161,13 +168,33 @@ export function addQuantities(q1: Quantity, q2: Quantity): Quantity | null {
     return null;
   }
   
-  // 4. 加算実行
-  const resultAmount = converted1.amount + converted2.amount;
+  return {
+    amount1: converted1.amount,
+    amount2: converted2.amount,
+    baseUnit: converted1.unit
+  };
+}
+
+/**
+ * Quantity型同士の加算
+ * PLAN.md 4.3 加算・減算ロジックに対応
+ * 
+ * @param q1 - 加算する数量1
+ * @param q2 - 加算する数量2
+ * @returns 加算結果、変換不可能な場合はnull
+ */
+export function addQuantities(q1: Quantity, q2: Quantity): Quantity | null {
+  const converted = convertQuantityPair(q1, q2);
+  if (!converted) {
+    return null;
+  }
   
-  // 5. 結果を返す（基本単位で）
+  // 加算実行
+  const resultAmount = converted.amount1 + converted.amount2;
+  
   return {
     amount: resultAmount.toString(),
-    unit: converted1.unit
+    unit: converted.baseUnit
   };
 }
 
@@ -180,30 +207,17 @@ export function addQuantities(q1: Quantity, q2: Quantity): Quantity | null {
  * @returns 減算結果（q1 - q2）、変換不可能な場合はnull
  */
 export function subtractQuantities(q1: Quantity, q2: Quantity): Quantity | null {
-  // 1. 各Quantityのamountを正規化
-  const amount1 = normalizeAmount(q1.amount);
-  const amount2 = normalizeAmount(q2.amount);
-  
-  // 2. 単位の互換性をチェック
-  if (!areUnitsCompatible(q1.unit, q2.unit)) {
+  const converted = convertQuantityPair(q1, q2);
+  if (!converted) {
     return null;
   }
   
-  // 3. 基本単位に変換
-  const converted1 = convertToBaseUnit(amount1, q1.unit);
-  const converted2 = convertToBaseUnit(amount2, q2.unit);
+  // 減算実行
+  const resultAmount = converted.amount1 - converted.amount2;
   
-  if (!converted1 || !converted2) {
-    return null;
-  }
-  
-  // 4. 減算実行
-  const resultAmount = converted1.amount - converted2.amount;
-  
-  // 5. 結果を返す（基本単位で）
   return {
     amount: resultAmount.toString(),
-    unit: converted1.unit
+    unit: converted.baseUnit
   };
 }
 
@@ -215,26 +229,14 @@ export function subtractQuantities(q1: Quantity, q2: Quantity): Quantity | null 
  * @returns 等しい場合true、変換不可能な場合はfalse
  */
 export function areQuantitiesEqual(q1: Quantity, q2: Quantity): boolean {
-  // 1. 各Quantityのamountを正規化
-  const amount1 = normalizeAmount(q1.amount);
-  const amount2 = normalizeAmount(q2.amount);
-  
-  // 2. 単位の互換性をチェック
-  if (!areUnitsCompatible(q1.unit, q2.unit)) {
+  const converted = convertQuantityPair(q1, q2);
+  if (!converted) {
     return false;
   }
   
-  // 3. 基本単位に変換
-  const converted1 = convertToBaseUnit(amount1, q1.unit);
-  const converted2 = convertToBaseUnit(amount2, q2.unit);
-  
-  if (!converted1 || !converted2) {
-    return false;
-  }
-  
-  // 4. 比較（小数点の誤差を考慮）
+  // 比較（小数点の誤差を考慮）
   const epsilon = 1e-10;
-  return Math.abs(converted1.amount - converted2.amount) < epsilon;
+  return Math.abs(converted.amount1 - converted.amount2) < epsilon;
 }
 
 /**
@@ -245,25 +247,13 @@ export function areQuantitiesEqual(q1: Quantity, q2: Quantity): boolean {
  * @returns q1 > q2の場合1、q1 < q2の場合-1、等しい場合0、比較不可能な場合null
  */
 export function compareQuantities(q1: Quantity, q2: Quantity): number | null {
-  // 1. 各Quantityのamountを正規化
-  const amount1 = normalizeAmount(q1.amount);
-  const amount2 = normalizeAmount(q2.amount);
-  
-  // 2. 単位の互換性をチェック
-  if (!areUnitsCompatible(q1.unit, q2.unit)) {
+  const converted = convertQuantityPair(q1, q2);
+  if (!converted) {
     return null;
   }
   
-  // 3. 基本単位に変換
-  const converted1 = convertToBaseUnit(amount1, q1.unit);
-  const converted2 = convertToBaseUnit(amount2, q2.unit);
-  
-  if (!converted1 || !converted2) {
-    return null;
-  }
-  
-  // 4. 比較
-  const diff = converted1.amount - converted2.amount;
+  // 比較
+  const diff = converted.amount1 - converted.amount2;
   const epsilon = 1e-10;
   
   if (Math.abs(diff) < epsilon) {

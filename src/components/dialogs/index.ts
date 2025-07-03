@@ -4,6 +4,9 @@
 // MealPlanDialog は削除されました（ダイアログ重複問題解決のため）
 export { MealPlanEditDialog } from './MealPlanEditDialog';
 
+// 献立編集フォームフィールド（リファクタリング分離コンポーネント）
+export { MealPlanFormFields } from './MealPlanFormFields';
+
 // 手動献立入力ダイアログ（5.6.3）
 export { ManualMealDialog } from './ManualMealDialog';
 

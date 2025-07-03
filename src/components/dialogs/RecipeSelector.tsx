@@ -1,19 +1,12 @@
 import React, { useMemo } from 'react';
-
-// レシピデータ型（食材情報付き）
-interface Recipe {
-  id: string;
-  title: string;
-  url: string;
-  ingredients: { name: string; quantity: string }[];
-}
+import { type SavedRecipe } from '../../hooks/useRecipes';
 
 // レシピセレクターコンポーネントのProps
 interface RecipeSelectorProps {
-  recipes: Recipe[];
+  recipes: SavedRecipe[];
   selectedRecipeId: string;
   searchQuery: string;
-  onRecipeSelect: (recipe: Recipe | null) => void;
+  onRecipeSelect: (recipe: SavedRecipe | null) => void;
   onSearchQueryChange: (query: string) => void;
   loading?: boolean;
 }
