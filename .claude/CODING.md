@@ -2,6 +2,48 @@
 
 ## 1. 基本方針
 
+### Martin Fowlerリファクタリング手法の適用
+Cookletプロジェクトでは、Martin Fowlerの「Refactoring: Improving the Design of Existing Code」の手法を標準として採用します。
+
+#### リファクタリングの基本原則
+- **レッド・グリーン・リファクター**: 機能を変更せずに内部構造を改善
+- **小さなステップ**: 一度に一つの変更のみ実行
+- **テスト保護下での作業**: 各ステップで動作確認を実施
+- **匂いのコード認識**: コードの問題箇所を体系的に特定
+
+#### 適用すべき主要リファクタリング技法
+
+**関数レベル**
+- **Extract Function**: 長い関数の機能分割
+- **Inline Function**: 不要な間接化の削除
+- **Replace Temp with Query**: 一時変数を関数呼び出しに置換
+
+**データ構造**
+- **Encapsulate Record**: データ構造のカプセル化
+- **Replace Primitive with Object**: プリミティブ型をオブジェクトに置換
+- **Remove Middle Man**: 不要な委譲の削除
+
+**React/TypeScript特有**
+- **Extract Custom Hook**: ビジネスロジックのカスタムフック化
+- **Split Phase**: 複雑なコンポーネントの段階分割
+- **Replace useEffect with Event Handler**: 不適切なuseEffectの置換
+
+#### リファクタリング実行プロセス
+1. **現状把握**: 対象コードの動作と構造を理解
+2. **匂いの特定**: 問題箇所をカタログに基づいて分類
+3. **技法選択**: 適切なリファクタリング技法を選定
+4. **小刻み実行**: 小さなステップで段階的に改善
+5. **動作確認**: 各ステップでlint・build・テストを実行
+6. **文書更新**: CLAUDE.mdの仕様書を最新化
+
+#### コードの匂いカタログ（React/TypeScript版）
+- **Long Component**: 200行を超える巨大コンポーネント → Extract Component
+- **Complex useEffect**: 複雑な依存関係のuseEffect → Extract Custom Hook
+- **Prop Drilling**: 深い階層でのprops渡し → Context/State Management
+- **Any Type Usage**: any型の使用 → Proper Type Definition
+- **Magic Numbers**: マジックナンバー → Named Constants
+- **Duplicate Code**: 重複コード → Extract Shared Component/Hook
+
 ### 品質重視
 - **厳格な型安全性**: `any`型の使用を完全禁止
 - **必須型注釈**: すべての変数定義時に型を明記

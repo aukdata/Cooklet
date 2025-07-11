@@ -305,7 +305,6 @@ users (
   google_id: TEXT UNIQUE,
   notification_enabled: BOOLEAN DEFAULT FALSE,
   expiry_notification_days: INTEGER DEFAULT 3,
-  notification_enabled: BOOLEAN DEFAULT FALSE,
   notification_time: TIME DEFAULT '08:00',
   created_at: TIMESTAMP DEFAULT NOW(),
   updated_at: TIMESTAMP DEFAULT NOW()

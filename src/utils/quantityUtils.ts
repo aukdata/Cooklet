@@ -176,6 +176,27 @@ function convertQuantityPair(q1: Quantity, q2: Quantity): ConvertedQuantityPair 
 }
 
 /**
+ * 2つのQuantity値を使用して演算を実行する共通ヘルパー関数
+ * 
+ * @param q1 - 演算対象の数量1
+ * @param q2 - 演算対象の数量2  
+ * @param operation - 変換後の数値に対する演算関数
+ * @returns 演算結果、変換不可能な場合はnull
+ */
+function executeQuantityOperation<T>(
+  q1: Quantity, 
+  q2: Quantity, 
+  operation: (amount1: number, amount2: number, baseUnit: FoodUnit) => T
+): T | null {
+  const converted = convertQuantityPair(q1, q2);
+  if (!converted) {
+    return null;
+  }
+  
+  return operation(converted.amount1, converted.amount2, converted.baseUnit);
+}
+
+/**
  * Quantity型同士の加算
  * PLAN.md 4.3 加算・減算ロジックに対応
  * 
@@ -184,18 +205,10 @@ function convertQuantityPair(q1: Quantity, q2: Quantity): ConvertedQuantityPair 
  * @returns 加算結果、変換不可能な場合はnull
  */
 export function addQuantities(q1: Quantity, q2: Quantity): Quantity | null {
-  const converted = convertQuantityPair(q1, q2);
-  if (!converted) {
-    return null;
-  }
-  
-  // 加算実行
-  const resultAmount = converted.amount1 + converted.amount2;
-  
-  return {
-    amount: resultAmount.toString(),
-    unit: converted.baseUnit
-  };
+  return executeQuantityOperation(q1, q2, (amount1, amount2, baseUnit) => ({
+    amount: (amount1 + amount2).toString(),
+    unit: baseUnit
+  }));
 }
 
 /**
@@ -207,18 +220,10 @@ export function addQuantities(q1: Quantity, q2: Quantity): Quantity | null {
  * @returns 減算結果（q1 - q2）、変換不可能な場合はnull
  */
 export function subtractQuantities(q1: Quantity, q2: Quantity): Quantity | null {
-  const converted = convertQuantityPair(q1, q2);
-  if (!converted) {
-    return null;
-  }
-  
-  // 減算実行
-  const resultAmount = converted.amount1 - converted.amount2;
-  
-  return {
-    amount: resultAmount.toString(),
-    unit: converted.baseUnit
-  };
+  return executeQuantityOperation(q1, q2, (amount1, amount2, baseUnit) => ({
+    amount: (amount1 - amount2).toString(),
+    unit: baseUnit
+  }));
 }
 
 /**
@@ -229,14 +234,13 @@ export function subtractQuantities(q1: Quantity, q2: Quantity): Quantity | null 
  * @returns 等しい場合true、変換不可能な場合はfalse
  */
 export function areQuantitiesEqual(q1: Quantity, q2: Quantity): boolean {
-  const converted = convertQuantityPair(q1, q2);
-  if (!converted) {
-    return false;
-  }
+  const result = executeQuantityOperation(q1, q2, (amount1, amount2) => {
+    // 比較（小数点の誤差を考慮）
+    const epsilon = 1e-10;
+    return Math.abs(amount1 - amount2) < epsilon;
+  });
   
-  // 比較（小数点の誤差を考慮）
-  const epsilon = 1e-10;
-  return Math.abs(converted.amount1 - converted.amount2) < epsilon;
+  return result ?? false;
 }
 
 /**

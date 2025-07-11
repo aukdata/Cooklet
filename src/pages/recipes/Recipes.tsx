@@ -7,8 +7,8 @@ import { ConfirmDialog } from '../../components/dialogs/ConfirmDialog';
 import { AddToMealPlanDialog } from '../../components/dialogs/AddToMealPlanDialog';
 import { EditButton } from '../../components/ui/Button';
 import { useToast } from '../../hooks/useToast.tsx';
+import { useRecipeDialogs } from '../../hooks/useRecipeDialogs';
 import type { SavedRecipe, RecipeFormData } from '../../types/recipe';
-import { type MealType } from '../../types';
 
 // レシピ画面コンポーネント - CLAUDE.md仕様書5.4に準拠
 export const Recipes: React.FC = () => {
@@ -18,31 +18,43 @@ export const Recipes: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState('全て');
   
-  // ダイアログの状態管理
-  const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
-  const [selectedRecipe, setSelectedRecipe] = useState<SavedRecipe | undefined>();
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingRecipe, setEditingRecipe] = useState<SavedRecipe | undefined>();
-  const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-  const [deletingRecipe, setDeletingRecipe] = useState<SavedRecipe | undefined>();
-  
-  // 献立追加ダイアログの状態管理
-  const [isAddToMealPlanDialogOpen, setIsAddToMealPlanDialogOpen] = useState(false);
-  const [addingToMealPlanRecipe, setAddingToMealPlanRecipe] = useState<SavedRecipe | undefined>();
-  
-  // 献立置き換え確認ダイアログの状態管理
-  const [isReplaceConfirmDialogOpen, setIsReplaceConfirmDialogOpen] = useState(false);
-  const [replacementData, setReplacementData] = useState<{
-    recipe: SavedRecipe;
-    date: string;
-    mealType: MealType;
-    existingMealPlan: unknown;
-  } | null>(null);
+  // ダイアログ状態管理（useRecipeDialogsフックで統合）
+  const {
+    // 詳細ダイアログ
+    isDetailDialogOpen,
+    selectedRecipe,
+    showRecipeDetail,
+    closeRecipeDetail,
+    
+    // 編集ダイアログ
+    isEditDialogOpen,
+    editingRecipe,
+    showNewRecipeDialog,
+    showEditRecipeDialog,
+    closeEditRecipeDialog,
+    
+    // 削除確認ダイアログ
+    isConfirmDialogOpen,
+    deletingRecipe,
+    showDeleteConfirmDialog,
+    closeDeleteConfirmDialog,
+    
+    // 献立追加ダイアログ
+    isAddToMealPlanDialogOpen,
+    addingToMealPlanRecipe,
+    showAddToMealPlanDialog,
+    closeAddToMealPlanDialog,
+    
+    // 献立置き換え確認ダイアログ
+    isReplaceConfirmDialogOpen,
+    replacementData,
+    showReplaceConfirmDialog,
+    closeReplaceConfirmDialog
+  } = useRecipeDialogs();
 
   // レシピ追加ボタンのハンドラー
   const handleAddNewRecipe = () => {
-    setEditingRecipe(undefined); // 新規追加なのでundefined
-    setIsEditDialogOpen(true);
+    showNewRecipeDialog();
   };
 
   // レシピ保存ハンドラー（新規追加と編集を統合）
@@ -55,8 +67,7 @@ export const Recipes: React.FC = () => {
         // 新規追加の場合
         await addRecipe(recipeData);
       }
-      setIsEditDialogOpen(false);
-      setEditingRecipe(undefined);
+      closeEditRecipeDialog();
     } catch (err) {
       console.error(editingRecipe ? 'レシピの更新に失敗しました:' : 'レシピの追加に失敗しました:', err);
       showError(editingRecipe ? 'レシピの更新に失敗しました' : 'レシピの追加に失敗しました');
@@ -66,35 +77,22 @@ export const Recipes: React.FC = () => {
 
   // レシピ詳細表示ハンドラー（issue #5対応）
   const handleShowRecipeDetail = (recipe: SavedRecipe) => {
-    setSelectedRecipe(recipe);
-    setIsDetailDialogOpen(true);
+    showRecipeDetail(recipe);
   };
 
   // レシピ詳細ダイアログを閉じるハンドラー
   const handleCloseDetailDialog = () => {
-    setIsDetailDialogOpen(false);
-    setSelectedRecipe(undefined);
+    closeRecipeDetail();
   };
 
   // レシピ編集ボタンのハンドラー
   const handleEditRecipe = (recipe: SavedRecipe) => {
-    // 詳細ダイアログが開いている場合は閉じる
-    setIsDetailDialogOpen(false);
-    setSelectedRecipe(undefined);
-    
-    setEditingRecipe(recipe);
-    setIsEditDialogOpen(true);
+    showEditRecipeDialog(recipe);
   };
-
 
   // レシピ削除ボタンのハンドラー
   const handleDeleteRecipe = (recipe: SavedRecipe) => {
-    // 詳細ダイアログが開いている場合は閉じる
-    setIsDetailDialogOpen(false);
-    setSelectedRecipe(undefined);
-    
-    setDeletingRecipe(recipe);
-    setIsConfirmDialogOpen(true);
+    showDeleteConfirmDialog(recipe);
   };
 
   // レシピ削除確認ダイアログの確認ハンドラー
@@ -103,8 +101,7 @@ export const Recipes: React.FC = () => {
     
     try {
       await deleteRecipe(deletingRecipe.id);
-      setIsConfirmDialogOpen(false);
-      setDeletingRecipe(undefined);
+      closeDeleteConfirmDialog();
     } catch (err) {
       console.error('レシピの削除に失敗しました:', err);
       showError('レシピの削除に失敗しました');
@@ -113,20 +110,17 @@ export const Recipes: React.FC = () => {
 
   // レシピ削除キャンセルハンドラー
   const handleCancelDelete = () => {
-    setIsConfirmDialogOpen(false);
-    setDeletingRecipe(undefined);
+    closeDeleteConfirmDialog();
   };
 
   // 献立追加ボタンのハンドラー
   const handleAddToMealPlan = (recipe: SavedRecipe) => {
-    setAddingToMealPlanRecipe(recipe);
-    setIsAddToMealPlanDialogOpen(true);
+    showAddToMealPlanDialog(recipe);
   };
 
   // 献立追加ダイアログを閉じるハンドラー
   const handleCloseAddToMealPlanDialog = () => {
-    setIsAddToMealPlanDialogOpen(false);
-    setAddingToMealPlanRecipe(undefined);
+    closeAddToMealPlanDialog();
   };
 
   // 献立追加処理
@@ -139,13 +133,12 @@ export const Recipes: React.FC = () => {
       
       if (existingMealPlan) {
         // 置き換え確認ダイアログを表示
-        setReplacementData({
+        showReplaceConfirmDialog({
           recipe: recipe,
           date,
           mealType,
           existingMealPlan
         });
-        setIsReplaceConfirmDialogOpen(true);
         return;
       }
 
@@ -189,15 +182,13 @@ export const Recipes: React.FC = () => {
       console.error('献立の置き換えに失敗しました:', err);
       showError('献立の置き換えに失敗しました');
     } finally {
-      setIsReplaceConfirmDialogOpen(false);
-      setReplacementData(null);
+      closeReplaceConfirmDialog();
     }
   };
 
   // 献立置き換えキャンセルハンドラー
   const handleCancelReplace = () => {
-    setIsReplaceConfirmDialogOpen(false);
-    setReplacementData(null);
+    closeReplaceConfirmDialog();
   };
 
   // 検索フィルタリング
@@ -382,7 +373,7 @@ export const Recipes: React.FC = () => {
       {/* レシピ編集ダイアログ */}
       <RecipeDialog
         isOpen={isEditDialogOpen}
-        onClose={() => setIsEditDialogOpen(false)}
+        onClose={closeEditRecipeDialog}
         onSave={handleSaveRecipe}
         onDelete={() => editingRecipe && handleDeleteRecipe(editingRecipe)}
         initialData={editingRecipe ? {

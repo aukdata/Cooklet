@@ -6,6 +6,9 @@ export { useMealPlans } from './useMealPlans';
 // レシピ管理フック
 export { useRecipes, type SavedRecipe } from './useRecipes';
 
+// レシピダイアログ状態管理フック（リファクタリング分離）
+export { useRecipeDialogs } from './useRecipeDialogs';
+
 // 在庫管理フック
 export { useStockItems } from './useStockItems';
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { FOOD_UNITS, type FoodUnit, parseQuantity, formatQuantity } from '../../constants/units';
 import { type Quantity } from '../../types';
 
@@ -21,12 +21,8 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
   const [tempAmount, setTempAmount] = useState(value.amount);
   const [isEditing, setIsEditing] = useState(false);
   
-  // valueが外部から変更されたときにtempAmountを更新
-  useEffect(() => {
-    if (!isEditing) {
-      setTempAmount(value.amount);
-    }
-  }, [value.amount, isEditing]);
+  // 編集中でない場合、propsの値を表示用の値として使用（レンダー時計算）
+  const displayAmount = isEditing ? tempAmount : value.amount;
 
   const handleAmountChange = (newAmount: string) => {
     setTempAmount(newAmount);
@@ -60,6 +56,8 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
   };
   
   const handleAmountFocus = () => {
+    // フォーカス時にpropsの最新値でtempAmountを初期化
+    setTempAmount(value.amount);
     setIsEditing(true);
   };
 
@@ -81,7 +79,7 @@ export const QuantityInput: React.FC<QuantityInputProps> = ({
       {/* 数値入力 */}
       <input
         type="text"
-        value={isEditing ? tempAmount : value.amount}
+        value={displayAmount}
         onChange={(e) => handleAmountChange(e.target.value)}
         onBlur={handleAmountBlur}
         onFocus={handleAmountFocus}

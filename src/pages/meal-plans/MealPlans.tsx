@@ -7,6 +7,7 @@ import { DayDetail } from '../../components/meal-plans/DayDetail';
 import { WeeklySummary } from '../../components/meal-plans/WeeklySummary';
 import { MealPlansGenerator } from '../../components/meal-plans/MealPlansGenerator';
 import { MealGenerationResultDialog } from '../../components/dialogs/MealGenerationResultDialog';
+import { CookedDialog } from '../../components/dialogs/CookedDialog';
 import { useMealPlans } from '../../hooks';
 import { type MealType, type MealPlan } from '../../types';
 import { useStockItems } from '../../hooks/useStockItems';
@@ -405,56 +406,13 @@ export const MealPlans: React.FC = () => {
       />
 
       {/* 完食・作り置き選択ダイアログ */}
-      {isConsumedDialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-sm">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-semibold flex items-center">
-                <span className="mr-2">🍽️</span>
-                作った！
-              </h2>
-              <button
-                onClick={handleCloseConsumedDialog}
-                className="text-gray-400 hover:text-gray-600 text-xl"
-              >
-                ×
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-sm text-gray-600 mb-3">
-                「{processingMeal?.memo}」を作りました！<br/>
-                どうしますか？
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <button
-                onClick={handleCompleted}
-                className="w-full px-4 py-3 bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center justify-center"
-              >
-                <span className="mr-2">✅</span>
-                完食しました
-              </button>
-              
-              <button
-                onClick={handleStoreMade}
-                className="w-full px-4 py-3 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center justify-center"
-              >
-                <span className="mr-2">🥡</span>
-                作り置きにします
-              </button>
-              
-              <button
-                onClick={handleCloseConsumedDialog}
-                className="w-full px-4 py-2 border border-gray-300 rounded text-gray-700 hover:bg-gray-50 transition-colors"
-              >
-                キャンセル
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <CookedDialog
+        isOpen={isConsumedDialogOpen}
+        meal={processingMeal}
+        onCompleted={handleCompleted}
+        onStoreMade={handleStoreMade}
+        onClose={handleCloseConsumedDialog}
+      />
 
       {/* 献立生成結果確認ダイアログ */}
       <MealGenerationResultDialog

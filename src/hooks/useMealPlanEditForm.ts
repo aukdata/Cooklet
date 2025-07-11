@@ -3,7 +3,7 @@
  * MealPlanEditDialog.tsxから分離したカスタムフック
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { type MealPlan, type MealType, type MealSourceType, type StockItem } from '../types';
 import type { Ingredient } from '../components/ui/IngredientsEditor';
 import type { Quantity } from '../types';
@@ -55,6 +55,56 @@ interface UseMealPlanEditFormReturn {
   isFormValid: boolean;
 }
 
+// 初期値を計算する関数
+const getInitialFormState = useCallback((initialData?: MealPlan, selectedMealType: MealType = '夜') => {
+  if (initialData) {
+    // 編集モード: 初期データをセット
+    const stockQuantity = initialData.source_type === 'stock' && initialData.ingredients.length > 0
+      ? initialData.ingredients[0].quantity || { amount: '', unit: '' }
+      : { amount: '', unit: '' };
+    
+    const recipeName = initialData.source_type === 'stock' && initialData.ingredients.length > 0
+      ? initialData.ingredients[0].name
+      : '';
+    
+    const ingredientList = (initialData.ingredients || []).map(ing => ({
+      name: ing.name,
+      quantity: ing.quantity || { amount: '', unit: '' }
+    }));
+
+    return {
+      mealType: initialData.meal_type,
+      sourceType: initialData.source_type || 'recipe',
+      selectedRecipe: null,
+      selectedRecipeId: '',
+      selectedStockId: initialData.stock_id || '',
+      stockConsumeQuantity: stockQuantity,
+      searchQuery: '',
+      manualRecipeName: recipeName,
+      manualRecipeUrl: initialData.recipe_url || '',
+      servings: 2,
+      ingredients: ingredientList,
+      memo: initialData.memo || ''
+    };
+  } else {
+    // 新規モード: デフォルト値をセット
+    return {
+      mealType: selectedMealType,
+      sourceType: 'recipe' as MealSourceType,
+      selectedRecipe: null,
+      selectedRecipeId: '',
+      selectedStockId: '',
+      stockConsumeQuantity: { amount: '', unit: '' },
+      searchQuery: '',
+      manualRecipeName: '',
+      manualRecipeUrl: '',
+      servings: 2,
+      ingredients: [] as Ingredient[],
+      memo: ''
+    };
+  }
+}, []);
+
 export const useMealPlanEditForm = ({
   initialData,
   selectedDate,
@@ -62,72 +112,54 @@ export const useMealPlanEditForm = ({
   isOpen
 }: UseMealPlanEditFormProps): UseMealPlanEditFormReturn => {
   
-  // フォーム状態管理
-  const [mealType, setMealType] = useState<MealType>(selectedMealType);
-  const [sourceType, setSourceType] = useState<MealSourceType>('recipe');
-  const [selectedRecipe, setSelectedRecipe] = useState<SavedRecipe | null>(null);
-  const [selectedRecipeId, setSelectedRecipeId] = useState<string>('');
-  const [selectedStockId, setSelectedStockId] = useState<string>('');
-  const [stockConsumeQuantity, setStockConsumeQuantity] = useState<Quantity>({ amount: '', unit: '' });
-  const [searchQuery, setSearchQuery] = useState('');
-  const [manualRecipeName, setManualRecipeName] = useState('');
-  const [manualRecipeUrl, setManualRecipeUrl] = useState('');
-  const [servings, setServings] = useState(2);
-  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
-  const [memo, setMemo] = useState('');
+  // 初期値をメモ化（isOpenとinitialDataが変わった時のみ再計算）
+  const initialFormState = useMemo(() => {
+    if (!isOpen) return null;
+    return getInitialFormState(initialData, selectedMealType);
+  }, [isOpen, initialData, selectedMealType, getInitialFormState]);
+
+  // フォーム状態管理（初期値から設定、isOpenがfalseの場合はデフォルト値）
+  const [mealType, setMealType] = useState<MealType>(initialFormState?.mealType || selectedMealType);
+  const [sourceType, setSourceType] = useState<MealSourceType>(initialFormState?.sourceType || 'recipe');
+  const [selectedRecipe, setSelectedRecipe] = useState<SavedRecipe | null>(initialFormState?.selectedRecipe || null);
+  const [selectedRecipeId, setSelectedRecipeId] = useState<string>(initialFormState?.selectedRecipeId || '');
+  const [selectedStockId, setSelectedStockId] = useState<string>(initialFormState?.selectedStockId || '');
+  const [stockConsumeQuantity, setStockConsumeQuantity] = useState<Quantity>(initialFormState?.stockConsumeQuantity || { amount: '', unit: '' });
+  const [searchQuery, setSearchQuery] = useState(initialFormState?.searchQuery || '');
+  const [manualRecipeName, setManualRecipeName] = useState(initialFormState?.manualRecipeName || '');
+  const [manualRecipeUrl, setManualRecipeUrl] = useState(initialFormState?.manualRecipeUrl || '');
+  const [servings, setServings] = useState(initialFormState?.servings || 2);
+  const [ingredients, setIngredients] = useState<Ingredient[]>(initialFormState?.ingredients || []);
+  const [memo, setMemo] = useState(initialFormState?.memo || '');
   
   // 確認ダイアログ状態
   const [showConfirmDelete, setShowConfirmDelete] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // 初期化処理
-  useEffect(() => {
-    if (isOpen) {
-      if (initialData) {
-        // 編集モード: 初期データをセット
-        setMealType(initialData.meal_type);
-        setSourceType(initialData.source_type || 'recipe');
-        setSelectedStockId(initialData.stock_id || '');
-        
-        // 在庫数量は材料リストから取得
-        if (initialData.source_type === 'stock' && initialData.ingredients.length > 0) {
-          setStockConsumeQuantity(initialData.ingredients[0].quantity || { amount: '', unit: '' });
-        }
-        
-        // 在庫ベースの場合は材料名から、レシピベースの場合は空文字
-        if (initialData.source_type === 'stock' && initialData.ingredients.length > 0) {
-          setManualRecipeName(initialData.ingredients[0].name);
-        } else {
-          setManualRecipeName('');
-        }
-        
-        setManualRecipeUrl(initialData.recipe_url || '');
-        setServings(2); // servingsプロパティは存在しないため固定値
-        setMemo(initialData.memo || '');
-        
-        // 材料データを変換
-        const ingredientList = (initialData.ingredients || []).map(ing => ({
-          name: ing.name,
-          quantity: ing.quantity || ''
-        }));
-        setIngredients(ingredientList);
-      } else {
-        // 新規モード: デフォルト値をセット
-        setMealType(selectedMealType);
-        setSourceType('recipe');
-        setSelectedRecipe(null);
-        setSelectedRecipeId('');
-        setSelectedStockId('');
-        setStockConsumeQuantity({ amount: '', unit: '' });
-        setSearchQuery('');
-        setManualRecipeName('');
-        setManualRecipeUrl('');
-        setServings(2);
-        setIngredients([]);
-        setMemo('');
-      }
+  // フォーム初期化処理（レンダー時計算でstate更新を回避）
+  const resetForm = useCallback(() => {
+    if (initialFormState) {
+      setMealType(initialFormState.mealType);
+      setSourceType(initialFormState.sourceType);
+      setSelectedRecipe(initialFormState.selectedRecipe);
+      setSelectedRecipeId(initialFormState.selectedRecipeId);
+      setSelectedStockId(initialFormState.selectedStockId);
+      setStockConsumeQuantity(initialFormState.stockConsumeQuantity);
+      setSearchQuery(initialFormState.searchQuery);
+      setManualRecipeName(initialFormState.manualRecipeName);
+      setManualRecipeUrl(initialFormState.manualRecipeUrl);
+      setServings(initialFormState.servings);
+      setIngredients(initialFormState.ingredients);
+      setMemo(initialFormState.memo);
     }
-  }, [isOpen, initialData, selectedMealType]);
+  }, [initialFormState]);
+
+  // ダイアログが開かれた時に初期化実行（イベントハンドラーパターン）
+  const [lastInitialData, setLastInitialData] = useState<MealPlan | undefined>(undefined);
+  if (isOpen && initialData !== lastInitialData) {
+    setLastInitialData(initialData);
+    resetForm();
+  }
 
   // レシピ選択処理
   const handleRecipeSelect = (recipe: SavedRecipe | null) => {

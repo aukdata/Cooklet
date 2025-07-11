@@ -1,6 +1,6 @@
 // 材料編集ダイアログコンポーネント - 材料マスタの追加・編集・削除機能を提供
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { BaseDialog } from '../ui/BaseDialog';
 import { ConfirmDialog } from './ConfirmDialog';
 import { type Ingredient } from '../../types';
@@ -31,6 +31,33 @@ interface IngredientDialogProps {
  * - 一般的価格の設定（任意）
  * - 在庫消費なし設定（infinityフラグ）
  */
+// 初期値を計算する関数
+const getInitialFormValues = (ingredient?: Ingredient) => {
+  if (ingredient) {
+    return {
+      originalName: ingredient.original_name || '',
+      name: ingredient.name || '',
+      category: ingredient.category,
+      defaultUnit: ingredient.default_unit || '',
+      typicalPrice: ingredient.typical_price ? ingredient.typical_price.toString() : '',
+      conversionQuantity: ingredient.conversion_quantity || '',
+      conversionUnit: ingredient.conversion_unit || '',
+      infinity: ingredient.infinity || false
+    };
+  } else {
+    return {
+      originalName: '',
+      name: '',
+      category: 'vegetables' as const,
+      defaultUnit: '',
+      typicalPrice: '',
+      conversionQuantity: '',
+      conversionUnit: '',
+      infinity: false
+    };
+  }
+};
+
 export const IngredientDialog = ({
   isOpen,
   onClose,
@@ -42,43 +69,22 @@ export const IngredientDialog = ({
   const { showError } = useToast();
   const { showConfirm, isOpen: confirmIsOpen, handleConfirm, closeConfirm, config } = useConfirmDialog();
 
-  // フォーム状態管理
-  const [originalName, setOriginalName] = useState<string>('');
-  const [name, setName] = useState<string>('');
-  const [category, setCategory] = useState<'vegetables' | 'meat' | 'seasoning' | 'others'>('vegetables');
-  const [defaultUnit, setDefaultUnit] = useState<string>('');
-  const [typicalPrice, setTypicalPrice] = useState<string>('');
-  const [conversionQuantity, setConversionQuantity] = useState<string>('');
-  const [conversionUnit, setConversionUnit] = useState<string>('');
-  const [infinity, setInfinity] = useState<boolean>(false);
+  // 初期値を計算（keyによる再マウント時に再計算される）
+  const initialValues = getInitialFormValues(ingredient);
+
+  // フォーム状態管理（propsから直接初期化）
+  const [originalName, setOriginalName] = useState<string>(initialValues.originalName);
+  const [name, setName] = useState<string>(initialValues.name);
+  const [category, setCategory] = useState<'vegetables' | 'meat' | 'seasoning' | 'others'>(initialValues.category);
+  const [defaultUnit, setDefaultUnit] = useState<string>(initialValues.defaultUnit);
+  const [typicalPrice, setTypicalPrice] = useState<string>(initialValues.typicalPrice);
+  const [conversionQuantity, setConversionQuantity] = useState<string>(initialValues.conversionQuantity);
+  const [conversionUnit, setConversionUnit] = useState<string>(initialValues.conversionUnit);
+  const [infinity, setInfinity] = useState<boolean>(initialValues.infinity);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // 編集モードかどうかの判定
   const isEditing = !!ingredient;
-
-  // 材料データをフォームに反映
-  useEffect(() => {
-    if (ingredient) {
-      setOriginalName(ingredient.original_name || '');
-      setName(ingredient.name || '');
-      setCategory(ingredient.category);
-      setDefaultUnit(ingredient.default_unit || '');
-      setTypicalPrice(ingredient.typical_price ? ingredient.typical_price.toString() : '');
-      setConversionQuantity(ingredient.conversion_quantity || '');
-      setConversionUnit(ingredient.conversion_unit || '');
-      setInfinity(ingredient.infinity || false);
-    } else {
-      // 新規作成時は初期化
-      setOriginalName('');
-      setName('');
-      setCategory('vegetables');
-      setDefaultUnit('');
-      setTypicalPrice('');
-      setConversionQuantity('');
-      setConversionUnit('');
-      setInfinity(false);
-    }
-  }, [ingredient]);
 
   // ダイアログが閉じられた時のクリーンアップ
   const handleClose = () => {

@@ -268,6 +268,7 @@ export const IngredientManagement: React.FC = () => {
 
       {/* 材料編集ダイアログ */}
       <IngredientDialog
+        key={editingIngredient?.id || 'new'}
         isOpen={isIngredientDialogOpen}
         onClose={() => setIsIngredientDialogOpen(false)}
         ingredient={editingIngredient}

@@ -25,6 +25,9 @@ export { ConfirmDialog } from './ConfirmDialog';
 // 献立生成結果確認ダイアログ（issue #64対応）
 export { MealGenerationResultDialog } from './MealGenerationResultDialog';
 
+// 完食・作り置き選択ダイアログ（リファクタリング抽出コンポーネント）
+export { CookedDialog } from './CookedDialog';
+
 // 各ダイアログの型定義は個別ファイルで定義されています
 // 使用時は個別にインポートしてください
 // 例: import type { MealPlanDialogProps } from './MealPlanDialog';

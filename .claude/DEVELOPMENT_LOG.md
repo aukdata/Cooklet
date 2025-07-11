@@ -1,8 +1,206 @@
 # Cooklet 開発ログ
 
+## Martin Fowlerリファクタリング手法の導入
+
+### リファクタリングガイドライン
+
+#### 基本方針
+Cookletプロジェクトでは、Martin Fowlerの体系的リファクタリング手法を全面採用し、継続的なコード品質向上を図ります。
+
+#### リファクタリング実行チェックリスト
+
+**事前準備**
+- [ ] 対象コードの現在の動作を理解・文書化
+- [ ] 既存テストの実行（lint & build含む）
+- [ ] バックアップ作成（git commit推奨）
+
+**リファクタリング実行**
+- [ ] コードの匂いを特定・分類
+- [ ] 適用すべき技法を選択
+- [ ] 小さなステップで段階的実行
+- [ ] 各ステップで動作確認
+- [ ] lint & buildの成功確認
+
+**事後処理**
+- [ ] CLAUDE.mdの仕様書更新
+- [ ] 開発ログへの記録
+- [ ] チームメンバーへの共有
+
+#### 実装済みリファクタリング事例
+
+**Extract Component パターン（Shopping.tsx → 4コンポーネント分離）**
+- **適用理由**: Long Component（473行）
+- **技法**: Extract Component + Extract Service
+- **効果**: コード削減55%、保守性向上
+
+**Replace useEffect with Event Handler パターン（useEffect最適化）**
+- **適用理由**: Complex useEffect依存関係
+- **技法**: レンダー時計算 + keyによる再マウント
+- **効果**: パフォーマンス向上、コード簡潔化
+
+**Extract Function パターン（quantityUtils.ts重複削除）**
+- **適用理由**: Duplicate Code（87-98%類似度）
+- **技法**: 共通関数抽出 + 型安全性維持
+- **効果**: コード重複排除、一元管理
+
+#### リファクタリング優先度
+
+**高優先度（即座に対応）**
+- Any Type Usage: any型の使用箇所
+- Long Component: 200行を超えるコンポーネント
+- Complex useEffect: 複雑な依存関係
+
+**中優先度（計画的に対応）**
+- Duplicate Code: 類似度70%以上の重複
+- Magic Numbers: ハードコードされた数値
+- Prop Drilling: 3階層以上のprops渡し
+
+**低優先度（必要に応じて対応）**
+- Dead Code: 未使用コード
+- Speculative Generality: 過度な汎用化
+- Comments: 不適切なコメント
+
+#### Martin Fowler技法適用マップ
+
+**React/TypeScript専用拡張**
+- **Extract Custom Hook**: ビジネスロジック分離
+- **Split Phase**: コンポーネント段階分割
+- **Replace Primitive with Object**: Quantity型導入
+- **Encapsulate Record**: interface定義の活用
+
+## 2025-07-11
+
+### 【最新】Martin Fowlerリファクタリング手法による包括的コードベース改善完了
+
+#### 実装内容
+包括的なリファクタリングプロセスを通じて、コードベース全体の品質向上と保守性改善を実現しました。
+
+**Phase 1: 複雑な構造の特定と改善**
+1. **MealPlans.tsx のコンポーネント抽出**（Extract Component）
+   - **対象**: インライン完食・作り置きダイアログ（50行）
+   - **成果**: CookedDialogコンポーネントとして分離
+   - **効果**: 469行 → 419行（11%削減）、再利用性向上
+
+2. **Recipes.tsx の状態管理統合**（Extract Custom Hook）
+   - **対象**: 5つのダイアログ状態（詳細・編集・削除・献立追加・置き換え確認）
+   - **成果**: useRecipeDialogsフックとして統合
+   - **効果**: 複雑な状態管理の一元化、ダイアログ重複防止
+
+3. **quantityUtils.ts の重複コード統一**（Extract Function）
+   - **対象**: 89-97%類似の数量演算関数（addQuantities、subtractQuantities、areQuantitiesEqual）
+   - **成果**: executeQuantityOperation共通ヘルパー関数の導入
+   - **効果**: 重複削除、型安全性向上、保守性改善
+
+#### Martin Fowlerリファクタリング技法の適用
+
+**Extract Component**
+- **適用箇所**: MealPlans.tsx完食ダイアログ
+- **効果**: 単一責任原則、再利用可能コンポーネント
+
+**Extract Custom Hook**  
+- **適用箇所**: Recipes.tsxダイアログ状態管理
+- **効果**: 複雑な状態ロジックの分離、テスタビリティ向上
+
+**Extract Function**
+- **適用箇所**: quantityUtils.ts数量演算
+- **効果**: DRY原則、共通ロジックの一元管理
+
+#### コードの匂い特定・修正成果
+
+**解決したコードの匂い**
+1. **Long Component**: MealPlans.tsx（469行）→ 適切な分離
+2. **Complex State Management**: Recipes.tsx複数ダイアログ状態 → フック統合
+3. **Duplicate Code**: quantityUtils.ts重複関数（89-97%類似）→ 共通化
+
+**品質向上指標**
+- **lint**: エラー・警告0件
+- **build**: 正常完了（778.15KB）
+- **型安全性**: 厳密なTypeScript型定義
+- **保守性**: 単一責任原則による構造改善
+
+#### 新規作成ファイル
+
+**コンポーネント**
+- `src/components/dialogs/CookedDialog.tsx`: 完食・作り置き選択ダイアログ
+
+**カスタムフック**
+- `src/hooks/useRecipeDialogs.ts`: レシピダイアログ状態管理フック
+
+**エクスポート更新**
+- `src/components/dialogs/index.ts`: CookedDialogエクスポート追加
+- `src/hooks/index.ts`: useRecipeDialogsエクスポート追加
+
+#### リファクタリング手法の成果
+
+**可読性向上**
+- インライン実装の分離による理解しやすさ
+- 責任分離による明確な構造
+- 統一された設計パターン
+
+**保守性向上**
+- 単一責任原則による変更影響の局所化
+- 再利用可能なコンポーネント設計
+- 共通ロジックの一元管理
+
+**テスタビリティ向上**
+- 独立したコンポーネント・フックのテスト容易性
+- ビジネスロジックとUIの分離
+- モック・スタブ作成の簡素化
+
+**再利用性向上**
+- CookedDialogの他画面での活用可能
+- useRecipeDialogsパターンの他機能への適用可能
+- 共通演算関数の利用拡大
+
+#### 技術的改善点
+
+**型安全性**
+- ジェネリック型を活用したexecuteQuantityOperation
+- 厳密なPropsインターフェース定義
+- 完全なTypeScriptコンパイル成功
+
+**設計パターン**
+- Reactフック設計ベストプラクティス適用
+- ダイアログ重複防止パターン確立
+- 共通演算ロジックの抽象化
+
+**エラーハンドリング**
+- 一貫したダイアログ状態管理
+- 型安全な演算処理
+- 適切なnull handling
+
+#### 引き継ぎ事項
+
+**新規コンポーネント活用**
+1. **CookedDialog**: 他の画面での完食・作り置き機能に再利用
+2. **useRecipeDialogs**: 複雑なダイアログ状態管理のベストプラクティス
+3. **executeQuantityOperation**: 数量演算の標準パターン
+
+**リファクタリングパターン適用**
+1. **大きなファイルの分離**: Extract Componentパターンの継続適用
+2. **複雑な状態管理**: Extract Custom Hookパターンの活用
+3. **重複コード**: Extract Functionパターンによる統一
+
+**品質維持**
+- Martin Fowlerリファクタリング手法の継続適用
+- 段階的改善による安全なコード変更
+- lint・build・型チェックの確実な実行
+
+#### 次回のリファクタリング候補
+
+**中優先度タスク**
+1. **Cost.tsx**: 計算ロジックの分離（416行）
+2. **ReceiptReader.tsx**: OCR処理・編集・保存ロジックの分離（403行）
+3. **RecipeDialog.tsx**: フォーム状態管理の最適化（401行）
+
+**継続的改善**
+- 200行を超えるコンポーネントの監視
+- 類似度70%以上の重複コード検出
+- 複雑なuseEffect依存関係の最適化
+
 ## 2025-07-01
 
-### 【最新】包括的コードベースリファクタリング完了
+### 【前回】包括的コードベースリファクタリング完了
 
 #### 実装内容
 1. **Shopping.tsx の大幅リファクタリング**
