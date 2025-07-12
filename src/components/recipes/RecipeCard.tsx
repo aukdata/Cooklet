@@ -97,7 +97,7 @@ export const RecipeCard: React.FC<RecipeCardProps> = ({
                   <span
                     key={index}
                     className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded whitespace-nowrap flex-shrink-0"
-                  > 
+                  >
                     {tag}
                   </span>
                 ))}
