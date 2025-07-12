@@ -4,11 +4,51 @@
 
 ## ファイル構成
 
+### autoShoppingList.ts
+**用途**: 献立から買い物リストの自動生成（parseQuantity統合版）
+
 ### notificationService.ts
 **用途**: 通知機能の管理とスケジューリング
 
 ### shoppingListGeneration.ts
 **用途**: 献立から買い物リストの自動生成
+
+## autoShoppingList.ts
+
+### parseIngredientNameWithQuantity(ingredientText: string)
+**用途**: 食材名と数量を分離して抽出（parseQuantity統合版）
+
+**引数**:
+- `ingredientText: string` - 解析対象の食材テキスト（例：「トマト 2個」）
+
+**戻り値**:
+- `{ name: string; quantity: string }` - 分離された食材名と数量
+
+**処理ロジック**:
+1. constants/units.ts の parseQuantity を使用した堅牢な実装
+2. 23の食材単位サポート（重量・容量・個数・料理系・その他）
+3. 分数・特殊表記（適量・お好み・少々）対応
+4. 数量が見つからない場合は全体を食材名として扱い、適量を設定
+
+**リファクタリング履歴**:
+- 2025-07-12: extractQuantity から Martin Fowler Replace Function パターンで統合
+- parseQuantity ベースの実装により機能拡張（10単位→23単位）
+- より説明的な関数名に変更
+
+### checkIngredientStock(ingredientName, requiredQuantity, stockItems)
+**用途**: 在庫と必要量を比較して不足をチェック
+
+### extractIngredientsFromMealPlans(mealPlans, startDate, endDate)
+**用途**: 指定期間の献立から必要な食材を抽出
+
+### findMissingIngredients(requiredIngredients, stockItems)
+**用途**: 不足している食材を特定
+
+### generateShoppingListItems(missingIngredients, existingShoppingList)
+**用途**: 買い物リストアイテムを生成
+
+### generateShoppingListFromMealPlans(mealPlans, stockItems, existingShoppingList, daysAhead)
+**用途**: メイン関数：献立から買い物リストを自動生成
 
 ## notificationService.ts
 

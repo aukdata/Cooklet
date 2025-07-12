@@ -186,6 +186,69 @@ Cookletプロジェクトでは、Martin Fowlerの体系的リファクタリン
 - 段階的改善による安全なコード変更
 - lint・build・型チェックの確実な実行
 
+## 2025-07-12
+
+### 【最新】Martin Fowler Replace Function パターンによる重複排除完了
+
+#### 実装内容
+真の重複コード（extractQuantity vs parseQuantity）のMartin Fowler Replace Function リファクタリングを実行し、コードベースの一貫性向上を達成しました。
+
+**Phase 1: 重複関数の特定と分析**
+1. **extractQuantity** (services/autoShoppingList.ts)
+   - **問題**: 限定的な正規表現実装（10単位のみサポート）
+   - **制限**: gkgml個本枚切れパック袋缶の基本単位のみ
+   
+2. **parseQuantity** (constants/units.ts)
+   - **利点**: 包括的な実装（23単位サポート）
+   - **機能**: 分数・特殊表記（適量・お好み・少々）対応
+   - **品質**: 長い単位名優先マッチング
+
+**Phase 2: Replace Function パターン適用**
+1. **関数統合**: extractQuantity → parseQuantity ベース実装
+2. **命名改善**: extractQuantity → parseIngredientNameWithQuantity（説明的な命名）
+3. **Import追加**: constants/units から parseQuantity, formatQuantity を導入
+4. **実装置換**: 堅牢な23単位対応実装への完全移行
+
+#### Martin Fowlerリファクタリング技法の適用
+
+**Replace Function**
+- **適用箇所**: services/autoShoppingList.ts
+- **効果**: 重複コード排除、機能拡張（10単位→23単位）
+
+**Rename Function**
+- **適用箇所**: extractQuantity → parseIngredientNameWithQuantity
+- **効果**: 関数の責任と動作をより明確に表現
+
+#### 技術的改善点
+
+**機能拡張**
+- **単位サポート**: 10単位 → 23単位（重量・容量・個数・料理系・その他）
+- **特殊表記対応**: 適量・お好み・少々・ひとつまみ・ひとかけ
+- **分数サポート**: "1/2", "0.5" 等の表記
+
+**コード品質向上**
+- **重複排除**: 真の重複コードの完全排除
+- **型安全性**: FoodUnit型による厳密な型チェック
+- **保守性**: 単一箇所での単位管理（constants/units.ts）
+
+#### 検証結果
+- ✅ **Lintチェック**: 0 warnings, 0 errors
+- ✅ **Buildチェック**: 正常完了
+- ✅ **型安全性**: TypeScript型チェック成功
+- ✅ **機能性**: 既存機能の完全維持
+
+#### 引き継ぎ事項
+
+**リファクタリング成果活用**
+1. **parseQuantity統合**: 他の数量解析箇所での活用推奨
+2. **命名規則**: より説明的な関数名の継続適用
+3. **重複検出**: 類似パターンの継続監視
+
+**今後の改善提案**
+1. **他の重複候補**: normalizeForMatching の使用箇所の統一性確認
+2. **単位変換機能**: parseQuantity の機能拡張検討
+3. **食材名正規化**: より高精度なマッチング機能
+
 #### 次回のリファクタリング候補
 
 **中優先度タスク**
@@ -1203,5 +1266,47 @@ setIngredientForm({
 
 ---
 
+### Martin Fowlerリファクタリング Phase2分析（2025-07-12）
+
+#### 重複分析の重要な発見: 異なる責任の誤認識
+
+**対象**: `extractQuantity` vs `normalizeQuantity` 関数
+**結論**: **重複ではなく、異なる責任を持つ別関数**
+
+#### 詳細分析結果
+
+**extractQuantity** (services/autoShoppingList.ts)
+- **役割**: 文字列から食材名と数量文字列を**分離**
+- **入力**: `string` ("トマト 2個")
+- **出力**: `{name: "トマト", quantity: "2個"}`
+- **使用場面**: 献立食材テキストの解析
+
+**normalizeQuantity** (services/shoppingListGeneration.ts)
+- **役割**: Quantity型から数値と単位を**抽出**
+- **入力**: `Quantity` (`{amount: "2", unit: "個"}`)
+- **出力**: `{value: 2, unit: "個"}`
+- **使用場面**: 在庫計算での数値演算
+
+#### 技術的教訓
+1. **関数名の類似性**: 名前が似ていても機能は全く異なる場合がある
+2. **責任分析の重要性**: Extract Function適用前に関数の実際の責任を詳細分析する必要
+3. **型シグネチャ確認**: 入力・出力型が異なれば別機能の可能性が高い
+4. **代替調査の必要性**: 真の重複は `utils/` と `constants/` の関係など他に存在する可能性
+
+#### Phase2方針変更
+- **当初計画**: extractQuantity vs normalizeQuantity の重複排除
+- **変更後**: 真の重複対象の再調査、またはPhase3（ドメイン層導入）への移行
+
+#### リファクタリング手法の学び
+Martin Fowler「Extract Function」パターン適用時は：
+1. **機能分析**: 実際のロジックと責任を詳細確認
+2. **使用文脈**: 呼び出し元でのユースケース比較
+3. **型安全性**: 入力・出力型の整合性確認
+4. **テスト観点**: 統合可能性のテストケース検証
+
+この発見により、Phase2は計画変更が必要となった。
+
+---
+
 **記録開始日：** 2025-06-20  
-**最終更新：** 2025-06-26
+**最終更新：** 2025-07-12

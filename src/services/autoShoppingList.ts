@@ -3,21 +3,26 @@
 import { type MealPlan, type StockItem, type IngredientItem, type Quantity } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 import { normalizeForMatching } from '../utils/ingredientNormalizer';
+import { parseQuantity, formatQuantity } from '../constants/units';
 
 // 食材名の正規化処理は ingredientNormalizer.ts の統一実装を使用
 
-// 食材の数量を抽出
-export const extractQuantity = (ingredientText: string): { name: string; quantity: string } => {
-  // 数量パターンのマッチング
-  const quantityPattern = /(\d+(?:\.\d+)?)\s*([gkgml個本枚切れパック袋缶])/i;
-  const match = ingredientText.match(quantityPattern);
+// 食材名と数量を分離して抽出（parseQuantity統合版）
+export const parseIngredientNameWithQuantity = (ingredientText: string): { name: string; quantity: string } => {
+  // constants/units.ts の parseQuantity を使用した堅牢な実装
+  const parsed = parseQuantity(ingredientText);
   
-  if (match) {
-    const quantity = `${match[1]}${match[2]}`;
-    const name = ingredientText.replace(quantityPattern, '').trim();
-    return { name: name || ingredientText, quantity };
+  // 数量が見つかった場合、元のテキストから数量部分を除去して食材名を抽出
+  if (parsed.amount && parsed.unit !== '-') {
+    const quantityStr = formatQuantity(parsed.amount, parsed.unit);
+    const name = ingredientText.replace(quantityStr, '').trim();
+    return { 
+      name: name || ingredientText, 
+      quantity: quantityStr 
+    };
   }
   
+  // 数量が見つからない場合は全体を食材名として扱う
   return { name: ingredientText, quantity: '適量' };
 };
 
@@ -64,7 +69,7 @@ export const extractIngredientsFromMealPlans = (
   // 各献立から食材を抽出
   relevantMealPlans.forEach(plan => {
     plan.ingredients.forEach((ingredient: IngredientItem) => {
-      const { name, quantity } = extractQuantity(ingredient.name);
+      const { name, quantity } = parseIngredientNameWithQuantity(ingredient.name);
       const normalizedName = normalizeForMatching(name);
       const source = `${plan.date}${plan.meal_type}`;
       

@@ -30,7 +30,7 @@
 変更を保存するため、キリがよく、かつ動作が確認できたタイミングで`git add . && git commit -m "wip" && git push`を実行してください。
 **重要** キリのいいタイミングで、CLAUDE.mdの内容がコードベースと一致しているか確認し、不一致があれば修正してください。
 **重要** 画面をまたいでUIの一貫性を維持してください。
-**遵守** データベースの変更が必要な場合は、その旨をIssueのコメントやユーザへの返答で知らせ、database/patch-***.sqlのような形式でパッチを出力してください。
+**遵守** データベースの変更が必要な場合は、その旨をIssueのコメントやユーザへの返答で知らせてください。
 **遵守** このプロジェクトのUIは、.claude/UI.mdの内容に従ってください。必要があれば追記してください。
 **遵守** ほかのセッションでの意図しないrevertを防ぐため、機能変更の経緯と、バグ修正、引き継ぐべき事項を、.claude/DEVELOPMENT_LOG.mdに出力してください。変更を計画する前に必ず参照してください。
 **遵守** 要素を追加するときは.claude/ELEMENTS.mdにある、既存の型、コンポーネント、関数を使用して作成してください。それで不可能な場合に、新しい要素を作成し、必ず.claude/ELEMENTS.mdに追加してください。
@@ -104,15 +104,3 @@
 ### ドキュメント構成管理
 - **ドキュメントテンプレート**: `.claude/DOC_TEMPLATES.md` - 標準的な文書作成テンプレート・Martin Fowlerリファクタリング記録テンプレート
 - **コマンド統合**: 古いコマンドファイル（doc.md、lint.md、refactor.md）を削除、doc-update.mdに統合（2025-07-01）
-
-### 最新の型安全性改善（2025-06-29）
-- **Quantity型の導入**: `{amount: string, unit: string}`形式の新しい数量管理型
-- **QuantityInputコンポーネント**: Quantity型を使用するように変更完了
-- **完全型統合**: 全ての数量関連型をQuantity型に完全移行完了
-  - StockItem.quantity: Quantity
-  - ShoppingListItem.quantity?: Quantity
-  - MealPlan.ingredients: IngredientItem[]
-  - SavedRecipe.ingredients: IngredientItem[]
-  - RecipeFormData.ingredients: IngredientItem[]
-  - IngredientsEditor: Quantity型対応完了
-- **型安全性**: 文字列ベースの数量管理を完全廃止し、型安全な数量管理を実現
