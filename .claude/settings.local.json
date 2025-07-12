@@ -27,7 +27,11 @@
       "Bash(mv:*)",
       "Bash(npx similarity-ts:*)",
       "Bash(npx tsc:*)",
-      "Bash(pnpm test:*)"
+      "Bash(pnpm test:*)",
+      "mcp__supabase__list_projects",
+      "mcp__supabase__list_tables",
+      "Bash(gemini:*)",
+      "Bash(pnpm vitest run:*)"
     ],
     "deny": [
       "Bash(rm:*)"

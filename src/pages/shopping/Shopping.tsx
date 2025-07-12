@@ -10,7 +10,7 @@ import { ShoppingAutoGeneration } from '../../components/shopping/ShoppingAutoGe
 import { ShoppingManualAdd } from '../../components/shopping/ShoppingManualAdd';
 import { ShoppingItemsList } from '../../components/shopping/ShoppingItemsList';
 import { useToast } from '../../hooks/useToast.tsx';
-import { ShoppingStockMergeService } from '../../utils/shoppingStockMerge';
+import { ShoppingStockMergeService } from '../../services/shoppingStockMerge';
 
 // 買い物リスト画面コンポーネント - CLAUDE.md仕様書5.3に準拠
 export const Shopping: React.FC = () => {

@@ -2,10 +2,10 @@ import React, { useState, useRef } from 'react';
 import { NameQuantityUnitInput } from '../common/NameQuantityUnitInput';
 import { useToast } from '../../hooks/useToast.tsx';
 import { useAuth } from '../../contexts/AuthContext';
-import { readReceiptFromImage, validateImageFile, type ReceiptItem, type ReceiptResult } from '../../utils/receiptReader';
+import { readReceiptFromImage, validateImageFile, type ReceiptItem, type ReceiptResult } from '../../services/receiptReader';
 import { type FoodUnit, parseQuantity } from '../../constants/units';
 import { type Ingredient, type StockItem } from '../../types';
-import { mergeStockWithPurchases, convertReceiptItemsToPurchaseItems, createMergeReport } from '../../utils/stockMergeUtils';
+import { mergeStockWithPurchases, convertReceiptItemsToPurchaseItems, createMergeReport } from '../../services/stockMergeUtils';
 
 interface EditableReceiptItem {
   originalName?: string;

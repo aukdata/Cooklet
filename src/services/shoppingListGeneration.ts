@@ -4,6 +4,7 @@
 import { type MealPlan, type StockItem, type Ingredient, type Quantity, type IngredientItem } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 import { quantityToDisplay } from '../utils/quantityDisplay';
+import { normalizeForMatching } from '../utils/ingredientNormalizer';
 
 export interface ShoppingListGenerationResult {
   success: boolean;
@@ -35,21 +36,14 @@ const normalizeQuantity = (quantity: Quantity): { value: number; unit: string } 
   };
 };
 
-// 食材名の正規化（類似食材のマッチング用）
-const normalizeIngredientName = (name: string): string => {
-  return name
-    .toLowerCase()
-    .replace(/\s+/g, '')
-    .replace(/[（）()]/g, '')
-    .trim();
-};
+// 食材名の正規化処理は ingredientNormalizer.ts の統一実装を使用
 
 // 在庫の食材と献立の食材をマッチングする関数
 const findMatchingStock = (ingredientName: string, stockItems: StockItem[]): StockItem | null => {
-  const normalizedName = normalizeIngredientName(ingredientName);
+  const normalizedName = normalizeForMatching(ingredientName);
   
   return stockItems.find(stock => {
-    const normalizedStockName = normalizeIngredientName(stock.name);
+    const normalizedStockName = normalizeForMatching(stock.name);
     return normalizedStockName === normalizedName || 
            normalizedStockName.includes(normalizedName) ||
            normalizedName.includes(normalizedStockName);
@@ -58,10 +52,10 @@ const findMatchingStock = (ingredientName: string, stockItems: StockItem[]): Sto
 
 // 食材が無限食材（在庫消費なし）かどうかをチェックする関数
 const isInfinityIngredient = (ingredientName: string, ingredients: Ingredient[]): boolean => {
-  const normalizedName = normalizeIngredientName(ingredientName);
+  const normalizedName = normalizeForMatching(ingredientName);
   
   return ingredients.some(ingredient => {
-    const normalizedIngredientName = normalizeIngredientName(ingredient.name);
+    const normalizedIngredientName = normalizeForMatching(ingredient.name);
     return ingredient.infinity && (
       normalizedIngredientName === normalizedName ||
       normalizedIngredientName.includes(normalizedName) ||
@@ -139,7 +133,7 @@ const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, Q
 
       const typedIngredient = ingredient as IngredientItem;
       
-      const normalizedName = normalizeIngredientName(typedIngredient.name);
+      const normalizedName = normalizeForMatching(typedIngredient.name);
       console.log(`🔍 [Debug] 正規化された食材名: "${typedIngredient.name}" → "${normalizedName}"`);
       
       if (aggregatedIngredients.has(normalizedName)) {
@@ -198,7 +192,7 @@ export const generateShoppingListFromMealPlans = async (
     // 既存の買い物リストアイテムを正規化してマップ化
     const existingItemsMap = new Map<string, ShoppingListItem>();
     existingShoppingItems.forEach(item => {
-      const normalizedName = normalizeIngredientName(item.name);
+      const normalizedName = normalizeForMatching(item.name);
       existingItemsMap.set(normalizedName, item);
     });
     
@@ -233,7 +227,7 @@ export const generateShoppingListFromMealPlans = async (
         const found = ingredients.find((ing: unknown) => {
           if (!ing || typeof ing !== 'object' || !('name' in ing)) return false;
           const typedIng = ing as { name: string };
-          return normalizeIngredientName(typedIng.name) === normalizedName;
+          return normalizeForMatching(typedIng.name) === normalizedName;
         });
         if (found && typeof found === 'object' && 'name' in found) {
           const typedFound = found as { name: string };

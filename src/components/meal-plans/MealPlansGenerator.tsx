@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 // import { useRecipes } from '../../hooks/useRecipes';
 // import { useIngredients } from '../../hooks/useIngredients';
 import { useToast } from '../../hooks/useToast.tsx';
-import { generateMealPlan, type MealGenerationResult } from '../../utils/mealPlanGeneration';
+import { generateMealPlan, type MealGenerationResult } from '../../services/mealPlanGeneration';
 import { type MealPlan, type StockItem, type Ingredient } from '../../types';
 import { type SavedRecipe } from '../../types/recipe';
 

@@ -4,7 +4,7 @@ import type { OCRResult } from '../lib/vision/vision-client';
 import { AIProviderFactory } from '../lib/ai/provider-factory';
 import type { ReceiptItem, ReceiptResult } from '../lib/ai/types';
 import { ReceiptExtractionError } from '../lib/ai/types';
-import { normalizeReceiptItems } from './nameNormalizer';
+import { normalizeReceiptItems } from '../utils/nameNormalizer';
 import type { Ingredient } from '../types';
 
 // 型のre-export（Shopping.tsxから利用するため）

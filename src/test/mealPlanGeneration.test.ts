@@ -10,7 +10,7 @@ import {
   type InventoryItem,
   type RecipeData,
   type PurchaseUnit
-} from '../utils/mealPlanGeneration';
+} from '../services/mealPlanGeneration';
 
 /**
  * 献立自動生成機能のユニットテスト

@@ -18,14 +18,16 @@ create table users (
 -- 2. ingredients テーブル (食材マスタ) - ユーザー認証対応
 CREATE TABLE IF NOT EXISTS ingredients (
   id SERIAL PRIMARY KEY,
-  user_id UUID REFERENCES users(id) ON DELETE CASCADE NOT NULL,
-  name TEXT NOT NULL,
+  user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+  name TEXT UNIQUE NOT NULL,
   category TEXT NOT NULL CHECK (category IN ('vegetables', 'meat', 'seasoning', 'others')),
   default_unit TEXT NOT NULL,
   typical_price DECIMAL(10,2),
   infinity BOOLEAN DEFAULT FALSE, -- 1回の使用量が少ない食材（調味料など）で在庫から消費されないもの
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  UNIQUE(user_id, name) -- ユーザーごとに食材名がユニーク
+  original_name TEXT, -- 商品名を一般名に変換するときに使用する元の商品名
+  conversion_quantity TEXT, -- 1個当たりの数量
+  conversion_unit TEXT, -- 1個当たりの単位
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
 -- 3. stock_items テーブル (食材在庫) - CLAUDE.md仕様書に準拠
@@ -51,6 +53,8 @@ CREATE TABLE IF NOT EXISTS meal_plans (
   ingredients JSONB,
   memo TEXT,
   consumed_status TEXT DEFAULT 'pending' CHECK (consumed_status IN ('pending', 'completed', 'stored')),
+  source_type TEXT DEFAULT 'recipe' CHECK (source_type IN ('recipe', 'stock')), -- 献立のソースタイプ（recipe: レシピ、stock: 在庫）
+  stock_id UUID REFERENCES stock_items(id) ON DELETE SET NULL, -- 在庫項目のID（source_typeがstockの場合のみ使用）
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -85,6 +89,7 @@ CREATE TABLE IF NOT EXISTS saved_recipes (
   url TEXT NOT NULL,
   servings INTEGER DEFAULT 1,
   tags TEXT[],
+  ingredients JSONB, -- レシピの材料情報をJSONB形式で保存。[{name: string, quantity: string}]
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 

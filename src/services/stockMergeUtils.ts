@@ -3,11 +3,11 @@
  * 購入品を既存在庫とマージする機能を提供
  */
 
-import { addQuantities, isValidQuantity } from './quantityUtils';
-import { normalizeProductName } from './nameNormalizer';
+import { addQuantities, isValidQuantity } from '../utils/quantityUtils';
+import { normalizeProductName } from '../utils/nameNormalizer';
 import type { StockItem } from '../types';
 import type { Ingredient } from '../types';
-import type { Quantity } from './quantityUtils';
+import type { Quantity } from '../utils/quantityUtils';
 import type { ReceiptItem } from '../lib/ai/types';
 import type { FoodUnit } from '../constants/units';
 

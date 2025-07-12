@@ -3,7 +3,7 @@ import { MealPlanEditDialog } from '../dialogs/MealPlanEditDialog';
 import { MealGenerationResultDialog } from '../dialogs/MealGenerationResultDialog';
 import { CookedDialog } from './CookedDialog';
 import { type MealPlan, type MealType } from '../../types';
-import { type MealGenerationResult } from '../../utils/mealPlanGeneration';
+import { type MealGenerationResult } from '../../services/mealPlanGeneration';
 
 // ダイアログ管理の状態型定義
 interface DialogStates {

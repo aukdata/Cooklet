@@ -159,24 +159,37 @@ async function callReceiptOCRFunction(file: File): Promise<OCRResult> {
 
 ### 2.1 基本データ型
 ```typescript
+// 数量型の統一定義
+interface Quantity {
+  amount: string;
+  unit: string;
+}
+
 interface MealPlan {
   id: string;
   user_id: string;
   date: string;
-  meal_type: MealType;
+  meal_type: '朝' | '昼' | '夜' | '間食';
   recipe_url?: string;
-  ingredients: { name: string; quantity: string }[];
+  ingredients: IngredientItem[];
   memo?: string;
   consumed_status?: 'pending' | 'completed' | 'stored';
+  source_type?: 'recipe' | 'stock';
+  stock_id?: string;
   created_at: string;
   updated_at: string;
+}
+
+interface IngredientItem {
+  name: string;
+  quantity: Quantity;
 }
 
 interface StockItem {
   id: string;
   user_id: string;
   name: string;
-  quantity: string;
+  quantity: string;  // DBでは文字列として保存、アプリ内でQuantity型に変換
   best_before?: string;
   storage_location?: string;
   is_homemade: boolean;
@@ -188,7 +201,7 @@ interface ShoppingListItem {
   id: string;
   user_id: string;
   name: string;
-  quantity?: string;
+  quantity?: string;  // DBでは文字列として保存、アプリ内でQuantity型に変換
   checked: boolean;
   added_from: 'manual' | 'auto';
   created_at: string;
@@ -211,6 +224,7 @@ interface SavedRecipe {
   url: string;
   servings: number;
   tags: string[];
+  ingredients: IngredientItem[];
   created_at: string;
 }
 
@@ -317,11 +331,13 @@ meal_plans (
   id: UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id: UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   date: DATE NOT NULL,
-  meal_type: TEXT NOT NULL,
+  meal_type: TEXT NOT NULL CHECK (meal_type IN ('朝', '昼', '夜', '間食')),
   recipe_url: TEXT,
   ingredients: JSONB,
   memo: TEXT,
   consumed_status: TEXT DEFAULT 'pending' CHECK (consumed_status IN ('pending', 'completed', 'stored')),
+  source_type: TEXT DEFAULT 'recipe' CHECK (source_type IN ('recipe', 'stock')),
+  stock_id: UUID REFERENCES stock_items(id) ON DELETE SET NULL,
   created_at: TIMESTAMP DEFAULT NOW(),
   updated_at: TIMESTAMP DEFAULT NOW()
 )
@@ -400,6 +416,7 @@ saved_recipes (
   url: TEXT NOT NULL,
   servings: INTEGER DEFAULT 1,
   tags: TEXT[],
+  ingredients: JSONB COMMENT 'レシピの材料情報をJSONB形式で保存。[{name: string, quantity: string}]',
   created_at: TIMESTAMP DEFAULT NOW()
 )
 ```

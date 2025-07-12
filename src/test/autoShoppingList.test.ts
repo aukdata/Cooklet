@@ -1,15 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import type { MealPlan, StockItem } from '../types';
 import type { ShoppingListItem } from '../hooks/useShoppingList';
+import { normalizeForMatching } from '../utils/ingredientNormalizer';
 import {
-  normalizeIngredientName,
   extractQuantity,
   checkIngredientStock,
   extractIngredientsFromMealPlans,
   findMissingIngredients,
   generateShoppingListItems,
   generateShoppingListFromMealPlans
-} from '../utils/autoShoppingList';
+} from '../services/autoShoppingList';
 
 /**
  * 買い物リスト自動生成機能のユニットテスト
@@ -74,17 +74,17 @@ describe('autoShoppingList', () => {
     }
   ];
 
-  describe('normalizeIngredientName', () => {
+  describe('normalizeForMatching', () => {
     it('食材名を正規化する', () => {
-      expect(normalizeIngredientName('トマト（大）')).toBe('トマト');
-      expect(normalizeIngredientName('玉ねぎ 2個')).toBe('玉ねぎ');
-      expect(normalizeIngredientName('にんじん、100g')).toBe('にんじん');
-      expect(normalizeIngredientName('  牛肉  ')).toBe('牛肉');
+      expect(normalizeForMatching('トマト（大）')).toBe('トマト');
+      expect(normalizeForMatching('玉ねぎ 2個')).toBe('玉ねぎ');
+      expect(normalizeForMatching('にんじん、100g')).toBe('にんじん');
+      expect(normalizeForMatching('  牛肉  ')).toBe('牛肉');
     });
 
     it('空文字列を処理する', () => {
-      expect(normalizeIngredientName('')).toBe('');
-      expect(normalizeIngredientName('   ')).toBe('');
+      expect(normalizeForMatching('')).toBe('');
+      expect(normalizeForMatching('   ')).toBe('');
     });
   });
 

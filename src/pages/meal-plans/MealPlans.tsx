@@ -14,7 +14,7 @@ import { useStockItems } from '../../hooks/useStockItems';
 import { useRecipes } from '../../hooks/useRecipes';
 import { useIngredients } from '../../hooks/useIngredients';
 import { useToast } from '../../hooks/useToast.tsx';
-import { generateMealPlan, type MealGenerationSettings, type MealGenerationResult } from '../../utils/mealPlanGeneration';
+import { generateMealPlan, type MealGenerationSettings, type MealGenerationResult } from '../../services/mealPlanGeneration';
 
 /**
  * 献立計画ページコンポーネント

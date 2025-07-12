@@ -2,16 +2,9 @@
 
 import { type MealPlan, type StockItem, type IngredientItem, type Quantity } from '../types/index';
 import { type ShoppingListItem } from '../hooks/useShoppingList';
+import { normalizeForMatching } from '../utils/ingredientNormalizer';
 
-// 食材名の正規化（類似食材をマッチングするため）
-export const normalizeIngredientName = (name: string): string => {
-  return name
-    .toLowerCase()
-    .replace(/[、，\s]+/g, '') // 句読点・空白除去
-    .replace(/[(（][^)）]*[)）]/g, '') // 括弧内除去
-    .replace(/[0-9]+[gkgml個本枚枚切れパック]/g, '') // 数量単位除去
-    .trim();
-};
+// 食材名の正規化処理は ingredientNormalizer.ts の統一実装を使用
 
 // 食材の数量を抽出
 export const extractQuantity = (ingredientText: string): { name: string; quantity: string } => {
@@ -34,11 +27,11 @@ export const checkIngredientStock = (
   _requiredQuantity: Quantity, 
   stockItems: StockItem[]
 ): boolean => {
-  const normalizedIngredient = normalizeIngredientName(ingredientName);
+  const normalizedIngredient = normalizeForMatching(ingredientName);
   
   // 在庫に同じまたは類似の食材があるかチェック
   const stockItem = stockItems.find(stock => {
-    const normalizedStock = normalizeIngredientName(stock.name);
+    const normalizedStock = normalizeForMatching(stock.name);
     return normalizedStock.includes(normalizedIngredient) || 
            normalizedIngredient.includes(normalizedStock);
   });
@@ -72,7 +65,7 @@ export const extractIngredientsFromMealPlans = (
   relevantMealPlans.forEach(plan => {
     plan.ingredients.forEach((ingredient: IngredientItem) => {
       const { name, quantity } = extractQuantity(ingredient.name);
-      const normalizedName = normalizeIngredientName(name);
+      const normalizedName = normalizeForMatching(name);
       const source = `${plan.date}${plan.meal_type}`;
       
       if (ingredientMap.has(normalizedName)) {
@@ -111,13 +104,13 @@ export const generateShoppingListItems = (
   existingShoppingList: ShoppingListItem[]
 ): Array<Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>> => {
   const existingItemNames = existingShoppingList.map(item => 
-    normalizeIngredientName(item.name)
+    normalizeForMatching(item.name)
   );
   
   return missingIngredients
     .filter(ingredient => {
       // 既に買い物リストにある場合は除外
-      const normalizedName = normalizeIngredientName(ingredient.name);
+      const normalizedName = normalizeForMatching(ingredient.name);
       return !existingItemNames.includes(normalizedName);
     })
     .map(ingredient => ({

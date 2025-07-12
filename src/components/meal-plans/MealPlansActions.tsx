@@ -2,7 +2,7 @@ import { useMealPlans } from '../../hooks';
 import { useStockItems } from '../../hooks/useStockItems';
 import { useToast } from '../../hooks/useToast.tsx';
 import { type MealPlan, type MealType } from '../../types';
-import { type MealGenerationResult } from '../../utils/mealPlanGeneration';
+import { type MealGenerationResult } from '../../services/mealPlanGeneration';
 
 // 献立操作フックの戻り値型
 export interface MealPlansActionsReturn {

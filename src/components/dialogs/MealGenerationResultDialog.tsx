@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { BaseDialog } from '../ui/BaseDialog';
-import { type MealGenerationResult } from '../../utils/mealPlanGeneration';
+import { type MealGenerationResult } from '../../services/mealPlanGeneration';
 
 interface MealGenerationResultDialogProps {
   /** ダイアログの表示状態 */
