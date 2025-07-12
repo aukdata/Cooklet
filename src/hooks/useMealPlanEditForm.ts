@@ -55,8 +55,8 @@ interface UseMealPlanEditFormReturn {
   isFormValid: boolean;
 }
 
-// 初期値を計算する関数
-const getInitialFormState = useCallback((initialData?: MealPlan, selectedMealType: MealType = '夜') => {
+// 初期値を計算する関数（通常の関数として定義）
+const getInitialFormState = (initialData?: MealPlan, selectedMealType: MealType = '夜') => {
   if (initialData) {
     // 編集モード: 初期データをセット
     const stockQuantity = initialData.source_type === 'stock' && initialData.ingredients.length > 0
@@ -103,7 +103,7 @@ const getInitialFormState = useCallback((initialData?: MealPlan, selectedMealTyp
       memo: ''
     };
   }
-}, []);
+};
 
 export const useMealPlanEditForm = ({
   initialData,
@@ -116,7 +116,7 @@ export const useMealPlanEditForm = ({
   const initialFormState = useMemo(() => {
     if (!isOpen) return null;
     return getInitialFormState(initialData, selectedMealType);
-  }, [isOpen, initialData, selectedMealType, getInitialFormState]);
+  }, [isOpen, initialData, selectedMealType]);
 
   // フォーム状態管理（初期値から設定、isOpenがfalseの場合はデフォルト値）
   const [mealType, setMealType] = useState<MealType>(initialFormState?.mealType || selectedMealType);
