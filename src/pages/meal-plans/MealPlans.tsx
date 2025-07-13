@@ -84,7 +84,7 @@ export const MealPlans: React.FC = () => {
   const weekDates = getWeekDates(currentWeekStart);
 
   // 献立データの取得（Supabase連携）
-  const { mealPlans, loading, error, saveMealPlan, deleteMealPlan, updateMealPlanStatus, getMealPlansForDate, getMealPlan } = useMealPlans();
+  const { mealPlans, loading, error, saveMealPlan, addMealPlansBatch, deleteMealPlan, updateMealPlanStatus, getMealPlansForDate, getMealPlan } = useMealPlans();
   
   // 在庫データの操作（作り置き機能用）
   const { stockItems, addStockItem } = useStockItems();
@@ -227,8 +227,10 @@ export const MealPlans: React.FC = () => {
     try {
       setIsGenerating(true);
       
-      // 生成結果を選択された日付・週に反映
-      for (const meal of generationResult.mealPlan) {
+      // 生成結果を選択された日付・週に反映（一括処理でキャッシュの整合性確保）
+      const sortedMeals = generationResult.mealPlan.sort((a, b) => a.mealNumber - b.mealNumber);
+      
+      const newMealPlans = sortedMeals.map(meal => {
         const dayIndex = Math.floor((meal.mealNumber - 1) / 3);
         const mealTypeIndex = (meal.mealNumber - 1) % 3;
         const mealTypes = ['朝', '昼', '夜'] as const;
@@ -237,30 +239,36 @@ export const MealPlans: React.FC = () => {
         date.setDate(generationStartDate.getDate() + dayIndex);
         const dateStr = date.toISOString().split('T')[0];
         
-        const newMealPlan: MealPlan = {
-          id: '', // saveMealPlanで自動生成される
-          user_id: '', // saveMealPlanで自動設定される
-          date: dateStr,
-          meal_type: mealTypes[mealTypeIndex],
-          source_type: 'recipe', // デフォルトはレシピ
-          memo: meal.recipe,
-          ingredients: meal.ingredients ? meal.ingredients.map(ing => ({ name: ing, quantity: { amount: '適量', unit: '' } })) : [],
-          consumed_status: 'pending',
-          created_at: '', // saveMealPlanで自動設定される
-          updated_at: '' // saveMealPlanで自動設定される
-        };
-        
-        console.log('🍽️ [Debug] 保存する献立データ:', {
+        console.log('🍽️ [Debug] 準備する献立データ:', {
+          mealNumber: meal.mealNumber,
           dayIndex,
           mealTypeIndex,
           mealType: mealTypes[mealTypeIndex],
           dateStr,
-          newMealPlan
+          recipe: meal.recipe
         });
         
-        const savedMealPlan = await saveMealPlan(newMealPlan);
-        console.log('✅ [Debug] 保存完了:', savedMealPlan);
-      }
+        return {
+          date: dateStr,
+          meal_type: mealTypes[mealTypeIndex],
+          source_type: 'recipe' as const,
+          memo: meal.recipe,
+          ingredients: meal.ingredients ? meal.ingredients.map(ing => ({ name: ing, quantity: { amount: '適量', unit: '' } })) : [],
+          consumed_status: 'pending' as const
+        };
+      });
+      
+      console.log('🚀 [Debug] 一括保存開始:', newMealPlans.length, '件の献立');
+      
+      // 一括保存実行
+      const savedMealPlans = await addMealPlansBatch(newMealPlans);
+      
+      console.log('✅ [Debug] 一括保存完了:', savedMealPlans.map(plan => ({
+        id: plan.id,
+        mealType: plan.meal_type,
+        date: plan.date,
+        memo: plan.memo
+      })));
       
       setIsGenerationResultDialogOpen(false);
       setGenerationResult(null);

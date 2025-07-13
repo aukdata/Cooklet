@@ -45,3 +45,6 @@ Thumbs.db
 /blob-report/
 /playwright/.cache/
 test-results.json
+
+.mcp.json
+nohup.out

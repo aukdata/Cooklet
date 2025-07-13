@@ -1,5 +1,56 @@
 # Cooklet 開発ログ
 
+## 2025-07-13 献立自動生成バグ修正
+
+### 修正内容: 夕食のみ表示される問題を解決
+
+#### 問題概要
+献立自動生成機能で朝昼夜の3食を生成し「決定」ボタンをクリックした後、データベースには3食全て保存されるが、フロントエンドでは夕食分しか表示されない問題が発生していた。
+
+#### 根本原因
+- **キャッシュ競合**: useMealPlansフックのaddMealPlan関数で、複数の献立を順次保存する際にキャッシュの競合状態が発生
+- **非同期更新の問題**: 前回の保存結果がキャッシュに反映される前に次の保存処理が実行され、古いキャッシュを参照
+
+#### 修正内容
+
+**1. useMealPlans.tsに追加**
+- `addMealPlansBatch`関数を追加: 複数の献立を一括でデータベースに保存
+- キャッシュ整合性確保: 保存完了後にinvalidateCache + fetchMealPlansで確実にデータ再取得
+
+**2. MealPlans.tsx修正**
+- `handleConfirmGeneration`関数を一括処理に変更
+- 順次実行のforループから一括処理のaddMealPlansBatchに変更
+- 不要なinvalidateCacheの削除
+
+#### 技術詳細
+```typescript
+// 修正前: 順次実行（キャッシュ競合問題）
+for (const meal of sortedMeals) {
+  await saveMealPlan(newMealPlan);
+  await new Promise(resolve => setTimeout(resolve, 100));
+}
+invalidateCache();
+
+// 修正後: 一括処理（キャッシュ整合性確保）
+const newMealPlans = sortedMeals.map(...);
+await addMealPlansBatch(newMealPlans);
+```
+
+#### 修正ファイル
+- `/src/hooks/useMealPlans.ts`: addMealPlansBatch関数追加
+- `/src/pages/meal-plans/MealPlans.tsx`: handleConfirmGeneration関数修正
+- `/src/hooks/CLAUDE.md`: 機能追加の文書化
+
+#### 動作確認
+- lint check: 成功
+- TypeScript型チェック: 成功
+- 複数献立の一括保存処理を実装
+
+#### 引き継ぎ事項
+- bug.mdファイルが残っていますが、問題は解決済み
+- バッチ処理により、複数データの整合性問題を根本解決
+- 今後の類似機能でもaddMealPlansBatchパターンを活用推奨
+
 ## Martin Fowlerリファクタリング手法の導入
 
 ### リファクタリングガイドライン

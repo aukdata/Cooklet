@@ -77,7 +77,12 @@ export const useMealPlans = () => {
 
       // キャッシュを更新（新しいアイテムを追加）
       const currentPlans = mealPlans || [];
-      const updatedPlans = [...currentPlans, data];
+      const updatedPlans = [...currentPlans, data].sort((a, b) => {
+        // 日付順、作成日時順でソート
+        const dateCompare = a.date.localeCompare(b.date);
+        if (dateCompare !== 0) return dateCompare;
+        return new Date(a.created_at).getTime() - new Date(b.created_at).getTime();
+      });
       setCache(updatedPlans);
       markAsUpdated(); // データ変更後に更新時刻をマーク
       
@@ -189,6 +194,60 @@ export const useMealPlans = () => {
     }
   };
 
+  // 複数の献立を一括追加（バッチ処理）
+  const addMealPlansBatch = async (mealPlans: Omit<MealPlan, 'id' | 'user_id' | 'created_at' | 'updated_at'>[]) => {
+    if (!user) throw new Error('ユーザーが認証されていません');
+
+    try {
+      console.log('🚀 [Debug] addMealPlansBatch 開始:', mealPlans.length, '件の献立を保存');
+      
+      // データベースに一括挿入
+      const insertData = mealPlans.map(mealPlan => ({
+        user_id: user.id,
+        date: mealPlan.date,
+        meal_type: mealPlan.meal_type,
+        source_type: mealPlan.source_type || 'recipe',
+        recipe_url: mealPlan.recipe_url,
+        stock_id: mealPlan.stock_id,
+        ingredients: mealPlan.ingredients,
+        memo: mealPlan.memo,
+        consumed_status: mealPlan.consumed_status || 'pending'
+      }));
+
+      const { data, error: insertError } = await supabase
+        .from('meal_plans')
+        .insert(insertData)
+        .select();
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      console.log('💾 [Debug] データベース保存完了:', data?.length, '件');
+      
+      // キャッシュを完全にクリアして再取得
+      console.log('🔄 [Debug] キャッシュクリア & 再取得開始');
+      invalidateCache();
+      
+      // 少し待ってから再取得（確実にキャッシュがクリアされるように）
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // 強制的にデータを再取得
+      const freshData = await fetchMealPlansWithCache();
+      console.log('📊 [Debug] 再取得完了:', freshData.length, '件のデータ');
+      
+      // キャッシュに直接設定
+      setCache(freshData);
+      markAsUpdated(); // データ変更後に更新時刻をマーク
+      
+      console.log('✅ [Debug] addMealPlansBatch 完了');
+      return data;
+    } catch (err) {
+      console.error('献立の一括追加に失敗しました:', err);
+      throw err;
+    }
+  };
+
   // 指定日の献立を取得
   const getMealPlansForDate = (date: Date) => {
     const dateStr = date.toISOString().split('T')[0];
@@ -233,6 +292,7 @@ export const useMealPlans = () => {
     loading,
     error,
     addMealPlan,
+    addMealPlansBatch, // 複数献立の一括追加
     updateMealPlan,
     deleteMealPlan,
     updateMealPlanStatus, // 献立消費状態更新

@@ -31,10 +31,26 @@
       "mcp__supabase__list_projects",
       "mcp__supabase__list_tables",
       "Bash(gemini:*)",
-      "Bash(pnpm vitest run:*)"
+      "Bash(pnpm vitest run:*)",
+      "mcp__playwright__browser_take_screenshot",
+      "mcp__playwright__browser_type",
+      "mcp__playwright__browser_click",
+      "mcp__playwright__browser_console_messages",
+      "mcp__playwright__browser_close",
+      "mcp__playwright__browser_navigate",
+      "mcp__playwright__browser_wait_for",
+      "mcp__playwright__browser_press_key",
+      "mcp__voicevox__speak",
+      "Bash(pkill:*)"
     ],
     "deny": [
       "Bash(rm:*)"
     ]
-  }
+  },
+  "enableAllProjectMcpServers": true,
+  "enabledMcpjsonServers": [
+    "playwright",
+    "supabase",
+    "sequential-thinking"
+  ]
 }

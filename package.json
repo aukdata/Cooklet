@@ -53,7 +53,10 @@
     "tailwindcss-safe-area": "^0.6.0",
     "terser": "^5.42.0",
     "typescript": "~5.8.3",
-    "vite": "^6.3.5",
+    "@modelcontextprotocol/server-sequential-thinking": "^2025.7.1",
+    "@playwright/mcp": "^0.0.29",
+    "@supabase/mcp-server-supabase": "^0.4.5",
+     "vite": "^6.3.5",
     "vitest": "^3.2.4"
   }
 }

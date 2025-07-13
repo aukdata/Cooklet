@@ -64,6 +64,7 @@ interface SavedRecipe {
 - `loading`: 読み込み状態
 - `error`: エラーメッセージ
 - `addMealPlan`: 献立追加関数
+- `addMealPlansBatch`: 複数献立の一括追加関数（キャッシュ整合性対応）
 - `updateMealPlan`: 献立更新関数
 - `deleteMealPlan`: 献立削除関数
 - `refetch`: 献立再取得関数
