@@ -8,8 +8,8 @@ export default defineConfig({
   // テストディレクトリ
   testDir: './tests',
   
-  // 実行するテストパターン
-  testMatch: ['**/basic.spec.ts', '**/example.spec.ts'],
+  // 実行するテストパターン（example.spec.tsは外部サイトテストのため除外）
+  testMatch: ['**/basic.spec.ts'],
   
   // 全てのテストタイムアウト
   timeout: 30 * 1000,
