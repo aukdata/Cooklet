@@ -48,7 +48,7 @@ export const MealGenerationResultDialog = ({
     <BaseDialog
       isOpen={isOpen}
       onClose={onClose}
-      title="💡 献立生成結果"
+      title="献立生成結果"
       icon="💡"
       size="lg"
       actions={

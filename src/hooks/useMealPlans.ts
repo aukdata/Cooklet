@@ -198,7 +198,19 @@ export const useMealPlans = () => {
   // 指定日・食事タイプの献立を取得
   const getMealPlan = (date: Date, mealType: MealType): MealPlan | undefined => {
     const dateStr = date.toISOString().split('T')[0];
-    return (mealPlans || []).find(plan => plan.date === dateStr && plan.meal_type === mealType);
+    const result = (mealPlans || []).find(plan => plan.date === dateStr && plan.meal_type === mealType);
+    
+    // デバッグログ出力
+    console.log('🔍 [Debug] getMealPlan 検索:', {
+      dateStr,
+      mealType,
+      totalMealPlans: (mealPlans || []).length,
+      matchingPlans: (mealPlans || []).filter(plan => plan.date === dateStr),
+      result: result ? '見つかった' : '見つからない',
+      resultData: result
+    });
+    
+    return result;
   };
 
   // レシピURLに基づいて最後に調理された日付を取得（issue #31対応）

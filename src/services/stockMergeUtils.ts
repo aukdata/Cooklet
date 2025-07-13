@@ -5,6 +5,7 @@
 
 import { addQuantities, isValidQuantity } from '../utils/quantityUtils';
 import { normalizeProductName } from '../utils/nameNormalizer';
+import { isNameMatch } from './nameMatchingService';
 import type { StockItem } from '../types';
 import type { Ingredient } from '../types';
 import type { Quantity } from '../utils/quantityUtils';
@@ -52,43 +53,7 @@ export interface StockMergeResult {
   };
 }
 
-/**
- * 商品名の類似度チェック（正規化後の名前でマッチング）
- * @param purchaseName - 購入品の名前
- * @param stockName - 在庫品の名前
- * @returns 類似している場合true
- */
-function isNameMatch(purchaseName: string, stockName: string): boolean {
-  const normalizeName = (name: string): string => {
-    return name
-      .toLowerCase()
-      .trim()
-      // 全角数字を半角に変換
-      .replace(/[０-９]/g, (char) => String.fromCharCode(char.charCodeAt(0) - 0xFEE0))
-      // 括弧や記号を除去
-      .replace(/[（）()【】「」〈〉]/g, '')
-      // 連続する空白を単一の空白に
-      .replace(/\s+/g, ' ');
-  };
-
-  const normalizedPurchase = normalizeName(purchaseName);
-  const normalizedStock = normalizeName(stockName);
-
-  // 完全一致
-  if (normalizedPurchase === normalizedStock) {
-    return true;
-  }
-
-  // 部分一致（より短い名前が長い名前に含まれる）
-  const shorter = normalizedPurchase.length <= normalizedStock.length 
-    ? normalizedPurchase 
-    : normalizedStock;
-  const longer = normalizedPurchase.length > normalizedStock.length 
-    ? normalizedPurchase 
-    : normalizedStock;
-
-  return longer.includes(shorter) && shorter.length >= 2; // 2文字以上で部分一致
-}
+// 商品名マッチング機能は nameMatchingService.ts の統一実装を使用
 
 /**
  * 購入品を既存在庫とマージする

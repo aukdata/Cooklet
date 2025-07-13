@@ -5,6 +5,7 @@ import { type MealPlan, type StockItem, type Ingredient, type Quantity, type Ing
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 import { quantityToDisplay } from '../utils/quantityDisplay';
 import { normalizeForMatching } from '../utils/ingredientNormalizer';
+import { isNameMatch, checkStockAvailability, normalizeQuantity, type StockCheckItem } from './nameMatchingService';
 
 export interface ShoppingListGenerationResult {
   success: boolean;
@@ -17,69 +18,34 @@ export interface ShoppingListGenerationResult {
   error?: string;
 }
 
-// 食材の数量を正規化する関数
-const normalizeQuantity = (quantity: Quantity): { value: number; unit: string } => {
-  // Quantity型から数値と単位を分離
-  const match = quantity.amount.match(/^(\d+(?:\.\d+)?)(.*)$/);
-  
-  if (match) {
-    return {
-      value: parseFloat(match[1]),
-      unit: quantity.unit || match[2].trim() || '個'
-    };
-  }
-  
-  // 数値が見つからない場合は適量として扱う
-  return {
-    value: 1,
-    unit: quantity.unit || '適量'
-  };
-};
+// 食材の数量を正規化する関数は nameMatchingService.normalizeQuantity を直接使用
 
 // 食材名の正規化処理は ingredientNormalizer.ts の統一実装を使用
 
-// 在庫の食材と献立の食材をマッチングする関数
+// 在庫の食材と献立の食材をマッチングする関数（統一正規化サービス使用）
 const findMatchingStock = (ingredientName: string, stockItems: StockItem[]): StockItem | null => {
-  const normalizedName = normalizeForMatching(ingredientName);
-  
-  return stockItems.find(stock => {
-    const normalizedStockName = normalizeForMatching(stock.name);
-    return normalizedStockName === normalizedName || 
-           normalizedStockName.includes(normalizedName) ||
-           normalizedName.includes(normalizedStockName);
-  }) || null;
+  return stockItems.find(stock => isNameMatch(ingredientName, stock.name)) || null;
 };
 
-// 食材が無限食材（在庫消費なし）かどうかをチェックする関数
+// 食材が無限食材（在庫消費なし）かどうかをチェックする関数（統一正規化サービス使用）
 const isInfinityIngredient = (ingredientName: string, ingredients: Ingredient[]): boolean => {
-  const normalizedName = normalizeForMatching(ingredientName);
-  
-  return ingredients.some(ingredient => {
-    const normalizedIngredientName = normalizeForMatching(ingredient.name);
-    return ingredient.infinity && (
-      normalizedIngredientName === normalizedName ||
-      normalizedIngredientName.includes(normalizedName) ||
-      normalizedName.includes(normalizedIngredientName)
-    );
-  });
+  return ingredients.some(ingredient => 
+    ingredient.infinity && isNameMatch(ingredientName, ingredient.name)
+  );
 };
 
-// 在庫が足りているかチェックする関数
+// 在庫が足りているかチェックする関数（統一サービス使用）
 const isStockSufficient = (
   requiredQuantity: Quantity, 
   stockQuantity: Quantity
 ): boolean => {
-  const required = normalizeQuantity(requiredQuantity);
-  const stock = normalizeQuantity(stockQuantity);
+  // 統一された在庫チェック関数を使用
+  const stockItems: StockCheckItem[] = [{
+    name: 'dummy', // 名前は使用しない（数量比較のみ）
+    quantity: stockQuantity
+  }];
   
-  // 単位が異なる場合は不十分とする（簡易実装）
-  if (required.unit !== stock.unit && 
-      !(required.unit === '個' && stock.unit === '本') &&
-      !(required.unit === '本' && stock.unit === '個')) {
-    return false;
-  }
-  
-  return stock.value >= required.value;
+  return checkStockAvailability('dummy', requiredQuantity, stockItems);
 };
 
 // 献立から必要な食材を集計する関数
@@ -159,7 +125,147 @@ const aggregateIngredientsFromMealPlans = (mealPlans: MealPlan[]): Map<string, Q
   return aggregatedIngredients;
 };
 
-// メイン関数：献立から買い物リストを自動生成
+// 入力データの妥当性チェック
+const validateInputData = (mealPlans: MealPlan[]): ShoppingListGenerationResult | null => {
+  console.log('🔍 [Debug] generateShoppingListFromMealPlans 開始');
+  console.log('🔍 [Debug] 入力 - 献立数:', mealPlans.length);
+  
+  if (mealPlans.length === 0) {
+    console.log('🔍 [Debug] 献立が0件のため終了');
+    return {
+      success: false,
+      generatedItems: [],
+      summary: { totalIngredients: 0, inStock: 0, needToBuy: 0 },
+      error: '献立が設定されていません'
+    };
+  }
+  
+  return null; // 妥当性OK
+};
+
+// 食材集計と既存買い物リストの正規化
+const aggregateAndNormalizeIngredients = (
+  mealPlans: MealPlan[],
+  existingShoppingItems: ShoppingListItem[]
+): {
+  aggregatedIngredients: Map<string, Quantity>;
+  existingItemsMap: Map<string, ShoppingListItem>;
+} => {
+  console.log('🔍 [Debug] 入力 - 在庫数:', existingShoppingItems.length);
+  console.log('🔍 [Debug] 献立詳細:', mealPlans);
+  
+  // 献立から必要な食材を集計
+  const aggregatedIngredients = aggregateIngredientsFromMealPlans(mealPlans);
+  
+  console.log('🔍 [Debug] 集計された食材:', aggregatedIngredients);
+  console.log('🔍 [Debug] 集計された食材数:', aggregatedIngredients.size);
+  
+  // 既存の買い物リストアイテムを正規化してマップ化
+  const existingItemsMap = new Map<string, ShoppingListItem>();
+  existingShoppingItems.forEach(item => {
+    const normalizedName = normalizeForMatching(item.name);
+    existingItemsMap.set(normalizedName, item);
+  });
+  
+  return { aggregatedIngredients, existingItemsMap };
+};
+
+// 元の食材名を復元
+const restoreOriginalIngredientName = (
+  normalizedName: string,
+  mealPlans: MealPlan[]
+): string => {
+  for (const plan of mealPlans) {
+    // ingredientsが配列でない場合の対処
+    let ingredients = plan.ingredients;
+    if (typeof plan.ingredients === 'string') {
+      try {
+        ingredients = JSON.parse(plan.ingredients);
+      } catch {
+        continue;
+      }
+    }
+    
+    if (!Array.isArray(ingredients)) continue;
+    
+    const found = ingredients.find((ing: unknown) => {
+      if (!ing || typeof ing !== 'object' || !('name' in ing)) return false;
+      const typedIng = ing as { name: string };
+      return normalizeForMatching(typedIng.name) === normalizedName;
+    });
+    if (found && typeof found === 'object' && 'name' in found) {
+      const typedFound = found as { name: string };
+      return typedFound.name;
+    }
+  }
+  
+  return normalizedName; // 見つからない場合は正規化名をそのまま使用
+};
+
+// 在庫チェックと無限食材フラグ確認
+const checkStockAndInfinityFlags = (
+  originalName: string,
+  quantity: Quantity,
+  stockItems: StockItem[],
+  ingredients: Ingredient[]
+): {
+  isInfinity: boolean;
+  matchingStock: StockItem | null;
+  hasEnoughStock: boolean;
+} => {
+  // infinityフラグ（在庫消費なし）をチェック
+  const isInfinity = isInfinityIngredient(originalName, ingredients);
+  
+  if (isInfinity) {
+    return { isInfinity: true, matchingStock: null, hasEnoughStock: true };
+  }
+  
+  // 在庫チェック
+  const matchingStock = findMatchingStock(originalName, stockItems);
+  const hasEnoughStock = matchingStock ? isStockSufficient(quantity, matchingStock.quantity) : false;
+  
+  return { isInfinity: false, matchingStock, hasEnoughStock };
+};
+
+// 不足数量の計算
+const calculateShortageQuantities = (
+  quantity: Quantity,
+  matchingStock: StockItem | null
+): Quantity => {
+  if (!matchingStock) {
+    return quantity;
+  }
+  
+  const required = normalizeQuantity(quantity);
+  const stock = normalizeQuantity(matchingStock.quantity);
+  
+  if (required.unit === stock.unit) {
+    const shortage = Math.max(0, required.value - stock.value);
+    return shortage > 0 ? { amount: shortage.toString(), unit: required.unit } : quantity;
+  }
+  
+  return quantity;
+};
+
+// 生成結果の構築
+const buildGenerationResult = (
+  generatedItems: Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>[],
+  totalIngredients: number,
+  inStock: number,
+  needToBuy: number
+): ShoppingListGenerationResult => {
+  return {
+    success: true,
+    generatedItems,
+    summary: {
+      totalIngredients,
+      inStock,
+      needToBuy
+    }
+  };
+};
+
+// メイン関数：献立から買い物リストを自動生成（Martin Fowler Extract Function適用）
 export const generateShoppingListFromMealPlans = async (
   mealPlans: MealPlan[],
   stockItems: StockItem[],
@@ -167,34 +273,17 @@ export const generateShoppingListFromMealPlans = async (
   ingredients: Ingredient[] = []
 ): Promise<ShoppingListGenerationResult> => {
   try {
-    console.log('🔍 [Debug] generateShoppingListFromMealPlans 開始');
-    console.log('🔍 [Debug] 入力 - 献立数:', mealPlans.length);
-    console.log('🔍 [Debug] 入力 - 在庫数:', stockItems.length);
-    console.log('🔍 [Debug] 入力 - 既存買い物リスト数:', existingShoppingItems.length);
-    console.log('🔍 [Debug] 献立詳細:', mealPlans);
-    
-    if (mealPlans.length === 0) {
-      console.log('🔍 [Debug] 献立が0件のため終了');
-      return {
-        success: false,
-        generatedItems: [],
-        summary: { totalIngredients: 0, inStock: 0, needToBuy: 0 },
-        error: '献立が設定されていません'
-      };
+    // 1. 入力データの妥当性チェック
+    const validationResult = validateInputData(mealPlans);
+    if (validationResult) {
+      return validationResult;
     }
     
-    // 献立から必要な食材を集計
-    const aggregatedIngredients = aggregateIngredientsFromMealPlans(mealPlans);
-    
-    console.log('🔍 [Debug] 集計された食材:', aggregatedIngredients);
-    console.log('🔍 [Debug] 集計された食材数:', aggregatedIngredients.size);
-    
-    // 既存の買い物リストアイテムを正規化してマップ化
-    const existingItemsMap = new Map<string, ShoppingListItem>();
-    existingShoppingItems.forEach(item => {
-      const normalizedName = normalizeForMatching(item.name);
-      existingItemsMap.set(normalizedName, item);
-    });
+    // 2. 食材集計と既存買い物リストの正規化
+    const { aggregatedIngredients, existingItemsMap } = aggregateAndNormalizeIngredients(
+      mealPlans,
+      existingShoppingItems
+    );
     
     const generatedItems: Omit<ShoppingListItem, 'id' | 'user_id' | 'created_at'>[] = [];
     let totalIngredients = 0;
@@ -204,40 +293,21 @@ export const generateShoppingListFromMealPlans = async (
     console.log('🔍 [Debug] 各食材について在庫チェック開始');
     console.log('🔍 [Debug] aggregatedIngredients entries:', Array.from(aggregatedIngredients.entries()));
 
-    // 各食材について在庫チェック
+    // 3. 各食材について在庫チェックと買い物リスト生成
     for (const [normalizedName, quantity] of aggregatedIngredients) {
       totalIngredients++;
       console.log(`🔍 [Debug] 処理中の食材: "${normalizedName}" (${quantityToDisplay(quantity)})`);
       
-      // 元の食材名を復元（最初に見つかった名前を使用）
-      let originalName = normalizedName;
-      for (const plan of mealPlans) {
-        // ingredientsが配列でない場合の対処
-        let ingredients = plan.ingredients;
-        if (typeof plan.ingredients === 'string') {
-          try {
-            ingredients = JSON.parse(plan.ingredients);
-          } catch {
-            continue;
-          }
-        }
-        
-        if (!Array.isArray(ingredients)) continue;
-        
-        const found = ingredients.find((ing: unknown) => {
-          if (!ing || typeof ing !== 'object' || !('name' in ing)) return false;
-          const typedIng = ing as { name: string };
-          return normalizeForMatching(typedIng.name) === normalizedName;
-        });
-        if (found && typeof found === 'object' && 'name' in found) {
-          const typedFound = found as { name: string };
-          originalName = typedFound.name;
-          break;
-        }
-      }
+      // 元の食材名を復元
+      const originalName = restoreOriginalIngredientName(normalizedName, mealPlans);
       
-      // infinityフラグ（在庫消費なし）をチェック
-      const isInfinity = isInfinityIngredient(originalName, ingredients);
+      // 在庫チェックと無限食材フラグ確認
+      const { isInfinity, matchingStock, hasEnoughStock } = checkStockAndInfinityFlags(
+        originalName,
+        quantity,
+        stockItems,
+        ingredients
+      );
       
       if (isInfinity) {
         // 無限食材（醤油・塩等）は買い物リストに追加不要
@@ -246,10 +316,7 @@ export const generateShoppingListFromMealPlans = async (
         continue;
       }
       
-      // 在庫チェック
-      const matchingStock = findMatchingStock(originalName, stockItems);
-      
-      if (matchingStock && isStockSufficient(quantity, matchingStock.quantity)) {
+      if (hasEnoughStock) {
         // 在庫が十分な場合
         inStock++;
       } else {
@@ -263,18 +330,8 @@ export const generateShoppingListFromMealPlans = async (
         // 在庫が不足している場合は買い物リストに追加
         needToBuy++;
         
-        let finalQuantity = quantity;
-        
-        // 在庫がある場合は不足分のみ計算
-        if (matchingStock) {
-          const required = normalizeQuantity(quantity);
-          const stock = normalizeQuantity(matchingStock.quantity);
-          
-          if (required.unit === stock.unit) {
-            const shortage = Math.max(0, required.value - stock.value);
-            finalQuantity = shortage > 0 ? { amount: shortage.toString(), unit: required.unit } : quantity;
-          }
-        }
+        // 不足数量の計算
+        const finalQuantity = calculateShortageQuantities(quantity, matchingStock);
         
         generatedItems.push({
           name: originalName,
@@ -285,15 +342,8 @@ export const generateShoppingListFromMealPlans = async (
       }
     }
     
-    return {
-      success: true,
-      generatedItems,
-      summary: {
-        totalIngredients,
-        inStock,
-        needToBuy
-      }
-    };
+    // 4. 生成結果の構築
+    return buildGenerationResult(generatedItems, totalIngredients, inStock, needToBuy);
     
   } catch (error) {
     console.error('買い物リスト生成中にエラーが発生しました:', error);

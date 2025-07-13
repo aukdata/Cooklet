@@ -28,7 +28,7 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
   weekDates,
   onGenerationResult
 }) => {
-  const { showInfo, showError } = useToast();
+  const { showError } = useToast();
   const [isGenerating, setIsGenerating] = useState(false);
   
   // データはProps経由で受け取り
@@ -39,8 +39,6 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
     
     try {
       setIsGenerating(true);
-      const dateStr = selectedDate.toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
-      showInfo(`${dateStr}の献立を生成中...`);
 
       // 実際のデータを使用して献立生成設定を作成
       const settings = {
@@ -79,9 +77,6 @@ export const MealPlansGenerator: React.FC<MealPlansGeneratorProps> = ({
     
     try {
       setIsGenerating(true);
-      const weekStartStr = weekDates[0].toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
-      const weekEndStr = weekDates[6].toLocaleDateString('ja-JP', { month: 'long', day: 'numeric' });
-      showInfo(`${weekStartStr}～${weekEndStr}の献立を生成中...`);
 
       // 実際のデータを使用して献立生成設定を作成
       const settings = {

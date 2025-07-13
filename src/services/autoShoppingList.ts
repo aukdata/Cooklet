@@ -4,6 +4,7 @@ import { type MealPlan, type StockItem, type IngredientItem, type Quantity } fro
 import { type ShoppingListItem } from '../hooks/useShoppingList';
 import { normalizeForMatching } from '../utils/ingredientNormalizer';
 import { parseQuantity, formatQuantity } from '../constants/units';
+import { checkStockAvailability, type StockCheckItem } from './nameMatchingService';
 
 // 食材名の正規化処理は ingredientNormalizer.ts の統一実装を使用
 
@@ -29,68 +30,102 @@ export const parseIngredientNameWithQuantity = (ingredientText: string): { name:
 // 在庫と必要量を比較して不足をチェック
 export const checkIngredientStock = (
   ingredientName: string, 
-  _requiredQuantity: Quantity, 
+  requiredQuantity: Quantity, 
   stockItems: StockItem[]
 ): boolean => {
-  const normalizedIngredient = normalizeForMatching(ingredientName);
+  // StockItem を StockCheckItem 形式に変換
+  const stockCheckItems: StockCheckItem[] = stockItems.map(stock => ({
+    name: stock.name,
+    quantity: stock.quantity
+  }));
   
-  // 在庫に同じまたは類似の食材があるかチェック
-  const stockItem = stockItems.find(stock => {
-    const normalizedStock = normalizeForMatching(stock.name);
-    return normalizedStock.includes(normalizedIngredient) || 
-           normalizedIngredient.includes(normalizedStock);
-  });
-  
-  if (!stockItem) {
-    return false; // 在庫なし
-  }
-  
-  // 簡単な数量チェック（実際の実装ではより精密な比較が必要）
-  // ここでは基本的な存在チェックのみ
-  return true; // 在庫あり（数量は考慮せず存在のみチェック）
+  // 統一された在庫チェック関数を使用
+  return checkStockAvailability(ingredientName, requiredQuantity, stockCheckItems);
 };
 
-// 指定期間の献立から必要な食材を抽出
-export const extractIngredientsFromMealPlans = (
+// 指定期間の献立をフィルタリング
+const filterMealPlansByDateRange = (
   mealPlans: MealPlan[],
   startDate: Date,
   endDate: Date
-): Array<{ name: string; quantity: Quantity; source: string }> => {
+): MealPlan[] => {
   const startDateStr = startDate.toISOString().split('T')[0];
   const endDateStr = endDate.toISOString().split('T')[0];
   
-  // 指定期間の献立をフィルター
-  const relevantMealPlans = mealPlans.filter(plan => {
+  return mealPlans.filter(plan => {
     return plan.date >= startDateStr && plan.date <= endDateStr;
   });
+};
+
+// 単一の献立から食材を抽出
+const extractIngredientsFromSinglePlan = (
+  plan: MealPlan
+): Array<{ normalizedName: string; quantity: Quantity; source: string }> => {
+  const source = `${plan.date}${plan.meal_type}`;
   
+  return plan.ingredients.map((ingredient: IngredientItem) => {
+    const { name, quantity } = parseIngredientNameWithQuantity(ingredient.name);
+    const normalizedName = normalizeForMatching(name);
+    
+    return {
+      normalizedName,
+      quantity: ingredient.quantity || { amount: quantity, unit: '' },
+      source
+    };
+  });
+};
+
+// 食材を名前ごとに集計
+const aggregateIngredientsByName = (
+  extractedIngredients: Array<{ normalizedName: string; quantity: Quantity; source: string }>
+): Map<string, { quantity: Quantity; sources: string[] }> => {
   const ingredientMap = new Map<string, { quantity: Quantity; sources: string[] }>();
   
-  // 各献立から食材を抽出
-  relevantMealPlans.forEach(plan => {
-    plan.ingredients.forEach((ingredient: IngredientItem) => {
-      const { name, quantity } = parseIngredientNameWithQuantity(ingredient.name);
-      const normalizedName = normalizeForMatching(name);
-      const source = `${plan.date}${plan.meal_type}`;
-      
-      if (ingredientMap.has(normalizedName)) {
-        const existing = ingredientMap.get(normalizedName)!;
-        existing.sources.push(source);
-      } else {
-        ingredientMap.set(normalizedName, {
-          quantity: ingredient.quantity || { amount: quantity, unit: '' },
-          sources: [source]
-        });
-      }
-    });
+  extractedIngredients.forEach(({ normalizedName, quantity, source }) => {
+    if (ingredientMap.has(normalizedName)) {
+      const existing = ingredientMap.get(normalizedName)!;
+      existing.sources.push(source);
+    } else {
+      ingredientMap.set(normalizedName, {
+        quantity,
+        sources: [source]
+      });
+    }
   });
   
-  // Map を配列に変換
+  return ingredientMap;
+};
+
+// Mapを配列形式に変換
+const convertMapToArray = (
+  ingredientMap: Map<string, { quantity: Quantity; sources: string[] }>
+): Array<{ name: string; quantity: Quantity; source: string }> => {
   return Array.from(ingredientMap.entries()).map(([name, data]) => ({
     name,
     quantity: data.quantity,
     source: data.sources.join(', ')
   }));
+};
+
+// 指定期間の献立から必要な食材を抽出（Martin Fowler Extract Function適用）
+export const extractIngredientsFromMealPlans = (
+  mealPlans: MealPlan[],
+  startDate: Date,
+  endDate: Date
+): Array<{ name: string; quantity: Quantity; source: string }> => {
+  // 1. 指定期間の献立をフィルター
+  const relevantMealPlans = filterMealPlansByDateRange(mealPlans, startDate, endDate);
+  
+  // 2. 各献立から食材を抽出
+  const extractedIngredients = relevantMealPlans.flatMap(plan => 
+    extractIngredientsFromSinglePlan(plan)
+  );
+  
+  // 3. 食材を名前ごとに集計
+  const ingredientMap = aggregateIngredientsByName(extractedIngredients);
+  
+  // 4. Map を配列に変換
+  return convertMapToArray(ingredientMap);
 };
 
 // 不足している食材を特定

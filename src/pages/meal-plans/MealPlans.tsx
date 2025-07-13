@@ -21,7 +21,7 @@ import { generateMealPlan, type MealGenerationSettings, type MealGenerationResul
  * 適切な粒度でコンポーネント化された統合版
  */
 export const MealPlans: React.FC = () => {
-  const { showInfo, showSuccess, showError } = useToast();
+  const { showSuccess, showError } = useToast();
 
   // 選択された日付（今日がデフォルト）
   const [selectedDate, setSelectedDate] = useState(new Date());
@@ -250,7 +250,16 @@ export const MealPlans: React.FC = () => {
           updated_at: '' // saveMealPlanで自動設定される
         };
         
-        await saveMealPlan(newMealPlan);
+        console.log('🍽️ [Debug] 保存する献立データ:', {
+          dayIndex,
+          mealTypeIndex,
+          mealType: mealTypes[mealTypeIndex],
+          dateStr,
+          newMealPlan
+        });
+        
+        const savedMealPlan = await saveMealPlan(newMealPlan);
+        console.log('✅ [Debug] 保存完了:', savedMealPlan);
       }
       
       setIsGenerationResultDialogOpen(false);
@@ -285,8 +294,6 @@ export const MealPlans: React.FC = () => {
       const result = await generateMealPlan(settings);
       setGenerationResult(result);
       setCurrentTemperature(newTemperature);
-      
-      showInfo(`ランダム性を${Math.round(newTemperature * 100)}%に上げて再生成しました`);
     } catch (err) {
       console.error('再生成に失敗しました:', err);
       showError('再生成に失敗しました');

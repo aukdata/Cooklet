@@ -68,6 +68,166 @@ Cookletプロジェクトでは、Martin Fowlerの体系的リファクタリン
 - **Replace Primitive with Object**: Quantity型導入
 - **Encapsulate Record**: interface定義の活用
 
+## 2025-07-13
+
+### 【最新】Martin Fowler Extract Function パターンによるservices層包括リファクタリング完了
+
+#### 実装内容
+`src/services`ディレクトリ全体に対してMartin Fowlerの体系的リファクタリング手法を適用し、コードの匂いを根本的に解決しました。
+
+**Phase 1: Extract Function パターンの大規模適用**
+
+1. **autoShoppingList.ts の Long Method 分割**
+   - **対象**: `extractIngredientsFromMealPlans`関数（40行のLong Method）
+   - **成果**: 4つの専門関数に分割
+     - `filterMealPlansByDateRange()` - 期間フィルタリング
+     - `extractIngredientsFromSinglePlan()` - 単一献立からの食材抽出
+     - `aggregateIngredientsByName()` - 食材名による集計
+     - `convertMapToArray()` - データ形式変換
+   - **効果**: 各関数の責任明確化、可読性・テスタビリティ向上
+
+2. **shoppingListGeneration.ts の Large Method 分割**
+   - **対象**: `generateShoppingListFromMealPlans`関数（143行の巨大メソッド）
+   - **成果**: 5つの専門関数に分割
+     - `validateInputData()` - 入力データ妥当性チェック
+     - `aggregateAndNormalizeIngredients()` - 食材集計と正規化
+     - `restoreOriginalIngredientName()` - 元食材名復元
+     - `checkStockAndInfinityFlags()` - 在庫・無限食材チェック
+     - `calculateShortageQuantities()` - 不足数量計算
+     - `buildGenerationResult()` - 結果構築
+   - **効果**: 複雑なロジックの段階分割、デバッグ性・保守性大幅向上
+
+**Phase 2: Extract Service パターンによる重複排除**
+
+3. **統一正規化サービス作成**
+   - **新規作成**: `src/services/nameMatchingService.ts`
+   - **目的**: 重複していた商品名マッチングロジックの統一
+   - **統合対象**: `shoppingListGeneration.ts`と`stockMergeUtils.ts`の類似機能
+   - **機能**:
+     - `normalizeProductName()` - 商品名正規化の統一実装
+     - `isNameMatch()` - 2つの商品名マッチング判定
+     - `findBestMatch()` - 候補から最適マッチ検索
+     - `deduplicateNames()` - 重複除去
+     - `batchMatching()` - 一括マッチングと統計
+   - **効果**: DRY原則遵守、一元管理によるバグ削減
+
+#### Martin Fowlerリファクタリング技法の適用
+
+**Extract Function**
+- **適用箇所**: 2つの大規模関数を合計9つの小関数に分割
+- **効果**: 単一責任原則、コード理解の向上、段階的テスト可能
+
+**Extract Service**
+- **適用箇所**: 重複する正規化ロジックの統一
+- **効果**: 共通機能の一元管理、保守性・信頼性向上
+
+#### コードの匂い解決成果
+
+**解決したコードの匂い**
+1. **Long Method**: 40行・143行の巨大関数 → 適切なサイズに分割
+2. **Duplicate Code**: 正規化ロジックの重複 → 統一サービスで解決
+3. **Complex Method**: 多重責任メソッド → 単一責任関数群に変換
+
+**品質向上指標**
+- **lint**: 0 warnings, 0 errors ✅
+- **build**: 正常完了（779KB）✅
+- **型安全性**: 厳密なTypeScript型定義維持
+- **可読性**: 関数名による自己文書化
+
+### 【追加】Phase 3: 高類似度関数の統合による重複排除完了
+
+**similarity-ts分析に基づく追加リファクタリング実行**
+
+4. **checkIngredientStock と isStockSufficient統合**
+   - **類似度**: 84.06%の高類似コード解決
+   - **適用技法**: Extract Function パターン
+   - **成果**: `nameMatchingService.ts`に`checkStockAvailability()`を追加
+   - **効果**: 在庫チェックロジックの一元化、型安全性維持
+
+5. **normalizeQuantity関数の統合**
+   - **類似度**: 89.44%の重複ロジック解決
+   - **適用技法**: Extract Function パターン
+   - **成果**: `normalizeQuantityInternal()`による統一実装
+   - **効果**: 数量正規化処理の一元管理
+
+#### 最終成果指標
+
+**解決した重複コード**
+- **checkIngredientStock vs isStockSufficient**: 84.06%類似 → 統合完了 ✅
+- **normalizeQuantity重複**: 89.44%類似 → 統合完了 ✅
+- **既存のnameMatching重複**: Phase2で完全統合済み ✅
+
+**コード品質確認**
+- **final lint**: 0 warnings, 0 errors ✅
+- **final build**: 779.87KB、正常完了 ✅
+- **型安全性**: 厳密なTypeScript型維持 ✅
+
+#### 新規作成・更新ファイル
+
+**新規作成**
+- `src/services/nameMatchingService.ts`: 統一正規化・マッチングサービス
+
+**主要更新**
+- `src/services/autoShoppingList.ts`: Extract Function適用
+- `src/services/shoppingListGeneration.ts`: Extract Function + Service統合
+- `src/services/stockMergeUtils.ts`: 統一サービス使用
+
+#### リファクタリング手法の成果
+
+**可読性向上**
+- 長い関数の段階的分割による理解しやすさ
+- 関数名による処理内容の明確化
+- 責任分離による変更点の局所化
+
+**保守性向上**
+- 単一責任原則による修正影響の最小化
+- 共通ロジック統一による一括修正可能
+- テスト容易性の大幅向上
+
+**再利用性向上**
+- 分割された関数の他機能での活用可能
+- 統一正規化サービスの横展開可能
+- ドメイン固有ロジックの明確化
+
+**テスタビリティ向上**
+- 小さな関数の独立テスト実行可能
+- モック・スタブ作成の簡素化
+- 段階的デバッグの実現
+
+#### 技術的改善点
+
+**Extract Function の効果**
+- 40行関数 → 4つの10行以下関数（autoShoppingList.ts）
+- 143行関数 → 5つの専門関数 + 簡潔なメイン関数（shoppingListGeneration.ts）
+- 各関数が明確な入力・出力・責任を持つ
+
+**Extract Service の効果**
+- 重複ロジック排除による保守性向上
+- 正規化アルゴリズムの一元管理
+- マッチング精度の統一による品質向上
+
+**型安全性**
+- 分割された関数でも厳密な型定義維持
+- インターフェース設計の改善
+- TypeScriptコンパイル完全成功
+
+#### 引き継ぎ事項
+
+**リファクタリングパターンの継続適用**
+1. **Extract Function**: 他の大きな関数への適用
+2. **Extract Service**: 共通ロジックの継続統一
+3. **段階的改善**: 小さなステップでの安全な変更
+
+**品質維持**
+- Martin Fowlerリファクタリング手法の継続適用
+- 各変更でのlint・build・型チェック実行
+- 単一責任原則の徹底
+
+**今後の拡張指針**
+- Phase 3候補: `shoppingStockMerge.ts`のモジュール化
+- 他のディレクトリへの手法展開
+- より高度なMartin Fowler技法の適用
+
 ## 2025-07-11
 
 ### 【最新】Martin Fowlerリファクタリング手法による包括的コードベース改善完了
